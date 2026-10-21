@@ -1,0 +1,215 @@
+import type { OperationDef, ParamDef } from '../../core/types'
+import { fr } from '../../i18n/fr'
+import type { LdcSnapshot } from './memory'
+import {
+  runAfficherListe,
+  runAfficherListeEnvers,
+  runDetruireListe,
+  runInsererApresValeur,
+  runInsererAvantValeur,
+  runInsererEnFin,
+  runInsererEnTete,
+  runInverserListe,
+  runRechercher,
+  runSupprimerEnTete,
+  runSupprimerValeur,
+} from './ops/intOps'
+import {
+  runInscrireEtudiant,
+  runRadierEtudiant,
+  runStudentAfficherListe,
+  runStudentAfficherListeEnvers,
+  runStudentDetruireListe,
+  runStudentInverserListe,
+} from './ops/studentOps'
+
+const numberParam = (
+  name: string,
+  label: string,
+  defaultValue: number,
+  target = false,
+): ParamDef => ({
+  name,
+  kind: 'number',
+  label,
+  defaultValue,
+  ...(target ? { target: true } : {}),
+})
+
+const textParam = (name: string, label: string, defaultValue: string): ParamDef => ({
+  name,
+  kind: 'text',
+  label,
+  defaultValue,
+})
+
+const noParams: ParamDef[] = []
+
+export const intOperations: OperationDef<LdcSnapshot>[] = [
+  {
+    id: 'afficherListe',
+    label: fr.ops.afficherListe.label,
+    params: noParams,
+    complexity: fr.ops.afficherListe.complexity,
+    complexityNote: fr.ops.afficherListe.note,
+    inserts: false,
+    run: runAfficherListe,
+  },
+  {
+    id: 'afficherListeEnvers',
+    label: fr.ops.afficherListeEnvers.label,
+    params: noParams,
+    complexity: fr.ops.afficherListeEnvers.complexity,
+    complexityNote: fr.ops.afficherListeEnvers.note,
+    inserts: false,
+    run: runAfficherListeEnvers,
+  },
+  {
+    id: 'insererEnTete',
+    label: fr.ops.insererEnTete.label,
+    params: [numberParam('valeur', fr.params.valeur, 7)],
+    complexity: fr.ops.insererEnTete.complexity,
+    complexityNote: fr.ops.insererEnTete.note,
+    inserts: true,
+    run: runInsererEnTete,
+  },
+  {
+    id: 'insererEnFin',
+    label: fr.ops.insererEnFin.label,
+    params: [numberParam('valeur', fr.params.valeur, 7)],
+    complexity: fr.ops.insererEnFin.complexity,
+    complexityNote: fr.ops.insererEnFin.note,
+    inserts: true,
+    run: runInsererEnFin,
+  },
+  {
+    id: 'insererApresValeur',
+    label: fr.ops.insererApresValeur.label,
+    params: [
+      numberParam('apres', fr.params.apres, 2, true),
+      numberParam('valeur', fr.params.valeur, 7),
+    ],
+    complexity: fr.ops.insererApresValeur.complexity,
+    complexityNote: fr.ops.insererApresValeur.note,
+    inserts: true,
+    run: runInsererApresValeur,
+  },
+  {
+    id: 'insererAvantValeur',
+    label: fr.ops.insererAvantValeur.label,
+    params: [
+      numberParam('avant', fr.params.avant, 2, true),
+      numberParam('valeur', fr.params.valeur, 7),
+    ],
+    complexity: fr.ops.insererAvantValeur.complexity,
+    complexityNote: fr.ops.insererAvantValeur.note,
+    inserts: true,
+    run: runInsererAvantValeur,
+  },
+  {
+    id: 'supprimerEnTete',
+    label: fr.ops.supprimerEnTete.label,
+    params: noParams,
+    complexity: fr.ops.supprimerEnTete.complexity,
+    complexityNote: fr.ops.supprimerEnTete.note,
+    inserts: false,
+    run: runSupprimerEnTete,
+  },
+  {
+    id: 'supprimerValeur',
+    label: fr.ops.supprimerValeur.label,
+    params: [numberParam('valeur', fr.params.valeur, 2, true)],
+    complexity: fr.ops.supprimerValeur.complexity,
+    complexityNote: fr.ops.supprimerValeur.note,
+    inserts: false,
+    run: runSupprimerValeur,
+  },
+  {
+    id: 'rechercher',
+    label: fr.ops.rechercher.label,
+    params: [numberParam('valeur', fr.params.valeur, 2, true)],
+    complexity: fr.ops.rechercher.complexity,
+    complexityNote: fr.ops.rechercher.note,
+    inserts: false,
+    run: runRechercher,
+  },
+  {
+    id: 'detruireListe',
+    label: fr.ops.detruireListe.label,
+    params: noParams,
+    complexity: fr.ops.detruireListe.complexity,
+    complexityNote: fr.ops.detruireListe.note,
+    inserts: false,
+    run: runDetruireListe,
+  },
+  {
+    id: 'inverserListe',
+    label: fr.ops.inverserListe.label,
+    params: noParams,
+    complexity: fr.ops.inverserListe.complexity,
+    complexityNote: fr.ops.inverserListe.note,
+    inserts: false,
+    run: runInverserListe,
+  },
+]
+
+export const studentOperations: OperationDef<LdcSnapshot>[] = [
+  {
+    id: 'inscrireEtudiant',
+    label: fr.ops.inscrireEtudiant.label,
+    params: [
+      numberParam('numero', fr.params.numero, 101),
+      textParam('nom', fr.params.nom, 'AAA'),
+      textParam('prenom', fr.params.prenom, 'aaa'),
+    ],
+    complexity: fr.ops.inscrireEtudiant.complexity,
+    complexityNote: fr.ops.inscrireEtudiant.note,
+    inserts: true,
+    run: runInscrireEtudiant,
+  },
+  {
+    id: 'radierEtudiant',
+    label: fr.ops.radierEtudiant.label,
+    params: [numberParam('num', fr.params.num, 102, true)],
+    complexity: fr.ops.radierEtudiant.complexity,
+    complexityNote: fr.ops.radierEtudiant.note,
+    inserts: false,
+    run: runRadierEtudiant,
+  },
+  {
+    id: 'afficherListe',
+    label: fr.ops.afficherListe.label,
+    params: noParams,
+    complexity: fr.ops.afficherListe.complexity,
+    complexityNote: fr.ops.afficherListe.note,
+    inserts: false,
+    run: runStudentAfficherListe,
+  },
+  {
+    id: 'afficherListeEnvers',
+    label: fr.ops.afficherListeEnvers.label,
+    params: noParams,
+    complexity: fr.ops.afficherListeEnvers.complexity,
+    complexityNote: fr.ops.afficherListeEnvers.note,
+    inserts: false,
+    run: runStudentAfficherListeEnvers,
+  },
+  {
+    id: 'inverserListe',
+    label: fr.ops.inverserListe.label,
+    params: noParams,
+    complexity: fr.ops.inverserListe.complexity,
+    complexityNote: fr.ops.inverserListe.note,
+    inserts: false,
+    run: runStudentInverserListe,
+  },
+  {
+    id: 'detruireListe',
+    label: fr.ops.detruireListe.label,
+    params: noParams,
+    complexity: fr.ops.detruireListe.complexity,
+    complexityNote: fr.ops.detruireListe.note,
+    inserts: false,
+    run: runStudentDetruireListe,
+  },
+]

@@ -1,0 +1,82 @@
+# DS Visualizer — Chapitre 4 : Listes doublement chaînées
+
+A single-page, fully offline French teaching demo for doubly linked lists in C (`ldc`), built with Vite + React + TypeScript.
+
+## Run
+
+```bash
+npm ci        # once, uses package-lock.json
+npm test      # vitest suite (65 tests)
+npm run lint  # oxlint
+npm run build # typecheck + single-file offline build
+npm run dev   # local dev server
+```
+
+`npm run build` produces **one self-contained `dist/index.html`** (`vite-plugin-singlefile`). Open it by double-click: no server and no network access are required — no CDNs, no external fonts or images.
+
+## What it teaches
+
+Two profiles, one C demo:
+
+- **Entiers** (`int`): the course list `9 ⇄ 2 ⇄ 5` and all classic operations — display forward/backward, insert head/tail/after/before, delete head/by-value, search, destroy, reverse.
+- **Étudiants** (`etudiant`): a student registry (`E1 = {101, AAA, aaa}`, …) with `inscrireEtudiant` and `radierEtudiant`.
+
+For every operation, the demo shows:
+
+- the exact canonical C code with the current statement highlighted;
+- a mutable SVG layout: `precedent` / `valeur` / `suivant` cells, forward (solid blue) and backward (dashed orange) arrows, `NULL` terminators, fake heap addresses, freed-node hatching, and pointer pins (`debut`, `courant`, `nouveau`, `temp`, `dernier`, …);
+- pointer rewrites animated red (old, dashed) → green (new);
+- a step-by-step player with French captions, condition evaluations, badges (`cas-particulier`, `debut-modifie`), live printf console, watch panel (globals + locals), and a call journal;
+- 8 ready-made scenarios from the professor's course, loadable from the header.
+
+One step = one executed C statement (including every condition/loop evaluation). Snapshots are fully frozen; stepping backwards is exact.
+
+## Architecture
+
+```
+src/
+  core/                  generic engine: result types, playback state machine
+  structures/ldc/        lec plugin: memory model, C sources + symbolic line labels,
+                         step generators, SVG renderer, scenarios
+  ui/                    layout + panels only (no list knowledge in core)
+  registry.ts            registers exactly one plugin: ldc
+```
+
+The core engine does not know about lists, and `ui/` never manipulates nodes. Adding "Chapitre 5 — LSC" would mean a new `src/structures/<id>/` folder plus one registration line — `core/` and `ui/` stay untouched.
+
+Key guarantees enforced by tests:
+
+- each operation equals a plain-array oracle on empty / 1 / 2 / 3 / 8-element lists (head, middle, tail, absent, duplicates);
+- `checkInvariants` holds after every random 20-operation sequence (no cycles, mirror forward/backward walk, no reachable freed node);
+- every symbolic line label points at the C line that contains its expected substring;
+- every step has a non-empty French caption; snapshots are frozen and mutating them throws;
+- the Visualization renders the first and last step of every scenario without error.
+
+## UI shortcuts
+
+- `← / →` previous / next step · `Space` play-pause · `Home / End` start / finish
+- `↑ / ↓` faster / slower · `+ / -` zoom · `0 / F` fit · `D` bottom panels · `P` presentation · `R` reset (confirmation shown)
+- `?` (header button) keyboard-shortcut popover
+- mouse wheel zooms at the cursor, drag pans, double-click fits; the toolbar also exposes −, 100 %, +, Ajuster and an Auto/Manuel chip.
+- click a leaf node in the SVG to fill a "cible" parameter (used by delete-by-value, insert-after/before, radiate).
+
+## Layout notes (v2 vitrine)
+
+- The shell is a fixed `100dvh` app frame: header (64px, 56px below 800px height) + 2-column workspace + full-width collapsible bottom dock (160px, 130px below 900px viewport height; collapsed by default below 800px).
+- The SVG stage uses one world-space camera `{x,y,k}` (`translate(x,y) scale(k)`); auto-fit centers the content bbox with 56px padding and clamps `k` to `[0.25, 1.3]`. During an operation the auto camera fits the union bbox of all steps. Manual zoom clamps to `[0.25, 4]`; manual mode persists across steps and operations, while scenario/profile load and reset force auto.
+- Right rail: code panel only (presentation auto-fit from measured monospace width and available height, clamped to 14–26px; horizontal scroll fallback). Bottom dock: Variables | Console (printf) | Journal (journal hidden in presentation). Left: viz card with caption band, playback row, operation row, scenario strip.
+- The journal lives in the bottom dock; `D` toggles the dock, `P` hides only the journal while keeping Variables and Console visible.
+- Verified visually by `scripts/shots.mjs` (Playwright) at 1920×1080 and 1280×720: empty, delete-middle, heap insertion, shared-node pins, reverse swap, 8 nodes, manual zoom/pan, presentation code fit, dock, dark theme, and scenario/help popovers.
+
+## Assumptions documented during the build
+
+- **`inverserListe`**: the course sets up the reversal deliberately with *declarations + a swap inside the loop* (`temp = courant->suivant` / `courant->suivant = courant->precedent`, `courant->precedent = temp`, and `dernier` observed as the last node reached). No `fin` global marker is used: after the loop the algorithm re-seats `debut = dernier` and the demo performs one final re-layout step (`slot/lane` reassignment) so the reversed list reads left-to-right from the new `debut`.
+- **Max nodes = 8** in the demo (list + heap combined); insertions are disabled once the cap is reached with a French message.
+- **No `fin` global.** Only `debut` exists, as in the course material.
+- **`insererAvantValeur`**: implemented via the "one courant + check `courant->precedent`" approach shown in the course rather than the two-pointer method.
+- Menu/operation labels whose text mentions the profile (`liste` vs `registre`) stay concise; all strings live in `src/i18n/fr.ts`.
+- The demo builds to a single offline file instead of a multi-page site; the professor's static PDF is intentionally replaced by this interactive demo.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Work on a branch, keep changes focused, run `npm test`, `npm run lint` and `npm run build`, and never push directly to `main`.
