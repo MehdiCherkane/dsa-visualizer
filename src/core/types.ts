@@ -149,7 +149,11 @@ export interface VisualizationProps<S extends BaseSnapshot> {
 
 export interface StructurePlugin<S extends BaseSnapshot> {
   id: string
+  /** Chapter number in the course: drives the menu badge and the `#/chapitre-<n>` route. */
+  chapter: number
   title: string
+  /** One-line French description shown on the main menu card (text lives in i18n). */
+  description: string
   profiles: ProfileDef<S>[]
   Visualization: ComponentType<VisualizationProps<S>>
   countNodes: (snapshot: S) => number

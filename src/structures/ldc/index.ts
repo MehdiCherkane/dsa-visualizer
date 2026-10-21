@@ -17,7 +17,9 @@ import LdcVisualization from './Visualization'
 
 export const ldcPlugin: StructurePlugin<LdcSnapshot> = {
   id: 'ldc',
+  chapter: 4,
   title: fr.app.title,
+  description: fr.chapters.ldc.description,
   profiles: [
     {
       id: 'int',

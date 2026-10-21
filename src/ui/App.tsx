@@ -42,6 +42,13 @@ interface StartOptions<S extends BaseSnapshot> {
   scenarioStepIndex?: number
 }
 
+/** Popovers, dialogs and the journal drawer own the Escape key while open. */
+const OVERLAY_SELECTOR = '[role="dialog"], [role="menu"], .journal-drawer, [aria-modal="true"]'
+
+function hasOpenOverlay(): boolean {
+  return typeof document !== 'undefined' && document.querySelector(OVERLAY_SELECTOR) !== null
+}
+
 function idleStep<S extends BaseSnapshot>(snapshot: S, fn: string): Step<S> {
   return {
     snapshot,
@@ -56,8 +63,14 @@ function idleStep<S extends BaseSnapshot>(snapshot: S, fn: string): Step<S> {
 
 export function DemoApp<S extends BaseSnapshot>({
   plugin,
+  theme,
+  onTheme,
+  onMenu,
 }: {
   plugin: StructurePlugin<S>
+  theme: 'light' | 'dark'
+  onTheme: () => void
+  onMenu: () => void
 }): JSX.Element {
   const initialProfile = plugin.profiles[0]
   if (!initialProfile) throw new Error('The plugin must declare at least one profile')
@@ -76,7 +89,6 @@ export function DemoApp<S extends BaseSnapshot>({
   )
   const [activeOperation, setActiveOperation] = useState<ActiveOperation<S> | null>(null)
   const [scenarioRun, setScenarioRun] = useState<ScenarioRun | null>(null)
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [presentation, setPresentation] = useState(false)
   const [cameraResetKey, setCameraResetKey] = useState(0)
 
@@ -84,9 +96,6 @@ export function DemoApp<S extends BaseSnapshot>({
   const playerState = usePlayerState(player)
 
   useEffect(() => () => player.destroy(), [player])
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme
-  }, [theme])
 
   const selectedOperation =
     profile.operations.find((candidate) => candidate.id === selectedId) ??
@@ -356,6 +365,14 @@ export function DemoApp<S extends BaseSnapshot>({
       }
 
       switch (event.key) {
+        case 'Escape':
+          // Popovers handle Escape on `document` first and call preventDefault.
+          // A dialog they close synchronously is already out of the DOM when
+          // this `window` listener runs, so both checks are needed.
+          if (event.defaultPrevented || hasOpenOverlay()) return
+          event.preventDefault()
+          onMenu()
+          break
         case 'ArrowRight':
           event.preventDefault()
           player.next()
@@ -403,7 +420,7 @@ export function DemoApp<S extends BaseSnapshot>({
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [player, resetAll])
+  }, [player, resetAll, onMenu])
 
   return (
     <div className={presentation ? 'app presentation' : 'app'}>
@@ -412,7 +429,8 @@ export function DemoApp<S extends BaseSnapshot>({
         profileId={profile.id}
         onProfile={switchProfile}
         theme={theme}
-        onTheme={() => setTheme((value) => (value === 'light' ? 'dark' : 'light'))}
+        onTheme={onTheme}
+        onMenu={onMenu}
         presentation={presentation}
         onPresentation={() => setPresentation((value) => !value)}
         scenarios={allScenarios}

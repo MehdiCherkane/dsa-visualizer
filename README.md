@@ -6,13 +6,15 @@ A single-page, fully offline French teaching demo for doubly linked lists in C (
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (65 tests)
+npm test      # vitest suite (83 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
 ```
 
 `npm run build` produces **one self-contained `dist/index.html`** (`vite-plugin-singlefile`). Open it by double-click: no server and no network access are required — no CDNs, no external fonts or images.
+
+Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point) and `#/chapitre-4` (the `ldc` demo). Unknown hashes fall back to the menu, and `Échap` or the `← Menu` header button leaves the demo.
 
 ## What it teaches
 
@@ -38,11 +40,14 @@ src/
   core/                  generic engine: result types, playback state machine
   structures/ldc/        lec plugin: memory model, C sources + symbolic line labels,
                          step generators, SVG renderer, scenarios
-  ui/                    layout + panels only (no list knowledge in core)
-  registry.ts            registers exactly one plugin: ldc
+  ui/                    layout + panels only (no list knowledge in core);
+                         MainMenu.tsx + useHashRoute.ts for the home screen
+  registry.ts            registers the plugins (currently ldc) and resolves a chapter
 ```
 
-The core engine does not know about lists, and `ui/` never manipulates nodes. Adding "Chapitre 5 — LSC" would mean a new `src/structures/<id>/` folder plus one registration line — `core/` and `ui/` stay untouched.
+The core engine does not know about lists, and `ui/` never manipulates nodes. Adding "Chapitre 5 — LSC" means a new `src/structures/<id>/` folder plus one registration line: the menu card (badge from `chapter`, `title`, `description`) and the `#/chapitre-<n>` route are derived from the registry — `core/` and `ui/` stay untouched.
+
+The main menu is the entry point (`#/`); each card opens `#/chapitre-<chapter>`. Navigation is a hand-written `hashchange` hook (no server, works from `file://`), so the demo shell is mounted only on its own route: the demo's keyboard shortcuts are unregistered while the menu is displayed.
 
 Key guarantees enforced by tests:
 
@@ -57,6 +62,7 @@ Key guarantees enforced by tests:
 - `← / →` previous / next step · `Space` play-pause · `Home / End` start / finish
 - `↑ / ↓` faster / slower · `+ / -` zoom · `0 / F` fit · `D` bottom panels · `P` presentation · `R` reset (confirmation shown)
 - `?` (header button) keyboard-shortcut popover
+- `Échap` returns to the main menu (only when no popover or dialog is open)
 - mouse wheel zooms at the cursor, drag pans, double-click fits; the toolbar also exposes −, 100 %, +, Ajuster and an Auto/Manuel chip.
 - click a leaf node in the SVG to fill a "cible" parameter (used by delete-by-value, insert-after/before, radiate).
 

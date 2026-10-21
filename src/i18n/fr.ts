@@ -15,8 +15,38 @@ export const fr = {
     creditPrefix: 'd’après le cours du',
     professor: 'Pr. M. OUTANOUTE',
     subtitle: 'EST Béni Mellal · DUT GI S3 · d’après le cours du Pr. M. OUTANOUTE',
-    chapter: 'Chapitre 4',
     ready: 'Prêt pour la démonstration',
+  },
+  menu: {
+    title: 'DS Visualizer',
+    pageTitle: 'DS Visualizer — Structures de données en C',
+    chapterPageTitle: (title: string) => `${title} — DS Visualizer`,
+    eyebrow: 'Chapitre par chapitre',
+    subtitle: 'Structures de données en C — démonstrations interactives',
+    chapters: 'Chapitres',
+    open: 'Ouvrir',
+    openAria: (title: string) => `Ouvrir « ${title} »`,
+    chapterLabel: (chapter: number) => `Chapitre ${chapter}`,
+    cardHint: 'Démonstration pas à pas, utilisable hors ligne',
+    soon: 'Bientôt disponible',
+    soonTitle: 'Prochains chapitres',
+    soonAria: (title: string) => `« ${title} » : bientôt disponible`,
+    soonItems: [
+      {
+        chapter: 5,
+        title: 'Listes simplement chaînées',
+        description: 'Parcours, insertion et suppression avec un seul lien suivant.',
+      },
+    ],
+    footer: 'Tout fonctionne hors ligne : un seul fichier, aucune connexion.',
+    backArrow: '←',
+    backLabel: 'Menu',
+    backAria: 'Revenir au menu principal',
+  },
+  chapters: {
+    ldc: {
+      description: 'Profils Entiers et Étudiants, 8 scénarios guidés.',
+    },
   },
   common: {
     node: 'nœud',
@@ -57,6 +87,7 @@ export const fr = {
       { keys: ['D'], label: 'Afficher / masquer les panneaux' },
       { keys: ['P'], label: 'Mode présentation' },
       { keys: ['R'], label: 'Réinitialiser la liste' },
+      { keys: ['Échap'], label: 'Revenir au menu' },
     ],
   },
   camera: {

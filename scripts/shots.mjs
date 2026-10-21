@@ -21,9 +21,12 @@ const blur = async (page) => {
   })
 }
 
+const CHAPTER4 = `${BASE}/#/chapitre-4`
+const MENU = `${BASE}/#/`
+
 const openPage = async (browser, width, height) => {
   const page = await browser.newPage({ viewport: { width, height } })
-  await page.goto(BASE, { waitUntil: 'networkidle' })
+  await page.goto(CHAPTER4, { waitUntil: 'networkidle' })
   await page.waitForSelector('.ldc-svg', { timeout: 10000 })
   await wait(page, 250)
   return page
@@ -278,6 +281,42 @@ await startScenarioOperation(inverseMobile)
 await stepUntilCounter(inverseMobile, '13 / 25')
 await shot(inverseMobile, '15-inverser-mid-1280', 1400)
 await inverseMobile.close()
+
+// main menu (#/) — entry point, 1920×1080 and 1280×720, light and dark
+const menuShot = async (width, height, theme, name) => {
+  const page = await browser.newPage({ viewport: { width, height } })
+  await page.goto(MENU, { waitUntil: 'networkidle' })
+  await page.waitForSelector('.menu-app', { timeout: 10000 })
+  if (theme === 'dark') {
+    await page.getByRole('button', { name: 'Passer au thème sombre', exact: true }).click()
+  }
+  await blur(page)
+  await shot(page, name, 500)
+  await page.close()
+}
+
+for (const [width, height, suffix] of [
+  [1920, 1080, '1920'],
+  [1280, 720, '1280'],
+]) {
+  await menuShot(width, height, 'light', `16-menu-${suffix}`)
+  await menuShot(width, height, 'dark', `17-menu-dark-${suffix}`)
+}
+
+// the menu card opens the chapter 4 demo, and ← Menu comes back
+const menuNav = await browser.newPage({ viewport: { width: 1280, height: 720 } })
+await menuNav.goto(MENU, { waitUntil: 'networkidle' })
+await menuNav.getByRole('link', { name: 'Ouvrir « Listes doublement chaînées »' }).click()
+await menuNav.waitForSelector('.ldc-svg', { timeout: 10000 })
+const chapterHashAfterClick = await menuNav.evaluate(() => window.location.hash)
+if (chapterHashAfterClick !== '#/chapitre-4') {
+  throw new Error(`menu card did not open the demo: ${chapterHashAfterClick}`)
+}
+await menuNav.getByRole('button', { name: 'Revenir au menu principal' }).click()
+await menuNav.waitForSelector('.menu-app', { timeout: 10000 })
+const menuHashAfterBack = await menuNav.evaluate(() => window.location.hash)
+if (menuHashAfterBack !== '#/') throw new Error(`← Menu did not return: ${menuHashAfterBack}`)
+await menuNav.close()
 
 await browser.close()
 console.log(`done -> ${OUT}`)

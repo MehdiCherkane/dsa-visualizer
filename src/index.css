@@ -3386,6 +3386,25 @@ select:focus-visible,
   height: 40px;
 }
 
+.header-actions .menu-button {
+  height: 40px;
+  border-radius: 10px;
+  padding: 0 12px;
+  gap: 6px;
+  color: var(--ink-2);
+  font-size: 11.5px;
+}
+
+.header-actions .menu-button:hover {
+  color: var(--ink);
+}
+
+@container header (max-width: 1500px) {
+  .presentation .menu-button-label {
+    display: none;
+  }
+}
+
 .presentation .brand-meta {
   display: none;
 }
@@ -3411,7 +3430,14 @@ select:focus-visible,
 }
 
 @container header (max-width: 1500px) {
-  .presentation .credit-prefix {
+  .presentation .credit-prefix,
+  .presentation .brand-rule {
+    display: none;
+  }
+}
+
+@container header (max-width: 1300px) {
+  .presentation .brand-credit {
     display: none;
   }
 }
@@ -3431,8 +3457,14 @@ select:focus-visible,
   }
 }
 
-@container header (max-width: 1080px) {
+@container header (max-width: 1300px) {
   .credit-prefix {
+    display: none;
+  }
+}
+
+@container header (max-width: 1080px) {
+  .brand-credit {
     display: none;
   }
 }
