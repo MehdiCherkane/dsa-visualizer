@@ -696,6 +696,13 @@ body.is-resizing-horizontal * {
   fill: var(--band-row);
 }
 
+.lane-band-circle {
+  fill: var(--band-row);
+  stroke: var(--line);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 10;
+}
+
 .lane-band-heap {
   fill: var(--band-heap);
 }

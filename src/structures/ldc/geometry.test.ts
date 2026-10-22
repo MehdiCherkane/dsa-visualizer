@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Camera, Point, Rect } from './geometry'
 import {
+  CIRCLE_CX,
+  CIRCLE_CY,
   DEBUT_CELL_GAP,
   DEBUT_CELL_H,
   DEBUT_CELL_W,
@@ -9,6 +11,7 @@ import {
   PIN_NULL_STUB,
   ROW_Y,
   cameraAtOne,
+  circleGeometry,
   debutCellGeometry,
   debutRoute,
   fitCamera,
@@ -23,6 +26,7 @@ import {
 } from './geometry'
 import { createSnapshot } from './memory'
 import { runInsererEnTete } from './ops/intOps'
+import { createCircularSnapshot } from '../lddc/memory'
 
 function center(rect: Rect): Point {
   return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
@@ -253,5 +257,70 @@ describe('caméra et géométrie du canvas', () => {
     expect(stub!.bounds.y + stub!.bounds.height).toBeLessThan(ROW_Y)
     const bounds = snapshotBounds(snapshot.nodes, [pin], { kind: 'null' })
     expect(contains(bounds, stub!.bounds)).toBe(true)
+  })
+})
+
+describe('géométrie circulaire du chapitre 5', () => {
+  const circular = () =>
+    createCircularSnapshot(
+      'int',
+      [9, 2, 5, 7].map((value) => ({ kind: 'int' as const, value })),
+    )
+
+  it('répartit les nœuds sur un anneau sans toucher au mode ligne', () => {
+    const snapshot = circular()
+    const ring = circleGeometry(snapshot.nodes)
+    expect(ring).not.toBeNull()
+    expect(ring!.cx).toBe(CIRCLE_CX)
+    expect(ring!.cy).toBe(CIRCLE_CY)
+
+    const layout = layoutNodes(snapshot.nodes, 'circle')
+    for (const node of snapshot.nodes) {
+      const point = layout.get(node.id)!
+      const nodeCenter = { x: point.x + 110, y: point.y + 50 }
+      expect(
+        Math.hypot(nodeCenter.x - ring!.cx, nodeCenter.y - ring!.cy),
+      ).toBeCloseTo(ring!.radius, 6)
+    }
+
+    const first = snapshot.nodes[0]!
+    const firstPoint = layout.get(first.id)!
+    expect(firstPoint.x + 110).toBeCloseTo(CIRCLE_CX, 6)
+    expect(firstPoint.y + 50).toBeLessThan(CIRCLE_CY)
+
+    const rowPoint = layoutNodes(snapshot.nodes).get(first.id)!
+    expect(rowPoint.y).toBe(ROW_Y)
+    expect(rowPoint.x).not.toBe(firstPoint.x)
+  })
+
+  it('route suivant à l’extérieur et precedent à l’intérieur du cercle', () => {
+    const snapshot = circular()
+    const [first, second, , fourth] = snapshot.nodes
+    if (!first || !second || !fourth) throw new Error('missing nodes')
+    const layout = layoutNodes(snapshot.nodes, 'circle')
+    const ring = circleGeometry(snapshot.nodes)!
+    const distance = (point: Point): number =>
+      Math.hypot(point.x - ring.cx, point.y - ring.cy)
+
+    const next = routeArrow(first, 'suivant', second, layout, 'circle', snapshot.nodes)
+    const previous = routeArrow(first, 'precedent', fourth, layout, 'circle', snapshot.nodes)
+    expect(next).not.toBeNull()
+    expect(previous).not.toBeNull()
+    expect(next!.kind).toBe('curve')
+    expect(previous!.kind).toBe('curve')
+    expect(distance(next!.tail)).toBeGreaterThan(ring.radius)
+    expect(distance(previous!.tail)).toBeLessThan(ring.radius)
+  })
+
+  it('place la cellule debut au-dessus du sommet de l’anneau', () => {
+    const snapshot = circular()
+    const first = snapshot.nodes[0]!
+    const firstPoint = layoutNodes(snapshot.nodes, 'circle').get(first.id)!
+    const geometry = debutCellGeometry(snapshot.nodes, 'circle')
+    expect(geometry.cell.y).toBe(firstPoint.y - DEBUT_CELL_GAP - DEBUT_CELL_H)
+    expect(geometry.dot.x).toBeCloseTo(firstPoint.x + 110, 6)
+    const route = debutRoute(snapshot.nodes, { kind: 'node', id: first.id }, 'circle')
+    expect(route).not.toBeNull()
+    expect(route!.tip.y).toBeCloseTo(firstPoint.y, 6)
   })
 })
