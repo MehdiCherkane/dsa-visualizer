@@ -74,6 +74,11 @@
   list-style: none;
 }
 
+/* Upcoming chapters stay on one compact row on wide screens. */
+.chapter-grid.is-soon-grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
 .chapter-card {
   display: flex;
   flex-direction: column;
@@ -102,9 +107,10 @@
 
 .chapter-card-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 6px 10px;
 }
 
 .chapter-card-title {
@@ -160,6 +166,14 @@
   border-style: dashed;
   background: var(--panel-2);
   box-shadow: none;
+}
+
+/* Upcoming cards are compact: badge on one line, status pill on the next,
+   so the head never wraps raggedly from card to card. */
+.chapter-card.is-soon .chapter-card-head {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
 }
 
 .chapter-card.is-soon .chapter-card-title {

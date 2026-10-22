@@ -92,7 +92,7 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
             <h2 id="menu-soon" className="menu-section-title">
               {fr.menu.soonTitle}
             </h2>
-            <ul className="chapter-grid">
+            <ul className="chapter-grid is-soon-grid">
               {fr.menu.soonItems.map((item) => (
                 <li key={item.chapter}>
                   <div

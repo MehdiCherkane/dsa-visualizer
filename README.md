@@ -45,7 +45,7 @@ src/
   registry.ts            registers the plugins (currently ldc) and resolves a chapter
 ```
 
-The core engine does not know about lists, and `ui/` never manipulates nodes. Adding "Chapitre 5 — LSC" means a new `src/structures/<id>/` folder plus one registration line: the menu card (badge from `chapter`, `title`, `description`) and the `#/chapitre-<n>` route are derived from the registry — `core/` and `ui/` stay untouched.
+The core engine does not know about lists, and `ui/` never manipulates nodes. Adding a chapter (for example "Chapitre 2 — Listes simplement chaînées") means a new `src/structures/<id>/` folder plus one registration line: the menu card (badge from `chapter`, `title`, `description`) and the `#/chapitre-<n>` route are derived from the registry — `core/` and `ui/` stay untouched. Until a chapter is implemented, it can be listed as a disabled "Bientôt disponible" card in `fr.menu.soonItems`.
 
 The main menu is the entry point (`#/`); each card opens `#/chapitre-<chapter>`. Navigation is a hand-written `hashchange` hook (no server, works from `file://`), so the demo shell is mounted only on its own route: the demo's keyboard shortcuts are unregistered while the menu is displayed.
 

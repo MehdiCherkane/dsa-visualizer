@@ -33,9 +33,24 @@ export const fr = {
     soonAria: (title: string) => `« ${title} » : bientôt disponible`,
     soonItems: [
       {
-        chapter: 5,
+        chapter: 1,
+        title: 'Piles et files statiques',
+        description: 'Piles et files implantées dans des tableaux de taille fixe.',
+      },
+      {
+        chapter: 2,
         title: 'Listes simplement chaînées',
         description: 'Parcours, insertion et suppression avec un seul lien suivant.',
+      },
+      {
+        chapter: 3,
+        title: 'Piles et files dynamiques',
+        description: 'Piles et files implantées avec des nœuds alloués dynamiquement.',
+      },
+      {
+        chapter: 5,
+        title: 'Listes doublement chaînées circulaires',
+        description: 'Listes à double lien dont le dernier nœud reboucle sur le premier.',
       },
     ],
     footer: 'Tout fonctionne hors ligne : un seul fichier, aucune connexion.',

@@ -64,10 +64,16 @@ describe('menu principal', () => {
   it('affiche les chapitres à venir comme des cartes désactivées', () => {
     const soon = container.querySelectorAll('.chapter-card.is-soon')
     expect(soon).toHaveLength(fr.menu.soonItems.length)
-    for (const element of soon) {
-      expect(element.getAttribute('aria-disabled')).toBe('true')
-      expect(element.textContent).toContain(fr.menu.soon)
-    }
+    fr.menu.soonItems.forEach((item, index) => {
+      const element = soon[index]
+      expect(element, item.title).toBeTruthy()
+      expect(element?.getAttribute('aria-disabled')).toBe('true')
+      expect(element?.getAttribute('aria-label')).toBe(fr.menu.soonAria(item.title))
+      expect(element?.textContent).toContain(fr.menu.soon)
+      expect(element?.textContent).toContain(fr.menu.chapterLabel(item.chapter))
+      expect(element?.textContent).toContain(item.title)
+      expect(element?.textContent).toContain(item.description)
+    })
   })
 
   it('ouvre le chapitre 4 au clic sur la carte', () => {
