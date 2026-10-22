@@ -1,16 +1,22 @@
 import type { JSX } from 'react'
+import { StructureScene } from './StructureScene'
 import './SiteBackdrop.css'
 
 /**
- * Site-wide decoration: a faint Moroccan zellige tessellation. The tile is the
- * classic eight-pointed khatam star (two overlapping squares) with its inner
- * octagon, a centre diamond and a small diamond at each crossing. Everything is
- * drawn with the gold accent token, so it follows the light and dark themes.
+ * Site background: a Moroccan zellige frieze along the left and right edges,
+ * and the 3D still life of the course structures in the middle. Both layers are
+ * painted with the theme tokens and stay behind the page content.
  */
 export function SiteBackdrop(): JSX.Element {
   return (
     <div className="site-backdrop">
-      <svg role="presentation" aria-hidden="true" focusable="false">
+      <StructureScene />
+      <svg
+        className="site-backdrop-zellige"
+        role="presentation"
+        aria-hidden="true"
+        focusable="false"
+      >
         <defs>
           <pattern
             id="zl-tile"
