@@ -1,7 +1,9 @@
 import type { BaseSnapshot, StructurePlugin } from './core/types'
 import { ldcPlugin } from './structures/ldc'
+import { lscPlugin } from './structures/lsc'
+import { pilesFilesPlugin } from './structures/piles-files'
 
-export const plugins = [ldcPlugin] as const
+export const plugins = [ldcPlugin, lscPlugin, pilesFilesPlugin] as const
 export const defaultPlugin = ldcPlugin
 
 /**

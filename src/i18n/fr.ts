@@ -39,16 +39,6 @@ export const fr = {
         description: 'Piles et files implantées dans des tableaux de taille fixe.',
       },
       {
-        chapter: 2,
-        title: 'Listes simplement chaînées',
-        description: 'Parcours, insertion et suppression avec un seul lien suivant.',
-      },
-      {
-        chapter: 3,
-        title: 'Piles et files dynamiques',
-        description: 'Piles et files implantées avec des nœuds alloués dynamiquement.',
-      },
-      {
         chapter: 5,
         title: 'Listes doublement chaînées circulaires',
         description: 'Listes à double lien dont le dernier nœud reboucle sur le premier.',
@@ -60,6 +50,14 @@ export const fr = {
     backAria: 'Revenir au menu principal',
   },
   chapters: {
+    lsc: {
+      title: 'Listes simplement chaînées',
+      description: 'Un seul lien suivant : parcours, insertion, suppression et registre étudiant.',
+    },
+    pilesFiles: {
+      title: 'Piles et files dynamiques',
+      description: 'LIFO et FIFO avec des nœuds alloués nœud par nœud, sans MAX.',
+    },
     ldc: {
       description: 'Profils Entiers et Étudiants, 8 scénarios guidés.',
     },
@@ -254,9 +252,282 @@ export const fr = {
   },
   profiles: {
     label: 'Nœuds',
+    structureLabel: 'Structure',
     int: 'Entiers',
     etudiant: 'Étudiants',
-    switchHint: 'Changer de profil réinitialise la liste.',
+    pile: 'Pile',
+    file: 'File',
+    switchHint: 'Changer de profil réinitialise la structure.',
+  },
+  lsc: {
+    ops: {
+      afficherListe: {
+        label: 'Afficher la liste',
+        complexity: 'O(n)',
+        note: 'Parcours complet avec un seul pointeur courant.',
+      },
+      insererEnTete: {
+        label: 'Insérer en tête',
+        complexity: 'O(1)',
+        note: 'Aucun parcours : le nouveau nœud devient debut.',
+      },
+      insererEnFin: {
+        label: 'Insérer en fin',
+        complexity: 'O(n)',
+        note: 'Pas de repère fin : il faut parcourir jusqu’au dernier nœud.',
+      },
+      supprimerEnTete: {
+        label: 'Supprimer en tête',
+        complexity: 'O(1)',
+        note: 'debut avance, puis free libère l’ancien nœud.',
+      },
+      supprimerValeur: {
+        label: 'Supprimer une valeur',
+        complexity: 'O(n)',
+        note: 'Recherche O(n), détachement O(1) avec un seul precedent.',
+      },
+      rechercher: {
+        label: 'Rechercher une valeur',
+        complexity: 'O(n)',
+        note: 'Un seul parcours séquentiel par suivant.',
+      },
+      detruireListe: {
+        label: 'Détruire la liste',
+        complexity: 'O(n)',
+        note: 'Suppressions en tête successives.',
+      },
+      inscrireEtudiant: {
+        label: 'Inscrire un étudiant',
+        complexity: 'O(n)',
+        note: 'Ajout en fin : parcours du registre jusqu’au dernier nœud.',
+      },
+      radierEtudiant: {
+        label: 'Radier un étudiant',
+        complexity: 'O(n)',
+        note: 'Recherche par numéro, détachement O(1).',
+      },
+    },
+    captions: {
+      malloc: (nodeId: number, address: string) =>
+        `\`malloc\` réserve le nœud ${nodeId} à l’adresse \`${address}\`. \`valeur\` et \`suivant\` sont non initialisés.`,
+      insertEmptyHead:
+        'La liste est vide : `nouveau->suivant` reçoit `NULL`, puis `debut` reçoit `nouveau`.',
+      insertHeadLink: '`nouveau->suivant` reçoit l’ancienne tête `debut`.',
+      insertNewHead: '`debut` pointe maintenant sur `nouveau` : l’insertion en tête est terminée.',
+      insertTailLink: 'Le dernier nœud pointe maintenant sur `nouveau`.',
+      insertTailEmpty: 'La liste est vide : `debut` reçoit directement `nouveau`.',
+      headDelegation:
+        '`debut->valeur` correspond à la valeur cherchée : on délègue à `supprimerEnTete`.',
+      afterHeadCall: 'On revient dans `supprimerValeur` : la tête a été retirée.',
+      removeHead: 'On avance `debut` sur `debut->suivant`, puis on libère l’ancien nœud.',
+      detachNode:
+        'On relie `precedent->suivant` à `courant->suivant` : le nœud est sauté, puis libéré.',
+      searchFound: (nodeId: number, value: string | number) =>
+        `Le nœud ${nodeId} contient \`${value}\` : la recherche s’arrête.`,
+      searchNotFound: (value: string | number) =>
+        `Le parcours atteint \`NULL\` : la valeur \`${value}\` est absente.`,
+      searchEmpty: '`debut` vaut `NULL` : la liste est vide, la recherche retourne `0`.',
+      deleteEmpty: '`debut` vaut `NULL` : la liste est vide, rien à supprimer.',
+      deleteAbsent: (value: string | number) =>
+        `La valeur \`${value}\` est absente : aucun nœud n’est détaché.`,
+      destroyEmpty: '`debut` vaut `NULL` : la liste est déjà vide.',
+      destroyHead: 'On retire la tête courante, puis on recommence tant que `debut` n’est pas `NULL`.',
+      registerHead: 'Le registre est vide : `debut` reçoit directement `nouveau`.',
+      registerTail: 'Le dernier nœud du registre pointe maintenant sur `nouveau`.',
+      writeNumero: (nodeId: number, numero: number) =>
+        `On écrit le numéro \`${numero}\` dans le champ \`numero\` du nœud ${nodeId}.`,
+      writeNom: (nodeId: number, nom: string) =>
+        `\`strcpy\` copie le nom « ${nom} » dans le champ \`nom\` du nœud ${nodeId}.`,
+      writePrenom: (nodeId: number, prenom: string) =>
+        `\`strcpy\` copie le prénom « ${prenom} » dans le champ \`prenom\` du nœud ${nodeId}.`,
+      registerDone: (student: string) => `L’étudiant ${student} est inscrit en fin de registre.`,
+      radierHead: 'L’étudiant à radier est en tête : `debut` avance puis on libère le nœud.',
+      radierDetach: 'On relie `precedent->suivant` à `courant->suivant`, puis on libère le nœud.',
+      radierAbsent: (numero: number) =>
+        `Aucun nœud ne porte le numéro \`${numero}\` : le registre est inchangé.`,
+      radierEmpty: '`debut` vaut `NULL` : le registre est vide.',
+      scanfNumero: 'Le numéro saisi est copié dans la variable locale `numero`.',
+      scanfNom: 'Le nom saisi est copié dans le tableau local `nom`.',
+      scanfPrenom: 'Le prénom saisi est copié dans le tableau local `prenom`.',
+    },
+    scenarios: {
+      cours: {
+        title: 'Le cours : liste 9 → 2 → 5',
+        description: 'Charge la liste simplement chaînée de la diapositive du cours.',
+      },
+      registre: {
+        title: 'Exercice d’application : le registre',
+        description:
+          'Inscrire E1, E2, E3, puis radier le numéro 102. Le registre final contient 101 → 103.',
+      },
+      milieu: {
+        title: 'Supprimer au milieu',
+        description:
+          'Supprimer 2 puis 5 : un seul pointeur precedent suffit pour détacher un nœud du milieu.',
+      },
+      tete: {
+        title: 'Les deux extrémités',
+        description: 'Insérer 9 en tête puis 7 en fin, et afficher la liste obtenue.',
+      },
+      absente: {
+        title: 'Valeur absente',
+        description: 'Supprimer 99 puis rechercher 99 : le parcours va jusqu’à NULL.',
+      },
+      detruire: {
+        title: 'Détruire la liste',
+        description: 'Détruire 9 → 2 → 5 nœud par nœud et vérifier que debut devient NULL.',
+      },
+    },
+  },
+  piles: {
+    ops: {
+      empiler: {
+        label: 'Empiler',
+        complexity: 'O(1)',
+        note: 'Allocation puis raccordement en tête : aucun parcours.',
+      },
+      depiler: {
+        label: 'Dépiler',
+        complexity: 'O(1)',
+        note: 'La tête est retirée et libérée : le sommet recule d’un nœud.',
+      },
+      pileVide: {
+        label: 'Tester si la pile est vide',
+        complexity: 'O(1)',
+        note: 'Il suffit de comparer sommet à NULL.',
+      },
+      detruirePile: {
+        label: 'Détruire la pile',
+        complexity: 'O(n)',
+        note: 'Dépilements successifs jusqu’à sommet == NULL.',
+      },
+      empilerCopie: {
+        label: 'Empiler une copie',
+        complexity: 'O(1)',
+        note: 'Réutilise empiler : un nouveau nœud est bien alloué pour la copie.',
+      },
+      corrigerCopie: {
+        label: 'Corriger la copie',
+        complexity: 'O(1)',
+        note: 'Dépile la copie du sommet et affiche sa correction : LIFO.',
+      },
+      enfiler: {
+        label: 'Enfiler',
+        complexity: 'O(1)',
+        note: 'Grâce à fin, l’ajout se fait sans parcours.',
+      },
+      defiler: {
+        label: 'Défiler',
+        complexity: 'O(1)',
+        note: 'debut avance ; si la file devient vide, fin doit aussi repasser à NULL.',
+      },
+      fileVide: {
+        label: 'Tester si la file est vide',
+        complexity: 'O(1)',
+        note: 'Il suffit de comparer debut à NULL.',
+      },
+      detruireFile: {
+        label: 'Détruire la file',
+        complexity: 'O(n)',
+        note: 'Défilements successifs jusqu’à debut == NULL.',
+      },
+      enregistrerArrivee: {
+        label: 'Enregistrer une arrivée',
+        complexity: 'O(1)',
+        note: 'Réutilise enfiler : ajout en fin grâce au repère fin.',
+      },
+      servirSuivant: {
+        label: 'Servir le suivant',
+        complexity: 'O(1)',
+        note: 'Réutilise defiler puis affiche le numéro servi : FIFO.',
+      },
+    },
+    captions: {
+      mallocPile: (nodeId: number, address: string) =>
+        `\`malloc\` réserve le nœud ${nodeId} à l’adresse \`${address}\`. \`valeur\` et \`precedent\` sont non initialisés.`,
+      newNodePile: '`nouveau` reçoit l’adresse du nœud alloué.',
+      setValuePile: (value: number) =>
+        `On écrit \`${value}\` dans le champ \`valeur\` du nouveau nœud.`,
+      linkTop: '`nouveau->precedent` reçoit l’ancien sommet : la chaîne descend vers le bas.',
+      newTop: '`sommet` pointe maintenant sur `nouveau` : la pile grandit par le haut.',
+      pushDone: 'Empilement terminé : le nouveau nœud est au sommet.',
+      popEmpty: '`sommet` vaut `NULL` : la pile est vide, `depiler` retourne.',
+      saveTop: '`ancienSommet` mémorise le nœud à libérer.',
+      moveTop: '`sommet` descend sur `sommet->precedent`.',
+      freeTop: '`free` libère l’ancien sommet : la pile a diminué d’un nœud.',
+      popDone: 'Dépilement terminé : le nouveau sommet est en haut.',
+      emptyTrue: '`sommet` vaut `NULL` : la pile est vide, la fonction retourne `1`.',
+      emptyFalse: '`sommet` ne vaut pas `NULL` : la pile contient au moins un nœud, retour `0`.',
+      destroyEmpty: '`sommet` vaut `NULL` : la pile est déjà vide.',
+      destroyLoop: 'On dépile le sommet courant, puis on recommence tant que la pile n’est pas vide.',
+      copieDelegation: '`empilerCopie` délègue à `empiler` : un nouveau nœud est alloué, puis empilé.',
+      copieDone: 'La copie est au sommet : elle est indépendante des nœuds déjà empilés.',
+      corrigerEmpty: '`pileVide` renvoie vrai : aucune copie à corriger.',
+      corrigerPop: 'On dépile la copie du sommet : la dernière empilée est la première corrigée.',
+      corrigerPrint: (numero: number) =>
+        `\`printf\` affiche « Correction de la copie ${numero} ».`,
+      corrigerDone: 'Correction terminée : le sommet est passé à la copie précédente.',
+      mallocFile: (nodeId: number, address: string) =>
+        `\`malloc\` réserve le nœud ${nodeId} à l’adresse \`${address}\`. \`valeur\` et \`suivant\` sont non initialisés.`,
+      setValueFile: (value: number) =>
+        `On écrit \`${value}\` dans le champ \`valeur\` du nouveau nœud.`,
+      enqueueEmpty: 'La file était vide : `debut` et `fin` pointent tous les deux sur `nouveau`.',
+      enqueueEmptyDebut: 'La file était vide : `debut` reçoit `nouveau`.',
+      enqueueEmptyFin: '`fin` reçoit aussi `nouveau` : les deux repères visent le seul nœud.',
+      enqueueAfterLast: '`fin->suivant` reçoit `nouveau`, puis `fin` avance sur le nouveau dernier.',
+      enqueueDone: 'Enfilement terminé : le nouveau nœud est en fin de file.',
+      dequeueEmpty: '`debut` vaut `NULL` : la file est vide, `defiler` retourne.',
+      saveFirst: '`ancienDebut` mémorise le nœud de tête à libérer.',
+      advanceFirst: '`debut` avance sur `debut->suivant`.',
+      dequeueLastTrap:
+        'La file devient vide : `debut` vaut `NULL`. Il faut aussi remettre `fin` à `NULL`, sinon `fin` reste pendant.',
+      dequeueLastFixed: '`fin` repasse à `NULL` : les deux repères sont cohérents.',
+      freeFirst: '`free` libère l’ancien premier nœud.',
+      dequeueDone: 'Défilement terminé : le premier client est servi.',
+      fileEmptyTrue: '`debut` vaut `NULL` : la file est vide, retour `1`.',
+      fileEmptyFalse: '`debut` ne vaut pas `NULL` : la file contient au moins un client, retour `0`.',
+      fileDestroyEmpty: '`debut` vaut `NULL` : la file est déjà vide.',
+      fileDestroyLoop: 'On défile le premier nœud, puis on recommence tant que la file n’est pas vide.',
+      arrive: (numero: number) =>
+        `L’étudiant ${numero} arrive : on l’enfile en fin de file.`,
+      serve: (numero: number) =>
+        `L’étudiant ${numero} est servi : \`printf\` affiche « Etudiant ${numero} servi ».`,
+      serveDone: 'Le premier arrivé est le premier servi : FIFO.',
+    },
+    scenarios: {
+      pileCours: {
+        title: 'La pile du cours : 25, 7, 12',
+        description: 'Empiler 25, 7 puis 12. Le sommet est 12 et la chaîne descend vers 25.',
+      },
+      pileDepiler: {
+        title: 'Dépiler jusqu’au vide',
+        description: 'Dépiler 12, 7 puis 25 : le sommet recule à chaque pas et finit à NULL.',
+      },
+      pileCopie: {
+        title: 'La pile de copies',
+        description:
+          'Empiler 101, 102 puis 103 avec empilerCopie, puis corriger deux copies : LIFO.',
+      },
+      pileCopieCorrigee: {
+        title: 'Corriger toute la pile',
+        description:
+          'Empiler trois copies puis les corriger une à une jusqu’à ce que la pile redevienne vide.',
+      },
+      fileCours: {
+        title: 'La file du cours : 7, 12, 25',
+        description: 'Enfiler 7, 12 puis 25 : debut pointe sur 7 et fin sur 25.',
+      },
+      fileServir: {
+        title: 'Servir toute la file',
+        description:
+          'Défiler 7, 12 puis 25 : au dernier retrait, debut et fin doivent tous deux devenir NULL.',
+      },
+      fileArrivees: {
+        title: 'Arrivées et service',
+        description:
+          'Enregistrer les étudiants 201, 202, 203, puis servir deux étudiants et afficher la file restante.',
+      },
+    },
   },
   params: {
     valeur: 'Valeur',
@@ -340,13 +611,24 @@ export const fr = {
     next: 'suivant',
     prev: 'precedent',
     debut: 'debut : variable globale',
+    sommet: 'sommet : variable globale',
+    file: 'debut et fin : variables globales',
     local: 'variable locale',
   },
   viz: {
     empty: 'Liste vide. Insérez un nœud.',
     emptyInsert: '＋ Insérer un nœud',
+    emptyLsc: 'debut vaut NULL : la liste est vide.',
+    emptyPile: 'sommet vaut NULL : la pile est vide.',
+    emptyFile: 'debut et fin valent NULL : la file est vide.',
+    insertEmptyLsc: '＋ Insérer un premier nœud',
+    insertEmptyEtudiant: '＋ Inscrire un premier étudiant',
+    insertEmptyPile: '＋ Empiler une première valeur',
+    insertEmptyFile: '＋ Enfiler un premier client',
     heap: 'tas (malloc)',
     row: 'liste',
+    rowPile: 'pile',
+    rowFile: 'file',
     freed: 'libéré',
     clickNode: 'Cliquer pour utiliser ce nœud',
     address: 'adresse',
@@ -356,6 +638,10 @@ export const fr = {
     pinned: 'pointeur',
     dangling: 'pointeur pendant',
     noNode: 'aucun nœud',
+    pileTop: 'sommet',
+    fileFirst: 'tête',
+    fileLast: 'queue',
+    alias: 'alias',
   },
   captions: {
     idle: 'Choisissez une opération, puis cliquez sur Exécuter.',
@@ -392,6 +678,10 @@ export const fr = {
     reasonNoPrevious: (nodeId: number) => `Le nœud ${nodeId} n’a pas de \`precedent\`.`,
     reasonListEmpty: '`debut` vaut `NULL` : la liste est vide.',
     reasonListNotEmpty: '`debut` ne vaut pas `NULL` : la liste contient au moins un nœud.',
+    reasonStackEmpty: '`sommet` vaut `NULL` : la pile est vide.',
+    reasonStackNotEmpty: '`sommet` ne vaut pas `NULL` : la pile contient au moins un nœud.',
+    reasonQueueEmpty: '`debut` vaut `NULL` : la file est vide.',
+    reasonQueueNotEmpty: '`debut` ne vaut pas `NULL` : la file contient au moins un nœud.',
     reasonValueEquals: (nodeId: number, nodeValue: string | number, searched: string | number) =>
       `Le nœud ${nodeId} contient \`${nodeValue}\`, la valeur recherchée \`${searched}\`.`,
     reasonValueDiffers: (nodeId: number, nodeValue: string | number, searched: string | number) =>
@@ -423,6 +713,8 @@ export const fr = {
     foundReturn: 'La valeur est trouvée : la fonction retourne `1`.',
     notFoundReturn: 'Le parcours atteint `NULL` sans trouver la valeur : retour `0`.',
     returnVoid: 'La fonction se termine par `return`.',
+    returnInt: (value: number) => `La fonction retourne \`${value}\`.`,
+    returnMinusOne: 'La fonction retourne `-1` pour signaler l’erreur.',
     headDelegation:
       '`courant` pointe sur `debut` : il n’a pas de `precedent`. On retombe sur la suppression en tête.',
     insertBeforeHeadDelegation:

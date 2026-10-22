@@ -15,7 +15,10 @@ const measureSample = 'MMMMMMMMMMMMMMMMMMMM'
 function functionSignature(source: CodeSource): string {
   const declaration = source.lines.find((line) => line.includes('(')) ?? source.fn
   return declaration
-    .replace(/^\s*(?:void|int|float|double|char|Noeud\s*\*?)\s+/, '')
+    .replace(
+      /^\s*(?:(?:void|int|float|double|char|long|short|unsigned|signed)\s+|(?:struct\s+)?[A-Za-z_][A-Za-z0-9_]*\s*\*+\s*)/,
+      '',
+    )
     .replace(/\s*\{\s*$/, '')
     .trim()
 }
