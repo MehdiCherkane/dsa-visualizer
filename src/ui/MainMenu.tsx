@@ -2,6 +2,7 @@ import type { JSX } from 'react'
 import { config } from '../config'
 import { fr } from '../i18n/fr'
 import { BrandMark } from './BrandMark'
+import { MenuIllustration } from './MenuIllustration'
 import { ThemeToggle } from './ThemeToggle'
 import { chapterHash, navigate } from './useHashRoute'
 import './MainMenu.css'
@@ -44,11 +45,16 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
 
       <main className="menu-main" aria-labelledby="menu-title">
         <section className="menu-hero">
-          <p className="menu-eyebrow">{fr.menu.eyebrow}</p>
-          <h1 id="menu-title" className="menu-title">
-            {fr.menu.title}
-          </h1>
-          <p className="menu-subtitle">{fr.menu.subtitle}</p>
+          <div className="menu-hero-copy">
+            <p className="menu-eyebrow">{fr.menu.eyebrow}</p>
+            <h1 id="menu-title" className="menu-title">
+              {fr.menu.title}
+            </h1>
+            <p className="menu-subtitle">{fr.menu.subtitle}</p>
+          </div>
+          <div className="menu-hero-art">
+            <MenuIllustration />
+          </div>
         </section>
 
         <section className="menu-section" aria-labelledby="menu-chapters">

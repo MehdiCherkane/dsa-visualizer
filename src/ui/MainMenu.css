@@ -18,10 +18,174 @@
 }
 
 .menu-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 470px);
+  align-items: center;
+  gap: 32px;
   width: 100%;
   max-width: 1100px;
   margin: 0 auto;
   padding: 24px 28px 0;
+}
+
+.menu-hero-copy {
+  min-width: 0;
+}
+
+/* Chapter 4 illustration, on the same canvas colour as the demo. */
+.menu-hero-art {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--viz-bg);
+  box-shadow: var(--shadow-soft);
+}
+
+.menu-illustration {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Short screens keep the one-screen menu, so the hero art steps aside. */
+@media (max-width: 1099px), (max-height: 859px) {
+  .menu-hero {
+    display: block;
+  }
+
+  .menu-hero-art {
+    display: none;
+  }
+}
+
+/* Illustration pieces, drawn with the node / cell / arrow / pin tokens. */
+.menu-illustration text {
+  font-family: var(--ui);
+}
+
+.ma-front {
+  fill: var(--node-bg);
+}
+
+.ma-ink-top {
+  fill: var(--node-ink);
+  opacity: 0.08;
+}
+
+.ma-ink-side {
+  fill: var(--node-ink);
+  opacity: 0.16;
+}
+
+.ma-cell-prev {
+  fill: var(--cell-prev);
+}
+
+.ma-cell-value {
+  fill: var(--cell-value);
+}
+
+.ma-cell-next {
+  fill: var(--cell-next);
+}
+
+.ma-sep {
+  stroke: var(--node-border);
+  stroke-width: 1;
+  opacity: 0.55;
+}
+
+.ma-edge {
+  fill: none;
+  stroke: var(--node-border);
+  stroke-width: 1.5;
+}
+
+.ma-value {
+  fill: var(--cell-value-ink);
+  font-size: 31px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.ma-null {
+  fill: var(--panel-3);
+}
+
+.ma-null-text {
+  fill: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.ma-shadow {
+  fill: #000;
+  opacity: 0.12;
+  filter: blur(5px);
+}
+
+[data-theme='dark'] .ma-shadow {
+  opacity: 0.4;
+}
+
+.ma-next-line {
+  fill: none;
+  stroke: var(--arrow-next);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.ma-prev-line {
+  fill: none;
+  stroke: var(--arrow-prev);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 8 6;
+}
+
+.ma-next-fill {
+  fill: var(--arrow-next);
+}
+
+.ma-prev-fill {
+  fill: var(--arrow-prev);
+}
+
+.ma-pin-box {
+  fill: var(--pin-tag-bg);
+  stroke: var(--pin);
+  stroke-width: 1.5;
+}
+
+.ma-pin-text {
+  fill: var(--pin);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.ma-pin-stem {
+  stroke: var(--pin);
+  stroke-width: 2;
+  stroke-dasharray: 3 4;
+}
+
+.ma-pin-fill {
+  fill: var(--pin);
+}
+
+.ma-legend {
+  fill: var(--ink-2);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.ma-swatch {
+  stroke: var(--node-border);
+  stroke-width: 1;
 }
 
 .menu-eyebrow {
