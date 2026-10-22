@@ -1,7 +1,8 @@
 /*
  * Site background: Moroccan zellige friezes along both sides of the page. The
- * pattern is faded towards the middle so the centre stays quiet for the content
- * and the structures still life.
+ * pattern is a tiled image mask painted with the gold accent, then faded towards
+ * the middle so the centre stays quiet for the content and the structures still
+ * life.
  */
 
 .site-backdrop {
@@ -15,8 +16,6 @@
 .site-backdrop-zellige {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
   -webkit-mask-image: linear-gradient(
     to right,
     #000 0,
@@ -41,39 +40,19 @@
   );
 }
 
-.zl-star {
-  fill: var(--gold);
-  fill-opacity: 0.035;
-  stroke: var(--gold);
-  stroke-width: 1.1;
-  stroke-opacity: 0.18;
+.site-backdrop-zellige-tile {
+  position: absolute;
+  inset: 0;
+  background-color: var(--gold);
+  opacity: 0.2;
+  -webkit-mask-image: var(--zl-pattern);
+  mask-image: var(--zl-pattern);
+  -webkit-mask-size: 240px 240px;
+  mask-size: 240px 240px;
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
 }
 
-.zl-line {
-  fill: none;
-  stroke: var(--gold);
-  stroke-width: 1.1;
-  stroke-opacity: 0.17;
-}
-
-.zl-glyph {
-  fill: var(--gold);
-  fill-opacity: 0.05;
-  stroke: var(--gold);
-  stroke-width: 1.1;
-  stroke-opacity: 0.19;
-}
-
-[data-theme='dark'] .zl-star {
-  fill-opacity: 0.05;
-  stroke-opacity: 0.22;
-}
-
-[data-theme='dark'] .zl-line {
-  stroke-opacity: 0.2;
-}
-
-[data-theme='dark'] .zl-glyph {
-  fill-opacity: 0.06;
-  stroke-opacity: 0.22;
+[data-theme='dark'] .site-backdrop-zellige-tile {
+  opacity: 0.24;
 }

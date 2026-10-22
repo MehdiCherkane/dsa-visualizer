@@ -39,6 +39,6 @@ describe('coquille de l’application', () => {
   it('ajoute la décoration de fond, invisible pour les lecteurs d’écran', () => {
     const markup = renderToStaticMarkup(<App />)
     expect(markup).toContain('class="site-backdrop"')
-    expect(markup).toContain('zl-tile')
+    expect(markup).toContain('site-backdrop-zellige')
   })
 })
