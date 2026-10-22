@@ -654,13 +654,11 @@ select:focus-visible,
 }
 
 .null-ground line {
-  stroke: var(--ink-2);
   stroke-width: 1.5;
   opacity: 0.85;
 }
 
 .null-label {
-  fill: var(--ink-2);
   font-family: var(--mono);
   font-weight: 700;
 }
@@ -708,7 +706,8 @@ select:focus-visible,
   pointer-events: none;
 }
 
-.pin {
+.pin,
+.pin-null {
   pointer-events: none;
 }
 
@@ -3212,7 +3211,7 @@ select:focus-visible,
   stroke: var(--gold);
 }
 
-.empty-null .null-label {
+.empty-null-ground .null-label {
   fill: var(--gold);
 }
 

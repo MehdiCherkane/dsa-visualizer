@@ -31,11 +31,13 @@ export const GAP = 72
 export const SLIDE = NODE_W + GAP
 export const PAD_L = 132
 export const ROW_Y = 338
-export const EMPTY_ROW_Y = 300
+export const EMPTY_ROW_Y = 304
 export const HEAP_Y = 92
 export const SUIVANT_LANE = 0.38
 export const PRECEDENT_LANE = 0.72
 export const NULL_STUB = 64
+export const PIN_NULL_STUB = 32
+export const PIN_NULL_LIFT = 64
 export const FIT_PADDING = 56
 export const MIN_AUTO_K = 0.25
 export const MAX_AUTO_K = 1.3
@@ -44,6 +46,7 @@ export const MAX_K = 4
 export const PIN_TAG_H = 24
 export const PIN_GAP = 8
 export const PIN_MAX_FAN = NODE_W + 44
+export const PIN_DEBUT_CLEARANCE = 10
 export const ROW_BAND_TOP = 246
 export const ROW_BAND_BOTTOM = ROW_Y + NODE_H + 46
 export const HEAP_BAND_TOP = 8
@@ -54,7 +57,7 @@ export const EMPTY_BAND_HEIGHT = 146
 export const EMPTY_NULL_X = PAD_L - 24
 export const DEBUT_CELL_W = 124
 export const DEBUT_CELL_H = 44
-export const DEBUT_CELL_GAP = 36
+export const DEBUT_CELL_GAP = 60
 export const DEBUT_DOT_X = DEBUT_CELL_W / 2
 export const DEBUT_DOT_Y = DEBUT_CELL_H
 
@@ -132,12 +135,14 @@ export function debutCellBounds(nodes: LdcNode[]): Rect {
   ])
 }
 
+export type NullStubDirection = 1 | -1 | 'down'
+
 export interface NullStubGeometry {
   start: Point
   end: Point
-  direction: 1 | -1
+  direction: NullStubDirection
   path: string
-  label: { x: number; y: number; anchor: 'start' | 'end' }
+  label: { x: number; y: number; anchor: 'start' | 'end' | 'middle' }
   bounds: Rect
 }
 
@@ -173,6 +178,35 @@ function makeNullStub(start: Point, direction: 1 | -1): NullStubGeometry {
   }
 }
 
+function makeVerticalNullStub(start: Point, length = NULL_STUB): NullStubGeometry {
+  const end = { x: start.x, y: start.y + length }
+  const label = { x: end.x, y: end.y + 27, anchor: 'middle' as const }
+  const labelRect: Rect = {
+    x: end.x - 18,
+    y: end.y + 12,
+    width: 36,
+    height: 20,
+  }
+  const points: Point[] = [
+    start,
+    end,
+    { x: end.x - 11, y: end.y },
+    { x: end.x + 11, y: end.y },
+    { x: end.x - 3, y: end.y + 10 },
+    { x: end.x + 3, y: end.y + 10 },
+    { x: labelRect.x, y: labelRect.y },
+    { x: labelRect.x + labelRect.width, y: labelRect.y + labelRect.height },
+  ]
+  return {
+    start,
+    end,
+    direction: 'down',
+    path: `M ${start.x} ${start.y} L ${end.x} ${end.y}`,
+    label,
+    bounds: boundsOfPoints(points, 2),
+  }
+}
+
 export function nullStubGeometry(
   node: LdcNode,
   field: PointerField,
@@ -182,10 +216,7 @@ export function nullStubGeometry(
 }
 
 export function emptyNullStubGeometry(): NullStubGeometry {
-  return makeNullStub(
-    { x: EMPTY_NULL_X, y: EMPTY_ROW_Y + NODE_H * SUIVANT_LANE },
-    1,
-  )
+  return makeVerticalNullStub({ x: EMPTY_NULL_X, y: EMPTY_ROW_Y })
 }
 
 export function nullAnchor(nodes: LdcNode[], layout: Map<number, Point>): Point {
@@ -388,7 +419,7 @@ export function debutRoute(
   if (value.kind === 'uninit') return null
   const geometry = debutCellGeometry(nodes)
   if (value.kind === 'null') {
-    const stub = makeNullStub(geometry.dot, 1)
+    const stub = makeVerticalNullStub(geometry.dot)
     return {
       kind: 'null',
       path: stub.path,
@@ -425,6 +456,7 @@ export interface PinPlacement {
   tag: Rect
   from: Point
   to?: Point
+  nullStub?: NullStubGeometry
 }
 
 function pinWidth(text: string): number {
@@ -488,6 +520,10 @@ export function layoutPins(pins: PinInput[], nodes: LdcNode[]): PinPlacement[] {
   }
 
   const placements: PinPlacement[] = []
+  const firstRowId = nodes
+    .filter((candidate) => !candidate.freed && candidate.lane === 'row')
+    .slice()
+    .sort((a, b) => a.slot - b.slot)[0]?.id
 
   for (const [key, group] of groups) {
     let centerX = anchor.x
@@ -502,6 +538,8 @@ export function layoutPins(pins: PinInput[], nodes: LdcNode[]): PinPlacement[] {
       if (!node || !targetPoint) continue
       centerX = targetPoint.x + NODE_W / 2
       baseY = targetPoint.y - 12
+    } else if (key === 'null') {
+      baseY -= PIN_NULL_LIFT
     }
 
     const widths = group.map((pin) => pinWidth(pin.text))
@@ -521,10 +559,24 @@ export function layoutPins(pins: PinInput[], nodes: LdcNode[]): PinPlacement[] {
     rows.forEach((row, rowIndex) => {
       const minX = node ? targetPoint!.x + 8 : anchor.x - PIN_MAX_FAN / 2
       const maxX = node ? targetPoint!.x + NODE_W - 8 : anchor.x + PIN_MAX_FAN / 2
-      const centers =
+      let centers =
         rowIndex === 0
           ? rowCenters[rowIndex]!
           : avoidTagCorridors(rowCenters[rowIndex]!, lowerTags, minX, maxX)
+      if (node && targetPoint && node.id === firstRowId) {
+        const rowWidths = row.map((pin) => pinWidth(pin.text))
+        const rowLeft = centers[0]! - rowWidths[0]! / 2
+        const lastIndex = centers.length - 1
+        const rowRight = centers[lastIndex]! + rowWidths[lastIndex]! / 2
+        const arrowX = targetPoint!.x + NODE_W / 2
+        if (
+          arrowX >= rowLeft - PIN_DEBUT_CLEARANCE &&
+          arrowX <= rowRight + PIN_DEBUT_CLEARANCE
+        ) {
+          const shift = arrowX + PIN_DEBUT_CLEARANCE - rowLeft
+          centers = centers.map((center) => center + shift)
+        }
+      }
       const y = baseY - PIN_TAG_H - rowIndex * (PIN_TAG_H + 8)
       row.forEach((pin, index) => {
         const width = pinWidth(pin.text)
@@ -537,12 +589,19 @@ export function layoutPins(pins: PinInput[], nodes: LdcNode[]): PinPlacement[] {
         }
         const from = { x: center, y: y + PIN_TAG_H }
         let to: Point | undefined
+        let nullStub: NullStubGeometry | undefined
         if (pin.target === 'node') {
           to = { x: center, y: targetPoint!.y + 1 }
         } else if (pin.target === 'null') {
-          to = anchor
+          nullStub = makeVerticalNullStub(from, PIN_NULL_STUB)
         }
-        placements.push({ pin, tag, from, to })
+        placements.push({
+          pin,
+          tag,
+          from,
+          ...(to === undefined ? {} : { to }),
+          ...(nullStub === undefined ? {} : { nullStub }),
+        })
         lowerTags.push(tag)
       })
     })
@@ -641,6 +700,7 @@ export function snapshotBounds(
     if (placement.to) {
       rects.push(boundsOfPoints([placement.from, placement.to], 1))
     }
+    if (placement.nullStub) rects.push(placement.nullStub.bounds)
   }
 
   return unionBounds(rects)
