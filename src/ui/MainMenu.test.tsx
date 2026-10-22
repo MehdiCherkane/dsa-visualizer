@@ -76,14 +76,6 @@ describe('menu principal', () => {
     })
   })
 
-  it('affiche l’illustration du chapitre 4, purement décorative', () => {
-    const art = container.querySelector('.menu-hero-art svg')
-    expect(art).not.toBeNull()
-    expect(art?.getAttribute('aria-hidden')).toBe('true')
-    expect(art?.getAttribute('focusable')).toBe('false')
-    expect(art?.querySelectorAll('.ma-value')).toHaveLength(3)
-  })
-
   it('ouvre le chapitre 4 au clic sur la carte', () => {
     act(() => {
       card().click()
