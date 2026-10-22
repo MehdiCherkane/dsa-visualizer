@@ -107,6 +107,21 @@ describe('opérations entières : équivalence avec un oracle', () => {
     })
   }
 
+  it('numérote les nœuds à partir de 1 et ne réutilise pas les identifiants libérés', () => {
+    const initial = snapshotOf([9, 2])
+    expect(initial.nodes.map((node) => node.id)).toEqual([1, 2])
+
+    const inserted = finalStep('insererEnFin', [9, 2], { valeur: 5 })
+    expect(inserted.snapshot.nodes.map((node) => node.id)).toEqual([1, 2, 3])
+
+    const deletion = run('supprimerValeur', [9, 2], { valeur: 9 })
+    const afterDelete = deletion[deletion.length - 1]!.snapshot
+    const nextInsert = operation('insererEnFin').run(afterDelete, { valeur: 7 })
+    const afterInsert = nextInsert[nextInsert.length - 1]!.snapshot
+    expect(afterInsert.nodes.map((node) => node.id)).toEqual([2, 3])
+    expect(checkInvariants(afterInsert)).toEqual([])
+  })
+
   it('affiche les valeurs dans les deux sens', () => {
     const forward = finalStep('afficherListe', [9, 2, 5])
     expect(forward.console.output).toContain('9')

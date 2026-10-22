@@ -460,7 +460,7 @@ select:focus-visible,
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.62fr) minmax(410px, 1fr);
+  grid-template-columns: minmax(0, 1fr) clamp(400px, 28vw, 560px);
   gap: 12px;
   min-height: 0;
 }
@@ -2202,7 +2202,27 @@ select:focus-visible,
 
 .app.presentation {
   --ui-scale: 1.25;
-  --header-h: 72px;
+  --header-h: 78px;
+}
+
+.app.simulation-fullscreen {
+  grid-template-rows: minmax(0, 1fr);
+  padding: 10px 12px 12px;
+  background:
+    radial-gradient(circle at 12% -10%, var(--bg-glow), transparent 38%),
+    radial-gradient(circle at 90% 0%, rgba(47, 111, 228, 0.1), transparent 34%),
+    var(--bg);
+}
+
+.app.simulation-fullscreen .app-header,
+.app.simulation-fullscreen .right-column,
+.app.simulation-fullscreen .bottom-dock {
+  display: none;
+}
+
+.app.simulation-fullscreen .workspace,
+.app.presentation.simulation-fullscreen .workspace {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .app-header {
@@ -2971,6 +2991,21 @@ select:focus-visible,
   padding: 0 10px;
 }
 
+.fullscreen-toggle {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  margin-left: 2px;
+  border-left: 1px solid var(--line);
+  border-radius: 0 7px 7px 0;
+  font-size: 16px;
+}
+
+.fullscreen-toggle[aria-pressed='true'] {
+  background: var(--panel-2);
+  color: var(--ink);
+}
+
 .operation-bar {
   height: 56px;
   min-height: 56px;
@@ -3103,6 +3138,7 @@ select:focus-visible,
 }
 
 .code-line {
+  align-items: baseline;
   width: max-content;
   min-width: 100%;
 }
@@ -3406,7 +3442,16 @@ select:focus-visible,
 }
 
 .presentation .brand-meta {
-  display: none;
+  display: flex;
+}
+
+@container header (max-width: 1500px) {
+  .presentation .brand-course,
+  .presentation .brand-course-sep,
+  .presentation .brand-institution-name,
+  .presentation .brand-institution-sep {
+    display: none;
+  }
 }
 
 @container header (max-width: 1260px) {
@@ -3436,12 +3481,6 @@ select:focus-visible,
   }
 }
 
-@container header (max-width: 1300px) {
-  .presentation .brand-credit {
-    display: none;
-  }
-}
-
 @container header (max-width: 1320px) {
   .presentation .brand-title-row {
     flex-wrap: wrap;
@@ -3458,6 +3497,10 @@ select:focus-visible,
 }
 
 @container header (max-width: 1300px) {
+  .presentation .brand-credit {
+    display: none;
+  }
+
   .credit-prefix {
     display: none;
   }
@@ -3482,11 +3525,6 @@ select:focus-visible,
   fill: color-mix(in srgb, var(--gold) 10%, var(--panel));
   stroke: var(--gold);
   stroke-width: 2.5;
-}
-
-.debut-cell-divider {
-  stroke: color-mix(in srgb, var(--gold) 25%, transparent);
-  stroke-width: 1;
 }
 
 .debut-cell-label {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { JSX } from 'react'
 import { Player } from '../core/player'
 import type {
@@ -40,6 +40,7 @@ interface StartOptions<S extends BaseSnapshot> {
   state?: S
   scenarioId?: string
   scenarioStepIndex?: number
+  autoPlay?: boolean
 }
 
 /** Popovers, dialogs and the journal drawer own the Escape key while open. */
@@ -90,12 +91,21 @@ export function DemoApp<S extends BaseSnapshot>({
   const [activeOperation, setActiveOperation] = useState<ActiveOperation<S> | null>(null)
   const [scenarioRun, setScenarioRun] = useState<ScenarioRun | null>(null)
   const [presentation, setPresentation] = useState(false)
+  const [simulationFullscreen, setSimulationFullscreen] = useState(false)
   const [cameraResetKey, setCameraResetKey] = useState(0)
+  const appRef = useRef<HTMLDivElement | null>(null)
 
   const player = useMemo(() => new Player<S>(), [])
   const playerState = usePlayerState(player)
 
   useEffect(() => () => player.destroy(), [player])
+  useEffect(() => {
+    const handleFullscreenChange = (): void => {
+      if (!document.fullscreenElement) setSimulationFullscreen(false)
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
 
   const selectedOperation =
     profile.operations.find((candidate) => candidate.id === selectedId) ??
@@ -197,6 +207,7 @@ export function DemoApp<S extends BaseSnapshot>({
           : { scenarioStepIndex: options.scenarioStepIndex }),
       }
       setActiveOperation(next)
+      if (options.autoPlay) player.play()
     },
     [committedState, player],
   )
@@ -204,7 +215,7 @@ export function DemoApp<S extends BaseSnapshot>({
   const execute = useCallback(() => {
     if (!selectedOperation || operationActive) return
     if (selectedOperation.inserts && plugin.countNodes(committedState) >= profile.maxNodes) return
-    startOperation(selectedOperation, paramValues)
+    startOperation(selectedOperation, paramValues, { autoPlay: true })
   }, [
     committedState,
     operationActive,
@@ -217,11 +228,13 @@ export function DemoApp<S extends BaseSnapshot>({
 
   const selectOperation = useCallback(
     (id: string) => {
+      player.clear()
+      setActiveOperation(null)
       setSelectedId(id)
       const operation = profile.operations.find((candidate) => candidate.id === id)
       setParamValues(defaultParams(operation))
     },
-    [profile.operations],
+    [player, profile.operations],
   )
 
   const insertFromEmpty = useCallback(() => {
@@ -247,6 +260,18 @@ export function DemoApp<S extends BaseSnapshot>({
     },
     [currentStep.snapshot, plugin, selectedOperation],
   )
+
+  const toggleSimulationFullscreen = useCallback(() => {
+    const next = !simulationFullscreen
+    setSimulationFullscreen(next)
+    if (next) {
+      if (appRef.current?.requestFullscreen && !document.fullscreenElement) {
+        void appRef.current.requestFullscreen().catch(() => undefined)
+      }
+    } else if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => undefined)
+    }
+  }, [simulationFullscreen])
 
   const finishOperation = useCallback(() => {
     player.last()
@@ -370,6 +395,14 @@ export function DemoApp<S extends BaseSnapshot>({
           // A dialog they close synchronously is already out of the DOM when
           // this `window` listener runs, so both checks are needed.
           if (event.defaultPrevented || hasOpenOverlay()) return
+          if (simulationFullscreen) {
+            event.preventDefault()
+            setSimulationFullscreen(false)
+            if (document.fullscreenElement) {
+              void document.exitFullscreen().catch(() => undefined)
+            }
+            break
+          }
           event.preventDefault()
           onMenu()
           break
@@ -420,10 +453,18 @@ export function DemoApp<S extends BaseSnapshot>({
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [player, resetAll, onMenu])
+  }, [player, resetAll, simulationFullscreen, onMenu])
+
+  const appClassName = [
+    'app',
+    presentation ? 'presentation' : '',
+    simulationFullscreen ? 'simulation-fullscreen' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
-    <div className={presentation ? 'app presentation' : 'app'}>
+    <div ref={appRef} className={appClassName}>
       <Header
         plugin={plugin}
         profileId={profile.id}
@@ -472,6 +513,8 @@ export function DemoApp<S extends BaseSnapshot>({
             onLast={() => player.last()}
             onGoto={(index) => player.goto(index)}
             onSpeed={(speed) => player.setSpeed(speed)}
+            fullscreen={simulationFullscreen}
+            onFullscreen={toggleSimulationFullscreen}
           />
 
           <OperationBar

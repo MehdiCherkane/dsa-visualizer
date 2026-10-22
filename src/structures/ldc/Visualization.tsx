@@ -12,7 +12,6 @@ import { fr } from '../../i18n/fr'
 import {
   BAND_PAD,
   CELL_W,
-  DEBUT_CELL_W,
   EMPTY_BAND_HEIGHT,
   EMPTY_BAND_TOP,
   HEAP_BAND_BOTTOM,
@@ -30,7 +29,6 @@ import {
   fitCamera,
   layoutNodes,
   layoutPins,
-  nullStubGeometry,
   pointerAnchor,
   routeArrow,
   screenPoint,
@@ -718,7 +716,6 @@ export default function LdcVisualization({
                 const route = renderRoute(node, field, pointer)
                 if (!route) return []
                 if (route.kind === 'null') {
-                  const geometry = nullStubGeometry(node, field, layout.get(node.id)!)
                   return [
                     <g key={`null-${node.id}-${field}`} className="null-stub">
                       <path
@@ -726,7 +723,7 @@ export default function LdcVisualization({
                         className={`arrow arrow-${field}`}
                         style={{ strokeWidth }}
                       />
-                      <NullGround geometry={geometry} />
+                      {route.stub ? <NullGround geometry={route.stub} /> : null}
                       <title>{`${field} de ${node.address} = ${fr.viz.null}`}</title>
                     </g>,
                   ]
@@ -851,13 +848,7 @@ export default function LdcVisualization({
                   className="arrow debut-arrow"
                   style={{ strokeWidth }}
                 />
-                <NullGround
-                  geometry={nullStubGeometry(
-                    debutGeometry.source,
-                    'suivant',
-                    debutGeometry.layout.get(debutGeometry.source.id)!,
-                  )}
-                />
+                {debutArrow.stub ? <NullGround geometry={debutArrow.stub} /> : null}
               </g>
             ) : (
               <path
@@ -1053,17 +1044,11 @@ function DebutCell({
         height={cell.height}
         rx="12"
       />
-      <line
-        className="debut-cell-divider"
-        x1={cell.x + DEBUT_CELL_W - 40}
-        y1={cell.y}
-        x2={cell.x + DEBUT_CELL_W - 40}
-        y2={cell.y + cell.height}
-      />
       <text
         className="debut-cell-label"
-        x={cell.x + 12}
+        x={cell.x + cell.width / 2}
         y={cell.y + cell.height / 2 + 7}
+        textAnchor="middle"
       >
         debut
       </text>
@@ -1092,34 +1077,26 @@ function NullGround({
   geometry,
   color = 'var(--ink-2)',
 }: {
-  geometry: Pick<NullStubGeometry, 'end' | 'label'>
+  geometry: NullStubGeometry
   color?: string
 }): JSX.Element {
-  const { end } = geometry
+  const { end, direction } = geometry
   return (
     <g className={color === 'var(--gold)' ? 'null-ground empty-null-ground' : 'null-ground'}>
-      <line x1={end.x} y1={end.y} x2={end.x} y2={end.y + 10} stroke={color} strokeWidth="2" />
+      <line x1={end.x} y1={end.y - 11} x2={end.x} y2={end.y + 11} stroke={color} strokeWidth="2" />
       <line
-        x1={end.x - 11}
-        y1={end.y + 10}
-        x2={end.x + 11}
-        y2={end.y + 10}
+        x1={end.x + direction * 5}
+        y1={end.y - 7}
+        x2={end.x + direction * 5}
+        y2={end.y + 7}
         stroke={color}
         strokeWidth="2"
       />
       <line
-        x1={end.x - 7}
-        y1={end.y + 14}
-        x2={end.x + 7}
-        y2={end.y + 14}
-        stroke={color}
-        strokeWidth="2"
-      />
-      <line
-        x1={end.x - 3}
-        y1={end.y + 18}
-        x2={end.x + 3}
-        y2={end.y + 18}
+        x1={end.x + direction * 10}
+        y1={end.y - 3}
+        x2={end.x + direction * 10}
+        y2={end.y + 3}
         stroke={color}
         strokeWidth="2"
       />
@@ -1283,9 +1260,9 @@ function NodeShape({ node }: { node: LdcNode }): JSX.Element {
       )}
 
       <text
-        x={NODE_W / 2}
-        y={NODE_H + 18}
-        textAnchor="middle"
+        x="10"
+        y="-10"
+        textAnchor="start"
         className="node-address"
         fontSize="13"
       >

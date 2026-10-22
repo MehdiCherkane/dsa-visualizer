@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { Camera, Point, Rect } from './geometry'
 import {
+  DEBUT_CELL_GAP,
   DEBUT_CELL_H,
   DEBUT_CELL_W,
-  DEBUT_DOT_X,
-  DEBUT_DOT_Y,
-  NODE_H,
+  NULL_STUB,
   ROW_Y,
-  SUIVANT_LANE,
   cameraAtOne,
   debutCellGeometry,
   debutRoute,
@@ -163,19 +161,19 @@ describe('caméra et géométrie du canvas', () => {
     expect(stub!.kind).toBe('null')
     expect(stub!.tail.y).toBeCloseTo(point.y + 100 * 0.72, 6)
     expect(stub!.tip.y).toBeCloseTo(stub!.tail.y, 6)
-    expect(Math.abs(stub!.tip.x - (stub!.tail.x - 44))).toBeLessThan(1)
+    expect(Math.abs(stub!.tip.x - (stub!.tail.x - NULL_STUB))).toBeLessThan(1)
   })
 
-  it('place la cellule debut à gauche de la première case de la rangée', () => {
+  it('place la cellule debut au-dessus de la première case de la rangée', () => {
     const snapshot = createSnapshot('int', [{ kind: 'int', value: 9 }])
     const first = snapshot.nodes[0]!
     const firstPoint = layoutNodes(snapshot.nodes).get(first.id)!
     const geometry = debutCellGeometry(snapshot.nodes)
     expect(geometry.cell.width).toBe(DEBUT_CELL_W)
     expect(geometry.cell.height).toBe(DEBUT_CELL_H)
-    expect(geometry.cell.x).toBe(firstPoint.x - 210)
-    expect(geometry.dot.x).toBe(firstPoint.x - 210 + DEBUT_DOT_X)
-    expect(geometry.dot.y).toBe(firstPoint.y + 100 * 0.38)
+    expect(geometry.cell.y).toBe(firstPoint.y - DEBUT_CELL_GAP - DEBUT_CELL_H)
+    expect(geometry.dot.x).toBe(firstPoint.x + 220 / 2)
+    expect(geometry.dot.y).toBe(firstPoint.y - DEBUT_CELL_GAP)
   })
 
   it('garde la cellule debut sur la rangée pendant une allocation sans nœud de rangée', () => {
@@ -189,13 +187,10 @@ describe('caméra et géométrie du canvas', () => {
       )
     if (!heapOnly) throw new Error('missing heap-only step')
     const geometry = debutCellGeometry(heapOnly)
-    expect(geometry.cell.y).toBeCloseTo(
-      ROW_Y + NODE_H * SUIVANT_LANE - DEBUT_DOT_Y,
-      6,
-    )
+    expect(geometry.cell.y).toBeCloseTo(ROW_Y - DEBUT_CELL_GAP - DEBUT_CELL_H, 6)
   })
 
-  it('trace la flèche debut de la pastille vers la bordure gauche du premier nœud', () => {
+  it('trace la flèche debut verticalement vers le premier nœud', () => {
     const snapshot = createSnapshot('int', [{ kind: 'int', value: 9 }, { kind: 'int', value: 2 }])
     const first = snapshot.nodes[0]!
     const firstPoint = layoutNodes(snapshot.nodes).get(first.id)!
@@ -205,8 +200,8 @@ describe('caméra et géométrie du canvas', () => {
     expect(route!.kind).toBe('straight')
     expect(route!.tail.x).toBeCloseTo(geometry.dot.x, 6)
     expect(route!.tail.y).toBeCloseTo(geometry.dot.y, 6)
-    expect(route!.tip.x).toBeCloseTo(firstPoint.x, 6)
-    expect(route!.tip.y).toBeCloseTo(geometry.dot.y, 6)
+    expect(route!.tip.x).toBeCloseTo(geometry.dot.x, 6)
+    expect(route!.tip.y).toBeCloseTo(firstPoint.y, 6)
   })
 
   it('trace le stub NULL depuis la pastille et inclut la cellule dans la bbox', () => {
@@ -217,7 +212,7 @@ describe('caméra et géométrie du canvas', () => {
     expect(route!.kind).toBe('null')
     expect(route!.tail.x).toBeCloseTo(geometry.dot.x, 6)
     expect(route!.tail.y).toBeCloseTo(geometry.dot.y, 6)
-    expect(route!.tip.x).toBeCloseTo(geometry.dot.x + 44, 6)
+    expect(route!.tip.x).toBeCloseTo(geometry.dot.x + NULL_STUB, 6)
     const bounds = snapshotBounds(snapshot.nodes, [], { kind: 'null' })
     expect(contains(bounds, geometry.cell)).toBe(true)
     expect(contains(bounds, route!.bounds)).toBe(true)

@@ -31,11 +31,11 @@ export const GAP = 72
 export const SLIDE = NODE_W + GAP
 export const PAD_L = 132
 export const ROW_Y = 338
-export const EMPTY_ROW_Y = 252
+export const EMPTY_ROW_Y = 300
 export const HEAP_Y = 92
 export const SUIVANT_LANE = 0.38
 export const PRECEDENT_LANE = 0.72
-export const NULL_STUB = 44
+export const NULL_STUB = 64
 export const FIT_PADDING = 56
 export const MIN_AUTO_K = 0.25
 export const MAX_AUTO_K = 1.3
@@ -53,10 +53,10 @@ export const EMPTY_BAND_TOP = 200
 export const EMPTY_BAND_HEIGHT = 146
 export const EMPTY_NULL_X = PAD_L - 24
 export const DEBUT_CELL_W = 124
-export const DEBUT_CELL_H = 56
-export const DEBUT_CELL_GAP = 210
-export const DEBUT_DOT_X = 104
-export const DEBUT_DOT_Y = 28
+export const DEBUT_CELL_H = 44
+export const DEBUT_CELL_GAP = 36
+export const DEBUT_DOT_X = DEBUT_CELL_W / 2
+export const DEBUT_DOT_Y = DEBUT_CELL_H
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
@@ -88,8 +88,6 @@ export interface DebutCellGeometry {
   cell: Rect
   dot: Point
   label: Point
-  source: LdcNode
-  layout: Map<number, Point>
 }
 
 export function debutCellGeometry(nodes: LdcNode[]): DebutCellGeometry {
@@ -101,37 +99,23 @@ export function debutCellGeometry(nodes: LdcNode[]): DebutCellGeometry {
   const rowX = first ? PAD_L + first.slot * SLIDE : PAD_L
   const hasHeap = nodes.some((node) => !node.freed && node.lane === 'heap')
   const rowY = first || hasHeap ? ROW_Y : EMPTY_ROW_Y
+  const centerX = rowX + NODE_W / 2
   const cell: Rect = {
-    x: rowX - DEBUT_CELL_GAP,
-    y: rowY + NODE_H * SUIVANT_LANE - DEBUT_DOT_Y,
+    x: centerX - DEBUT_CELL_W / 2,
+    y: rowY - DEBUT_CELL_GAP - DEBUT_CELL_H,
     width: DEBUT_CELL_W,
     height: DEBUT_CELL_H,
   }
-  const dot = { x: cell.x + DEBUT_DOT_X, y: rowY + NODE_H * SUIVANT_LANE }
-  const source: LdcNode = {
-    id: -1,
-    address: '',
-    payload: { kind: 'uninit' },
-    suivant: first ? { kind: 'node', id: first.id } : { kind: 'null' },
-    precedent: { kind: 'null' },
-    freed: false,
-    slot: first ? first.slot - 1 : -1,
-    lane: 'row',
-  }
-  const layout = layoutNodes(nodes)
-  layout.set(source.id, {
-    x: dot.x - (NODE_W - CELL_W / 2),
-    y: dot.y - NODE_H * SUIVANT_LANE,
-  })
   return {
     cell,
-    dot,
+    dot: {
+      x: cell.x + DEBUT_DOT_X,
+      y: cell.y + DEBUT_DOT_Y,
+    },
     label: {
       x: cell.x + cell.width / 2,
-      y: cell.y + cell.height + 18,
+      y: cell.y - 7,
     },
-    source,
-    layout,
   }
 }
 
@@ -160,7 +144,7 @@ export interface NullStubGeometry {
 function makeNullStub(start: Point, direction: 1 | -1): NullStubGeometry {
   const end = { x: start.x + direction * NULL_STUB, y: start.y }
   const label = {
-    x: end.x + direction * 10,
+    x: end.x + direction * 20,
     y: end.y + 27,
     anchor: (direction > 0 ? 'start' : 'end') as 'start' | 'end',
   }
@@ -172,12 +156,10 @@ function makeNullStub(start: Point, direction: 1 | -1): NullStubGeometry {
   const points: Point[] = [
     start,
     end,
-    { x: end.x - 11, y: end.y + 10 },
-    { x: end.x + 11, y: end.y + 10 },
-    { x: end.x - 7, y: end.y + 14 },
-    { x: end.x + 7, y: end.y + 14 },
-    { x: end.x - 3, y: end.y + 18 },
-    { x: end.x + 3, y: end.y + 18 },
+    { x: end.x + direction * 5, y: end.y - 7 },
+    { x: end.x + direction * 5, y: end.y + 7 },
+    { x: end.x + direction * 10, y: end.y - 3 },
+    { x: end.x + direction * 10, y: end.y + 3 },
     { x: labelRect.x, y: labelRect.y },
     { x: labelRect.x + labelRect.width, y: labelRect.y + labelRect.height },
   ]
@@ -242,6 +224,7 @@ export interface ArrowRoute {
   tail: Point
   tip: Point
   bounds: Rect
+  stub?: NullStubGeometry
 }
 
 export function routeArrow(
@@ -262,6 +245,7 @@ export function routeArrow(
       tail,
       tip: stub.end,
       bounds: stub.bounds,
+      stub,
     }
   }
 
@@ -403,11 +387,30 @@ export function debutRoute(
 ): ArrowRoute | null {
   if (value.kind === 'uninit') return null
   const geometry = debutCellGeometry(nodes)
-  const target =
-    value.kind === 'node'
-      ? nodes.find((candidate) => candidate.id === value.id) ?? null
-      : null
-  return routeArrow(geometry.source, 'suivant', target, geometry.layout)
+  if (value.kind === 'null') {
+    const stub = makeNullStub(geometry.dot, 1)
+    return {
+      kind: 'null',
+      path: stub.path,
+      tail: geometry.dot,
+      tip: stub.end,
+      bounds: stub.bounds,
+      stub,
+    }
+  }
+
+  const target = nodes.find((candidate) => candidate.id === value.id)
+  if (!target) return null
+  const targetPoint = layoutNodes(nodes).get(target.id)
+  if (!targetPoint) return null
+  const tip = { x: geometry.dot.x, y: targetPoint.y }
+  return {
+    kind: 'straight',
+    path: `M ${geometry.dot.x} ${geometry.dot.y} L ${tip.x} ${tip.y}`,
+    tail: geometry.dot,
+    tip,
+    bounds: boundsOfPoints([geometry.dot, tip], 2),
+  }
 }
 
 export interface PinInput {
@@ -549,7 +552,7 @@ export function layoutPins(pins: PinInput[], nodes: LdcNode[]): PinPlacement[] {
 }
 
 export function nodeBounds(point: Point): Rect {
-  return { x: point.x - 4, y: point.y - 4, width: NODE_W + 8, height: NODE_H + 34 }
+  return { x: point.x - 4, y: point.y - 30, width: NODE_W + 8, height: NODE_H + 34 }
 }
 
 export function boundsOfPoints(points: Point[], padding = 0): Rect {

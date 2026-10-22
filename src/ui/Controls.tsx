@@ -13,6 +13,8 @@ interface ControlsProps {
   onLast: () => void
   onGoto: (index: number) => void
   onSpeed: (speed: number) => void
+  fullscreen: boolean
+  onFullscreen: () => void
 }
 
 export function Controls({
@@ -24,6 +26,8 @@ export function Controls({
   onLast,
   onGoto,
   onSpeed,
+  fullscreen,
+  onFullscreen,
 }: ControlsProps): JSX.Element {
   const empty = state.total === 0
   const atStart = empty || state.index <= 0
@@ -112,6 +116,17 @@ export function Controls({
           </button>
         ))}
       </div>
+
+      <button
+        type="button"
+        className="icon-button fullscreen-toggle"
+        onClick={onFullscreen}
+        title={fullscreen ? fr.controls.exitFullscreen : fr.controls.fullscreen}
+        aria-label={fullscreen ? fr.controls.exitFullscreen : fr.controls.fullscreen}
+        aria-pressed={fullscreen}
+      >
+        {fullscreen ? '⤡' : '⤢'}
+      </button>
     </section>
   )
 }
