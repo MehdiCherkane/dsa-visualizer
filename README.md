@@ -6,7 +6,7 @@ A single-page, fully offline French teaching demo for doubly linked lists in C (
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (86 tests)
+npm test      # vitest suite (88 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server

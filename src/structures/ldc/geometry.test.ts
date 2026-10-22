@@ -5,12 +5,15 @@ import {
   DEBUT_CELL_H,
   DEBUT_CELL_W,
   NULL_STUB,
+  PIN_DEBUT_CLEARANCE,
+  PIN_NULL_STUB,
   ROW_Y,
   cameraAtOne,
   debutCellGeometry,
   debutRoute,
   fitCamera,
   layoutNodes,
+  layoutPins,
   routeArrow,
   screenPoint,
   snapshotBounds,
@@ -204,7 +207,7 @@ describe('caméra et géométrie du canvas', () => {
     expect(route!.tip.y).toBeCloseTo(firstPoint.y, 6)
   })
 
-  it('trace le stub NULL depuis la pastille et inclut la cellule dans la bbox', () => {
+  it('trace le stub NULL verticalement sous la pastille et inclut la cellule dans la bbox', () => {
     const snapshot = createSnapshot('int', [])
     const geometry = debutCellGeometry(snapshot.nodes)
     const route = debutRoute(snapshot.nodes, { kind: 'null' })
@@ -212,9 +215,43 @@ describe('caméra et géométrie du canvas', () => {
     expect(route!.kind).toBe('null')
     expect(route!.tail.x).toBeCloseTo(geometry.dot.x, 6)
     expect(route!.tail.y).toBeCloseTo(geometry.dot.y, 6)
-    expect(route!.tip.x).toBeCloseTo(geometry.dot.x + NULL_STUB, 6)
+    expect(route!.tip.x).toBeCloseTo(geometry.dot.x, 6)
+    expect(route!.tip.y).toBeCloseTo(geometry.dot.y + NULL_STUB, 6)
+    expect(route!.stub?.direction).toBe('down')
     const bounds = snapshotBounds(snapshot.nodes, [], { kind: 'null' })
     expect(contains(bounds, geometry.cell)).toBe(true)
     expect(contains(bounds, route!.bounds)).toBe(true)
+  })
+
+  it('garde les pastilles de nœud séparées de la cellule debut', () => {
+    const snapshot = createSnapshot('int', [{ kind: 'int', value: 9 }])
+    const first = snapshot.nodes[0]!
+    const geometry = debutCellGeometry(snapshot.nodes)
+    const [placement] = layoutPins(
+      [{ name: 'courant', text: 'courant', target: 'node', targetId: first.id }],
+      snapshot.nodes,
+    )
+    expect(placement).toBeDefined()
+    expect(placement!.tag.y - (geometry.cell.y + geometry.cell.height)).toBeGreaterThanOrEqual(20)
+    expect(placement!.tag.x).toBeGreaterThanOrEqual(geometry.dot.x + PIN_DEBUT_CLEARANCE)
+  })
+
+  it('rend un pointeur local NULL vertical et détaché de la liste', () => {
+    const snapshot = createSnapshot('int', [
+      { kind: 'int', value: 9 },
+      { kind: 'int', value: 2 },
+      { kind: 'int', value: 5 },
+    ])
+    const pin = { name: 'dernier', text: 'dernier', target: 'null' as const }
+    const [placement] = layoutPins([pin], snapshot.nodes)
+    expect(placement).toBeDefined()
+    const stub = placement!.nullStub
+    expect(stub).toBeDefined()
+    expect(stub!.direction).toBe('down')
+    expect(stub!.start.x).toBeCloseTo(stub!.end.x, 6)
+    expect(stub!.end.y - stub!.start.y).toBeCloseTo(PIN_NULL_STUB, 6)
+    expect(stub!.bounds.y + stub!.bounds.height).toBeLessThan(ROW_Y)
+    const bounds = snapshotBounds(snapshot.nodes, [pin], { kind: 'null' })
+    expect(contains(bounds, stub!.bounds)).toBe(true)
   })
 })

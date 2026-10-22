@@ -511,8 +511,12 @@ export default function LdcVisualization({
     return routeArrow(source, field, target, layout)
   }
 
-  const bandX = fitBounds.x - BAND_PAD
-  const bandWidth = Math.max(nodes.length === 0 ? 480 : 120, fitBounds.width + BAND_PAD * 2)
+  const emptyBandExtra = nodes.length === 0 ? 36 : 0
+  const bandX = fitBounds.x - BAND_PAD - emptyBandExtra
+  const bandWidth = Math.max(
+    nodes.length === 0 ? 480 : 120,
+    fitBounds.width + BAND_PAD * 2 + emptyBandExtra,
+  )
   const emptyBandTop = EMPTY_BAND_TOP
   const emptyBandHeight = EMPTY_BAND_HEIGHT
   const debutGeometry = debutCellGeometry(nodes)
@@ -832,6 +836,23 @@ export default function LdcVisualization({
               />
             )
           })}
+          {pinPlacements.map((placement, index) => {
+            if (!placement.nullStub) return null
+            const pin = placement.pin as PinSpec
+            const color = pin.dangling ? 'var(--alert)' : pin.color
+            return (
+              <g key={`pin-null-${pin.name}-${index}`} className="pin-null">
+                <path
+                  d={placement.nullStub.path}
+                  className="pin-null-line"
+                  stroke={color}
+                  strokeWidth="1.5"
+                  opacity="0.8"
+                />
+                <NullGround geometry={placement.nullStub} color={color} />
+              </g>
+            )
+          })}
           {pinPlacements.map((placement, index) => (
             <PinTag
               key={`pin-${placement.pin.name}-${index}`}
@@ -848,7 +869,9 @@ export default function LdcVisualization({
                   className="arrow debut-arrow"
                   style={{ strokeWidth }}
                 />
-                {debutArrow.stub ? <NullGround geometry={debutArrow.stub} /> : null}
+                {debutArrow.stub ? (
+                  <NullGround geometry={debutArrow.stub} color="var(--gold)" />
+                ) : null}
               </g>
             ) : (
               <path
@@ -1083,23 +1106,33 @@ function NullGround({
   const { end, direction } = geometry
   return (
     <g className={color === 'var(--gold)' ? 'null-ground empty-null-ground' : 'null-ground'}>
-      <line x1={end.x} y1={end.y - 11} x2={end.x} y2={end.y + 11} stroke={color} strokeWidth="2" />
-      <line
-        x1={end.x + direction * 5}
-        y1={end.y - 7}
-        x2={end.x + direction * 5}
-        y2={end.y + 7}
-        stroke={color}
-        strokeWidth="2"
-      />
-      <line
-        x1={end.x + direction * 10}
-        y1={end.y - 3}
-        x2={end.x + direction * 10}
-        y2={end.y + 3}
-        stroke={color}
-        strokeWidth="2"
-      />
+      {direction === 'down' ? (
+        <>
+          <line x1={end.x - 11} y1={end.y} x2={end.x + 11} y2={end.y} stroke={color} strokeWidth="2" />
+          <line x1={end.x - 7} y1={end.y + 5} x2={end.x + 7} y2={end.y + 5} stroke={color} strokeWidth="2" />
+          <line x1={end.x - 3} y1={end.y + 10} x2={end.x + 3} y2={end.y + 10} stroke={color} strokeWidth="2" />
+        </>
+      ) : (
+        <>
+          <line x1={end.x} y1={end.y - 11} x2={end.x} y2={end.y + 11} stroke={color} strokeWidth="2" />
+          <line
+            x1={end.x + direction * 5}
+            y1={end.y - 7}
+            x2={end.x + direction * 5}
+            y2={end.y + 7}
+            stroke={color}
+            strokeWidth="2"
+          />
+          <line
+            x1={end.x + direction * 10}
+            y1={end.y - 3}
+            x2={end.x + direction * 10}
+            y2={end.y + 3}
+            stroke={color}
+            strokeWidth="2"
+          />
+        </>
+      )}
       <text
         x={geometry.label.x}
         y={geometry.label.y}
