@@ -18,11 +18,12 @@ export const fr = {
     ready: 'Prêt pour la démonstration',
   },
   menu: {
-    title: 'DS Visualizer',
-    pageTitle: 'DS Visualizer — Structures de données en C',
-    chapterPageTitle: (title: string) => `${title} — DS Visualizer`,
+    title: 'Structures de données',
+    pageTitle: 'Structures de données en C — simulation et visualisation',
+    chapterPageTitle: (title: string) => `${title} — Structures de données en C`,
     eyebrow: 'Chapitre par chapitre',
-    subtitle: 'Structures de données en C — démonstrations interactives',
+    subtitle:
+      'Simulation et visualisation des différentes fonctionnalités des structures de données en C',
     chapters: 'Chapitres',
     open: 'Ouvrir',
     openAria: (title: string) => `Ouvrir « ${title} »`,
