@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { JSX } from 'react'
+import type { CSSProperties, JSX } from 'react'
 import { Player } from '../core/player'
 import type {
   BaseSnapshot,
@@ -16,9 +16,24 @@ import { BottomDock } from './BottomDock'
 import { Controls } from './Controls'
 import { Header } from './Header'
 import { OperationBar } from './OperationBar'
+import { SplitHandle } from './SplitHandle'
 import { defaultOperation, defaultParams, formatCall } from './operations'
+import {
+  DEFAULT_LAYOUT,
+  WORKSPACE_MAX_SPLIT,
+  WORKSPACE_MIN_LEFT,
+  WORKSPACE_MIN_RIGHT,
+  WORKSPACE_MIN_RIGHT_PRESENTATION,
+  WORKSPACE_MIN_SPLIT,
+  clamp,
+  readLayout,
+  writeLayout,
+} from './layout'
+import type { LayoutPatch, LayoutState } from './layout'
 import { ScenarioStrip } from './ScenarioStrip'
 import { usePlayerState } from './usePlayer'
+
+const WORKSPACE_SASH_SIZE = 7
 
 interface ActiveOperation<S extends BaseSnapshot> {
   operation: OperationDef<S>
@@ -88,12 +103,16 @@ export function DemoApp<S extends BaseSnapshot>({
   const [dockCollapsed, setDockCollapsed] = useState(
     () => typeof window !== 'undefined' && window.innerHeight < 800,
   )
+  const [layout, setLayout] = useState<LayoutState>(readLayout)
   const [activeOperation, setActiveOperation] = useState<ActiveOperation<S> | null>(null)
   const [scenarioRun, setScenarioRun] = useState<ScenarioRun | null>(null)
   const [presentation, setPresentation] = useState(false)
   const [simulationFullscreen, setSimulationFullscreen] = useState(false)
   const [cameraResetKey, setCameraResetKey] = useState(0)
   const appRef = useRef<HTMLDivElement | null>(null)
+  const workspaceRef = useRef<HTMLElement | null>(null)
+  const codeColumnRef = useRef<HTMLDivElement | null>(null)
+  const workspaceDragRef = useRef<{ left: number; usable: number } | null>(null)
 
   const player = useMemo(() => new Player<S>(), [])
   const playerState = usePlayerState(player)
@@ -106,6 +125,50 @@ export function DemoApp<S extends BaseSnapshot>({
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
+
+  useEffect(() => {
+    writeLayout(layout)
+  }, [layout])
+
+  const updateLayout = useCallback((patch: LayoutPatch) => {
+    setLayout((current) => ({ ...current, ...patch }))
+  }, [])
+
+  const beginWorkspaceDrag = useCallback(() => {
+    const workspaceWidth = workspaceRef.current?.getBoundingClientRect().width ?? 0
+    const codeWidth = codeColumnRef.current?.getBoundingClientRect().width ?? 0
+    const usable =
+      workspaceWidth > WORKSPACE_SASH_SIZE ? workspaceWidth - WORKSPACE_SASH_SIZE : 1000
+    const left = codeWidth > 0 ? usable - codeWidth : usable * (layout.workspaceSplit / 100)
+    workspaceDragRef.current = { left, usable }
+    const measuredSplit = clamp((left / usable) * 100, WORKSPACE_MIN_SPLIT, WORKSPACE_MAX_SPLIT)
+    if (Math.abs(measuredSplit - layout.workspaceSplit) > 0.25) {
+      updateLayout({ workspaceSplit: measuredSplit })
+    }
+  }, [layout.workspaceSplit, updateLayout])
+
+  const resizeWorkspace = useCallback(
+    (delta: number) => {
+      const drag = workspaceDragRef.current
+      if (!drag) return
+      const minRight = presentation ? WORKSPACE_MIN_RIGHT_PRESENTATION : WORKSPACE_MIN_RIGHT
+      const maxLeft = Math.max(WORKSPACE_MIN_LEFT, drag.usable - minRight)
+      const left = clamp(drag.left + delta, WORKSPACE_MIN_LEFT, maxLeft)
+      const split = clamp((left / drag.usable) * 100, WORKSPACE_MIN_SPLIT, WORKSPACE_MAX_SPLIT)
+      updateLayout({ workspaceSplit: split })
+    },
+    [presentation, updateLayout],
+  )
+
+  const resetWorkspace = useCallback(() => {
+    workspaceDragRef.current = null
+    updateLayout({ workspaceSplit: DEFAULT_LAYOUT.workspaceSplit })
+  }, [updateLayout])
+
+  const workspaceStyle = {
+    '--workspace-left-fr': `${layout.workspaceSplit}fr`,
+    '--workspace-right-fr': `${100 - layout.workspaceSplit}fr`,
+  } as CSSProperties
 
   const selectedOperation =
     profile.operations.find((candidate) => candidate.id === selectedId) ??
@@ -479,8 +542,8 @@ export function DemoApp<S extends BaseSnapshot>({
         onLoadScenario={loadScenario}
       />
 
-      <main className="workspace">
-        <div className="left-column">
+      <main ref={workspaceRef} className="workspace" style={workspaceStyle}>
+        <div className="left-column" id="workspace-main">
           <section className="panel viz-card">
             <plugin.Visualization
               snapshot={currentStep.snapshot}
@@ -549,7 +612,24 @@ export function DemoApp<S extends BaseSnapshot>({
           ) : null}
         </div>
 
-        <div className="right-column">
+        <SplitHandle
+          orientation="vertical"
+          className="workspace-sash"
+          label={fr.dock.resizeWorkspace}
+          value={layout.workspaceSplit}
+          min={WORKSPACE_MIN_SPLIT}
+          max={WORKSPACE_MAX_SPLIT}
+          valueText={fr.dock.percentValue(layout.workspaceSplit)}
+          controls="workspace-main workspace-code"
+          onDragStart={beginWorkspaceDrag}
+          onDrag={resizeWorkspace}
+          onDragEnd={() => {
+            workspaceDragRef.current = null
+          }}
+          onReset={resetWorkspace}
+        />
+
+        <div ref={codeColumnRef} className="right-column" id="workspace-code">
           <CodePanel profile={profile} step={currentStep} presentation={presentation} />
         </div>
       </main>
@@ -562,8 +642,10 @@ export function DemoApp<S extends BaseSnapshot>({
         presentation={presentation}
         collapsed={dockCollapsed}
         summary={dockSummary}
+        layout={layout}
         onToggle={() => setDockCollapsed((value) => !value)}
         onReset={resetAll}
+        onLayoutChange={updateLayout}
       />
     </div>
   )
