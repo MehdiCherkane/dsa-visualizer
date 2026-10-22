@@ -1,0 +1,246 @@
+/* Main menu: same shell, tokens and card language as the demo. */
+
+.brand-copy .menu-brand-meta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-main {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 6px 0 20px;
+}
+
+.menu-hero {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 28px 0;
+}
+
+.menu-eyebrow {
+  margin: 0 0 8px;
+  color: var(--gold);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.menu-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(30px, 3.6vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.menu-subtitle {
+  margin: 10px 0 0;
+  color: var(--ink-2);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.menu-section {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+.menu-section-title {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Upcoming chapters stay on one compact row on wide screens. */
+.chapter-grid.is-soon-grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.chapter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--panel);
+  padding: 18px;
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: var(--shadow-soft);
+  transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+.chapter-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.chapter-card:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.chapter-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+
+.chapter-card-title {
+  font-size: 18px;
+  font-weight: 780;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.chapter-card-description {
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.chapter-card-hint {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+
+.chapter-card-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 8px;
+  background: var(--navy);
+  padding: 7px 14px;
+  color: var(--panel);
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: var(--shadow-soft);
+  transition: background 140ms ease;
+}
+
+.chapter-card:hover .chapter-card-open {
+  background: var(--navy-hi);
+}
+
+[data-theme='dark'] .chapter-card-open {
+  background: #c9d4ff;
+  color: #0b1020;
+}
+
+[data-theme='dark'] .chapter-card:hover .chapter-card-open {
+  background: #e3e9ff;
+}
+
+.chapter-card.is-soon {
+  border-style: dashed;
+  background: var(--panel-2);
+  box-shadow: none;
+}
+
+/* Upcoming cards are compact: badge on one line, status pill on the next,
+   so the head never wraps raggedly from card to card. */
+.chapter-card.is-soon .chapter-card-head {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.chapter-card.is-soon .chapter-card-title {
+  color: var(--ink-2);
+  font-size: 16px;
+}
+
+.chapter-card.is-soon .chapter-card-description {
+  color: var(--muted);
+}
+
+.chapter-card-soon {
+  flex: none;
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  border-radius: 999px;
+  padding: 3px 9px;
+  color: var(--gold);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.menu-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding: 9px 8px 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.menu-footer-source {
+  color: var(--ink-2);
+}
+
+.menu-footer-offline {
+  color: var(--ink-2);
+  text-align: right;
+}
+
+@media (max-width: 760px) {
+  .chapter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-hero,
+  .menu-section {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .menu-footer {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-height: 780px) {
+  .menu-main {
+    gap: 18px;
+  }
+
+  .menu-hero {
+    padding-top: 6px;
+  }
+}

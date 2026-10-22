@@ -104,7 +104,7 @@ Then open the PR on GitHub ("Compare & pull request"), fill in the template, and
 3. Write the step generators and their tests.
 4. Reuse the shared pieces: the player, the camera (zoom and pan), the code panel, the watch panel, the arrow routing. A new chapter should only need its own memory model and renderer.
 5. Add the French captions to `i18n/fr.ts`.
-6. Register the structure in `registry.ts`.
+6. Register the structure in `registry.ts` with its `chapter` number, `title` and `description`: the main menu card and its `#/chapitre-<n>` route are derived from these fields, so no menu code changes are needed.
 7. Add at least one **scenario** taken from the professor's exercises, so he can demo it in one click.
 
 ## Reviewing (for the maintainer)

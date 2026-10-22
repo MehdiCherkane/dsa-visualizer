@@ -15,8 +15,54 @@ export const fr = {
     creditPrefix: 'd’après le cours du',
     professor: 'Pr. M. OUTANOUTE',
     subtitle: 'EST Béni Mellal · DUT GI S3 · d’après le cours du Pr. M. OUTANOUTE',
-    chapter: 'Chapitre 4',
     ready: 'Prêt pour la démonstration',
+  },
+  menu: {
+    title: 'Structures de données',
+    pageTitle: 'Structures de données en C — simulation et visualisation',
+    chapterPageTitle: (title: string) => `${title} — Structures de données en C`,
+    eyebrow: 'Chapitre par chapitre',
+    subtitle:
+      'Simulation et visualisation des différentes fonctionnalités des structures de données en C',
+    chapters: 'Chapitres',
+    open: 'Ouvrir',
+    openAria: (title: string) => `Ouvrir « ${title} »`,
+    chapterLabel: (chapter: number) => `Chapitre ${chapter}`,
+    cardHint: 'Démonstration pas à pas, utilisable hors ligne',
+    soon: 'Bientôt disponible',
+    soonTitle: 'Prochains chapitres',
+    soonAria: (title: string) => `« ${title} » : bientôt disponible`,
+    soonItems: [
+      {
+        chapter: 1,
+        title: 'Piles et files statiques',
+        description: 'Piles et files implantées dans des tableaux de taille fixe.',
+      },
+      {
+        chapter: 2,
+        title: 'Listes simplement chaînées',
+        description: 'Parcours, insertion et suppression avec un seul lien suivant.',
+      },
+      {
+        chapter: 3,
+        title: 'Piles et files dynamiques',
+        description: 'Piles et files implantées avec des nœuds alloués dynamiquement.',
+      },
+      {
+        chapter: 5,
+        title: 'Listes doublement chaînées circulaires',
+        description: 'Listes à double lien dont le dernier nœud reboucle sur le premier.',
+      },
+    ],
+    footer: 'Tout fonctionne hors ligne : un seul fichier, aucune connexion.',
+    backArrow: '←',
+    backLabel: 'Menu',
+    backAria: 'Revenir au menu principal',
+  },
+  chapters: {
+    ldc: {
+      description: 'Profils Entiers et Étudiants, 8 scénarios guidés.',
+    },
   },
   common: {
     node: 'nœud',
@@ -57,6 +103,7 @@ export const fr = {
       { keys: ['D'], label: 'Afficher / masquer les panneaux' },
       { keys: ['P'], label: 'Mode présentation' },
       { keys: ['R'], label: 'Réinitialiser la liste' },
+      { keys: ['Échap'], label: 'Revenir au menu' },
     ],
   },
   camera: {
