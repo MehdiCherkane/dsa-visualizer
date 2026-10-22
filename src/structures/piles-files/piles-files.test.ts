@@ -101,11 +101,35 @@ describe('chapitre 3 — pile dynamique', () => {
     expect(fullSteps[fullSteps.length - 1]!.console.returnValue).toBe(0)
   })
 
-  it('détruit toute la pile', () => {
-    const snapshot = runPile('detruirePile', [12, 7, 25])
-    expect(snapshot.globals.sommet).toEqual({ kind: 'null' })
-    expect(snapshot.nodes).toEqual([])
-    expect(checkPileInvariants(snapshot)).toEqual([])
+  it('détruit toute la pile sans fuite du retour de depiler', () => {
+    const steps = operation(pileOperations, 'detruirePile').run(createPile([12, 7]), {})
+    // Les étapes internes de depiler gardent leur propre retour ; les étapes
+    // de detruirePile, déclarée void, ne doivent jamais l'afficher.
+    for (const step of steps) {
+      if (step.fn === 'detruirePile') {
+        expect(step.console.returnValue).toBeUndefined()
+      }
+    }
+    const last = steps[steps.length - 1]!
+    expect(last.console.returnValue).toBeUndefined()
+    expect(last.snapshot.globals.sommet).toEqual({ kind: 'null' })
+    expect(last.snapshot.nodes).toEqual([])
+    expect(checkPileInvariants(last.snapshot)).toEqual([])
+  })
+
+  it('détruit une pile vide sans fuite du retour de depiler', () => {
+    const steps = operation(pileOperations, 'detruirePile').run(createPile([]), {})
+    for (const step of steps) {
+      expect(step.console.returnValue).toBeUndefined()
+    }
+    const last = steps[steps.length - 1]!
+    expect(last.snapshot.globals.sommet).toEqual({ kind: 'null' })
+    expect(checkPileInvariants(last.snapshot)).toEqual([])
+  })
+
+  it('dépiler renvoie la valeur retirée', () => {
+    const steps = operation(pileOperations, 'depiler').run(createPile([12, 7]), {})
+    expect(steps[steps.length - 1]!.console.returnValue).toBe(12)
   })
 
   it('empilerCopie délègue à empiler et corrigerCopie dépile', () => {
@@ -234,12 +258,37 @@ describe('chapitre 3 — file dynamique', () => {
     expect(fullSteps[fullSteps.length - 1]!.console.returnValue).toBe(0)
   })
 
-  it('détruit toute la file', () => {
-    const snapshot = runFile('detruireFile', [7, 12, 25])
-    expect(snapshot.globals.debut).toEqual({ kind: 'null' })
-    expect(snapshot.globals.fin).toEqual({ kind: 'null' })
-    expect(snapshot.nodes).toEqual([])
-    expect(checkFileInvariants(snapshot)).toEqual([])
+  it('détruit toute la file sans fuite du retour de defiler', () => {
+    const steps = operation(fileOperations, 'detruireFile').run(createFile([7, 12]), {})
+    // Les étapes internes de defiler gardent leur propre retour ; les étapes
+    // de detruireFile, déclarée void, ne doivent jamais l'afficher.
+    for (const step of steps) {
+      if (step.fn === 'detruireFile') {
+        expect(step.console.returnValue).toBeUndefined()
+      }
+    }
+    const last = steps[steps.length - 1]!
+    expect(last.console.returnValue).toBeUndefined()
+    expect(last.snapshot.globals.debut).toEqual({ kind: 'null' })
+    expect(last.snapshot.globals.fin).toEqual({ kind: 'null' })
+    expect(last.snapshot.nodes).toEqual([])
+    expect(checkFileInvariants(last.snapshot)).toEqual([])
+  })
+
+  it('détruit une file vide sans fuite du retour de defiler', () => {
+    const steps = operation(fileOperations, 'detruireFile').run(createFile([]), {})
+    for (const step of steps) {
+      expect(step.console.returnValue).toBeUndefined()
+    }
+    const last = steps[steps.length - 1]!
+    expect(last.snapshot.globals.debut).toEqual({ kind: 'null' })
+    expect(last.snapshot.globals.fin).toEqual({ kind: 'null' })
+    expect(checkFileInvariants(last.snapshot)).toEqual([])
+  })
+
+  it('défiler renvoie la valeur retirée', () => {
+    const steps = operation(fileOperations, 'defiler').run(createFile([7, 12]), {})
+    expect(steps[steps.length - 1]!.console.returnValue).toBe(7)
   })
 
   it('enregistrerArrivee et servirSuivant respectent FIFO', () => {

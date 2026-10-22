@@ -221,6 +221,7 @@ export function runDetruireFile(state: FileSnapshot, _params: ParamValues): Step
     if (!notEmpty) break
     r.step(fn, fnLabels.callDefiler.line, fr.captions.call('defiler'))
     callDefiler(r)
+    r.clearReturnValue()
     r.step(fn, fnLabels.endWhile.line, C.fileDestroyLoop)
   }
 
