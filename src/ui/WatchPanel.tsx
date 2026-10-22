@@ -1,11 +1,15 @@
 import type { JSX } from 'react'
 import type { BaseSnapshot, Step, StructurePlugin, VarValue } from '../core/types'
 import { fr } from '../i18n/fr'
+import { PanelFocusButton } from './PanelFocusButton'
 
 interface WatchPanelProps<S extends BaseSnapshot> {
   plugin: StructurePlugin<S>
   step: Step<S>
   stepIndex: number
+  id?: string
+  focused?: boolean
+  onToggleFocus?: () => void
 }
 
 function valueClass(value: VarValue): string {
@@ -18,6 +22,9 @@ export function WatchPanel<S extends BaseSnapshot>({
   plugin,
   step,
   stepIndex,
+  id,
+  focused = false,
+  onToggleFocus,
 }: WatchPanelProps<S>): JSX.Element {
   const frame = step.snapshot.frames[step.snapshot.frames.length - 1]
   const activeFrameIndex = step.snapshot.frames.length - 1
@@ -39,12 +46,21 @@ export function WatchPanel<S extends BaseSnapshot>({
   const locals = frame ? Object.entries(frame.vars) : []
 
   return (
-    <section className="panel watch-panel">
+    <section className="panel watch-panel" id={id}>
       <div className="panel-header">
         <span className="panel-title">{fr.watch.title}</span>
-        {step.evals && step.evals.length > 0 ? (
-          <span className="panel-subtitle">{fr.watch.evals}</span>
-        ) : null}
+        <div className="panel-header-actions">
+          {step.evals && step.evals.length > 0 ? (
+            <span className="panel-subtitle">{fr.watch.evals}</span>
+          ) : null}
+          {onToggleFocus ? (
+            <PanelFocusButton
+              title={fr.watch.title}
+              focused={focused}
+              onToggle={onToggleFocus}
+            />
+          ) : null}
+        </div>
       </div>
       <div className="watch-body">
         <div className="watch-group">

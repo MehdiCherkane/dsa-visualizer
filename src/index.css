@@ -460,9 +460,92 @@ select:focus-visible,
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(400px, 28vw, 560px);
-  gap: 12px;
+  grid-template-columns:
+    minmax(380px, var(--workspace-left-fr, 70fr))
+    var(--sash-size, 7px)
+    minmax(430px, var(--workspace-right-fr, 30fr));
+  gap: 12px 0;
   min-height: 0;
+}
+
+.split-handle {
+  position: relative;
+  z-index: 4;
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  touch-action: none;
+  user-select: none;
+}
+
+.split-handle::before {
+  content: '';
+  position: absolute;
+  border-radius: 999px;
+  background: var(--line);
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.split-handle-vertical {
+  width: var(--sash-size, 7px);
+  cursor: col-resize;
+}
+
+.split-handle-vertical::before {
+  top: 8px;
+  bottom: 8px;
+  left: 3px;
+  width: 1px;
+}
+
+.split-handle-horizontal {
+  width: 100%;
+  height: var(--sash-size, 7px);
+  cursor: row-resize;
+}
+
+.split-handle-horizontal::before {
+  top: 3px;
+  left: 50%;
+  width: 48px;
+  height: 1px;
+  transform: translateX(-50%);
+}
+
+.split-handle:hover::before {
+  background: var(--gold);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 28%, transparent);
+}
+
+.split-handle-vertical:hover::before {
+  left: 2px;
+  width: 3px;
+}
+
+.split-handle-horizontal:hover::before {
+  top: 1px;
+  height: 4px;
+}
+
+.split-handle:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -1px;
+  border-radius: 6px;
+}
+
+body.is-resizing-vertical,
+body.is-resizing-vertical * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+body.is-resizing-horizontal,
+body.is-resizing-horizontal * {
+  cursor: row-resize !important;
+  user-select: none !important;
 }
 
 .left-column,
@@ -508,12 +591,52 @@ select:focus-visible,
   font-size: 9.5px;
 }
 
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
+.panel-focus-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  padding: 0;
+  color: var(--muted);
+}
+
+.panel-focus-button:hover {
+  border-color: var(--line);
+  background: var(--panel-2);
+  color: var(--ink-2);
+}
+
+.panel-focus-button[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--gold) 55%, transparent);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+  color: var(--gold);
+}
+
+.panel-focus-button svg {
+  display: block;
+  width: 13px;
+  height: 13px;
+}
+
 /* ---------------- visualization card ---------------- */
 
 .viz-card {
   position: relative;
   flex: 1 1 auto;
-  min-height: 55vh;
+  min-height: min(55vh, 360px);
   background:
     radial-gradient(circle at 20% 20%, rgba(47, 111, 228, 0.055), transparent 40%),
     radial-gradient(circle at 82% 78%, rgba(201, 162, 39, 0.05), transparent 36%),
@@ -1714,13 +1837,17 @@ select:focus-visible,
   display: flex;
   flex-direction: column;
   flex: 0 0 auto;
-  height: 160px;
+  height: clamp(110px, var(--dock-height, 160px), 32vh);
   min-height: 0;
   border: 1px solid var(--line);
   border-radius: 13px;
   background: var(--panel);
   box-shadow: var(--shadow-soft);
   overflow: hidden;
+}
+
+.dock-height-sash {
+  flex: none;
 }
 
 .bottom-dock.collapsed {
@@ -1765,8 +1892,13 @@ select:focus-visible,
 
 .dock-panels {
   display: grid;
-  grid-template-columns: minmax(240px, 0.82fr) minmax(0, 1.08fr) minmax(280px, 1fr);
-  gap: 8px;
+  grid-template-columns:
+    minmax(200px, var(--dock-fr-1, 28fr))
+    var(--sash-size, 7px)
+    minmax(260px, var(--dock-fr-2, 37fr))
+    var(--sash-size, 7px)
+    minmax(220px, var(--dock-fr-3, 35fr));
+  gap: 0;
   flex: 1 1 auto;
   min-height: 0;
   padding: 0 8px 8px;
@@ -1774,8 +1906,29 @@ select:focus-visible,
 
 .dock-panels > .panel {
   height: 100%;
+  min-width: 0;
   border-radius: 10px;
   box-shadow: none;
+}
+
+.dock-sash {
+  height: 100%;
+}
+
+.bottom-dock.presentation .dock-panels {
+  grid-template-columns:
+    minmax(200px, var(--dock-fr-1, 43fr))
+    var(--sash-size, 7px)
+    minmax(0, var(--dock-fr-2, 57fr));
+}
+
+.bottom-dock .dock-panels.focused,
+.bottom-dock.presentation .dock-panels.focused {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.bottom-dock .dock-panels.focused > .journal-panel {
+  grid-column: auto;
 }
 
 .bottom-dock .watch-panel {
@@ -1893,7 +2046,10 @@ select:focus-visible,
 /* ---------------- presentation mode ---------------- */
 
 .presentation .workspace {
-  grid-template-columns: minmax(0, 1.9fr) minmax(430px, 1fr);
+  grid-template-columns:
+    minmax(380px, var(--workspace-left-fr, 70fr))
+    var(--sash-size, 7px)
+    minmax(500px, var(--workspace-right-fr, 30fr));
 }
 
 .presentation .app-header h1 {
@@ -1935,10 +2091,6 @@ select:focus-visible,
 }
 
 @media (min-width: 1100px) and (max-width: 1500px) {
-  .presentation .workspace {
-    grid-template-columns: minmax(0, 1fr) 500px;
-  }
-
   .presentation .line-number {
     width: 34px;
     padding-right: 6px;
@@ -2034,10 +2186,6 @@ select:focus-visible,
 }
 
 @media (max-height: 899px) {
-  .bottom-dock {
-    height: 130px;
-  }
-
   .viz-card {
     min-height: 0;
   }
@@ -2050,12 +2198,6 @@ select:focus-visible,
 
   .field-label select {
     min-width: 140px;
-  }
-}
-
-@media (max-width: 1150px) {
-  .workspace {
-    grid-template-columns: minmax(0, 1.4fr) minmax(350px, 1fr);
   }
 }
 
@@ -2076,7 +2218,13 @@ select:focus-visible,
   }
 
   .workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workspace-sash,
+  .dock-sash,
+  .dock-height-sash {
+    display: none;
   }
 
   .viz-card {
@@ -2098,7 +2246,13 @@ select:focus-visible,
 
   .dock-panels {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
     overflow: auto;
+  }
+
+  .bottom-dock.presentation .dock-panels {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
   }
 
   .journal-panel {
@@ -2215,7 +2369,8 @@ select:focus-visible,
 
 .app.simulation-fullscreen .app-header,
 .app.simulation-fullscreen .right-column,
-.app.simulation-fullscreen .bottom-dock {
+.app.simulation-fullscreen .bottom-dock,
+.app.simulation-fullscreen .workspace-sash {
   display: none;
 }
 
@@ -3254,12 +3409,6 @@ select:focus-visible,
 
 .presentation .operation-main {
   flex-wrap: nowrap;
-}
-
-@media (min-width: 1100px) and (max-width: 1500px) {
-  .presentation .workspace {
-    grid-template-columns: minmax(0, 1fr) 550px;
-  }
 }
 
 .scenario-strip-label {
