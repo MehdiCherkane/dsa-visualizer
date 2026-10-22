@@ -35,4 +35,10 @@ describe('coquille de l’application', () => {
     const markup = renderToStaticMarkup(<App />)
     expect(markup).toContain(fr.params.valeur)
   })
+
+  it('ajoute la décoration de fond, invisible pour les lecteurs d’écran', () => {
+    const markup = renderToStaticMarkup(<App />)
+    expect(markup).toContain('class="site-backdrop"')
+    expect(markup).toContain('bd-float-1')
+  })
 })
