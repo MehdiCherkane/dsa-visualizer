@@ -47,14 +47,15 @@
   height: auto;
 }
 
-/* Short screens keep the one-screen menu, so the hero art steps aside. */
-@media (max-width: 1099px), (max-height: 859px) {
+/* Narrow windows stack the art under the hero text instead of hiding it. */
+@media (max-width: 1099px) {
   .menu-hero {
     display: block;
   }
 
   .menu-hero-art {
-    display: none;
+    max-width: 520px;
+    margin-top: 18px;
   }
 }
 
