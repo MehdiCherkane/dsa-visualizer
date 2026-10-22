@@ -183,6 +183,7 @@ export function runDetruirePile(state: PileSnapshot, _params: ParamValues): Step
     if (!notEmpty) break
     r.step(fn, fnLabels.callDepiler.line, fr.captions.call('depiler'))
     callDepiler(r)
+    r.clearReturnValue()
     r.step(fn, fnLabels.endWhile.line, C.destroyLoop)
   }
 
