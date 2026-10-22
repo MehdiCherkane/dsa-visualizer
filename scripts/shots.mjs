@@ -43,6 +43,9 @@ const startOperation = async (page, label, params = {}) => {
   }
   await page.getByRole('button', { name: 'Exécuter', exact: true }).click()
   await page.locator('.in-progress').waitFor({ timeout: 4000 })
+  const pause = page.getByRole('button', { name: 'Pause', exact: true })
+  await pause.waitFor({ timeout: 3000 })
+  await pause.click()
   await blur(page)
 }
 
@@ -185,9 +188,35 @@ const presentationDesktop = await openPage(browser, 1920, 1080)
 await loadScenario(presentationDesktop, 'Le cours')
 await startOperation(presentationDesktop, 'Supprimer une valeur', { Valeur: 2 })
 await openPresentation(presentationDesktop)
+const presentationMetaVisible = await presentationDesktop.locator('.brand-meta').isVisible()
+if (!presentationMetaVisible) throw new Error('presentation header hides its metadata')
 await expectCodeFits(presentationDesktop, 'presentation-1920')
 await shot(presentationDesktop, '08-presentation-supprimer-1920', 500)
 await presentationDesktop.close()
+
+const fullscreenDesktop = await openPage(browser, 1920, 1080)
+await loadScenario(fullscreenDesktop, 'Le cours')
+await startOperation(fullscreenDesktop, 'Supprimer une valeur', { Valeur: 2 })
+await fullscreenDesktop.getByRole('button', { name: 'Plein écran', exact: true }).click()
+await wait(fullscreenDesktop, 500)
+const fullscreenState = await fullscreenDesktop.evaluate(() => ({
+  active: document.querySelector('.app')?.classList.contains('simulation-fullscreen'),
+  header: getComputedStyle(document.querySelector('.app-header')).display,
+  code: getComputedStyle(document.querySelector('.right-column')).display,
+  dock: getComputedStyle(document.querySelector('.bottom-dock')).display,
+}))
+console.log(`fullscreen: ${JSON.stringify(fullscreenState)}`)
+if (!fullscreenState.active || fullscreenState.header !== 'none' || fullscreenState.code !== 'none' || fullscreenState.dock !== 'none') {
+  throw new Error('simulation fullscreen does not hide the shell panels')
+}
+await shot(fullscreenDesktop, '18-fullscreen-1920', 500)
+await fullscreenDesktop.keyboard.press('Escape')
+await wait(fullscreenDesktop, 350)
+const fullscreenExited = await fullscreenDesktop.locator('.app').evaluate(
+  (element) => !element.classList.contains('simulation-fullscreen'),
+)
+if (!fullscreenExited) throw new Error('Escape did not leave simulation fullscreen')
+await fullscreenDesktop.close()
 
 const manualDesktop = await openPage(browser, 1920, 1080)
 await loadScenario(manualDesktop, 'Le cours')
@@ -203,6 +232,7 @@ const mobileDockCollapsed = await mobile.locator('.bottom-dock').evaluate((eleme
 if (!mobileDockCollapsed) throw new Error('dock should start collapsed at 1280x720')
 
 await insertTo8(mobile)
+await expectCodeFits(mobile, 'regular-1280')
 await shot(mobile, '11-eight-nodes-1280', 900)
 await mobile.close()
 

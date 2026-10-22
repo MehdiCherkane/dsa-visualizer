@@ -148,6 +148,8 @@ export const fr = {
     step: 'Étape',
     ready: 'Prêt',
     slider: 'Position dans l’opération',
+    fullscreen: 'Plein écran',
+    exitFullscreen: 'Quitter le plein écran',
   },
   operation: {
     title: 'Opération',

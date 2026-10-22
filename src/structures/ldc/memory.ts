@@ -35,7 +35,7 @@ export type LdcItem =
   | { kind: 'etudiant'; student: StudentValue }
 
 export const MAX_NODES = 8
-const FIRST_NODE_ID = 101
+const FIRST_NODE_ID = 1
 const FIRST_ADDRESS = 0x1a40
 const ADDRESS_STEP = 0x28
 
