@@ -2,7 +2,7 @@
 
 A single-page, fully offline French teaching platform for data structures in C (`Structures de données`), built with Vite + React + TypeScript. Each chapter is an independent plugin behind one shared player, visualization shell, and chapter menu. The project replaces the professor's static course PDFs with interactive, step-by-step demos.
 
-**Chapters 2, 3 and 4 are available now:** singly linked lists (`lsc`), dynamic stacks and queues (`pile` / `file`), and doubly linked lists (`ldc`). Chapters 1 and 5 remain planned.
+**Chapters 2–6 are available:** singly linked lists (`lsc`), dynamic stacks and queues (`pile` / `file`), doubly linked lists (`ldc`), circular doubly linked lists (`lddc`), and binary trees (`trees`). Chapter 1 remains planned.
 
 ## Run
 
@@ -16,7 +16,7 @@ npm run dev   # local dev server
 
 `npm run build` produces **one self-contained `dist/index.html`** (`vite-plugin-singlefile`). Open it by double-click: no server and no network access are required — no CDNs, no external fonts or images.
 
-Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point), `#/chapitre-2` (single linked lists), `#/chapitre-3` (stacks and queues), `#/chapitre-4` (doubly linked lists) and `#/chapitre-5` (circular doubly linked lists). Unknown hashes fall back to the menu, and `Échap` or the `← Menu` header button leaves the demo.
+Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point) and `#/chapitre-2` through `#/chapitre-6` for the available chapters. Unknown hashes fall back to the menu, and `Échap` or the `← Menu` header button leaves the demo.
 
 ## Chapters
 
@@ -40,7 +40,11 @@ Navigation is hash-based so it also works from `file://`: `#/` (main menu, the e
 - **Entiers** (`int`): the circular ring `9 ⇄ 2 ⇄ 5 ⇄ (retour sur 9)` in radial circular geometry; display forward/backward, $O(1)$ insert head/tail via `debut->precedent`, delete head/by-value, search, destroy, and head turn `passerAuSuivant`.
 - **Étudiants** (`etudiant`): a circular student registry (`E1 = {101, AAA, aaa}`, …) with display forward/backward, `inscrireEtudiant` in $O(1)$, `radierEtudiant`, `passerAuSuivant` and `detruireListe`.
 
-For every operation, the demo shows:
+### Chapitre 6 — Arbres binaires (`trees`)
+
+- **Entiers** (`int`): build the six-node course tree with `creerNoeud`, then animate recursive prefix, infix, and postfix traversals and postorder destruction. The exercise tree and empty-tree base case are available as guided scenarios. Binary search tree operations are reserved for Chapter 7.
+
+For linked-list, stack, and queue operations, the demo shows:
 
 - the exact canonical C code with the current statement highlighted;
 - a mutable SVG layout: `precedent` / `valeur` / `suivant` cells, forward (solid blue) and backward (dashed orange) arrows, `NULL` terminators, fake heap addresses, freed-node hatching, and pointer pins (`debut`, `sommet`, `fin`, `courant`, `nouveau`, `temp`, `dernier`, …);
@@ -55,7 +59,6 @@ One step = one executed C statement (including every condition/loop evaluation).
 The main menu already lists planned chapters as disabled **Bientôt disponible** cards:
 
 - **Chapter 1 — Piles et files statiques**
-- **Chapter 5 — Listes doublement chaînées circulaires**
 
 A chapter becomes available once its plugin is registered in `src/registry.ts`; the shared engine and UI do not need to change.
 
@@ -66,16 +69,18 @@ src/
   core/                  generic engine: result types, playback state machine
   structures/ldc/        chapitre 4 plugin: doubly linked list memory model,
                          C sources + symbolic line labels, steps, renderer, scenarios
+  structures/trees/      chapitre 6 plugin: binary-tree memory model, recursive
+                         traversal/destruction steps, SVG renderer, scenarios
   structures/lsc/        chapitre 2 plugin: singly linked list memory model,
                          C sources + symbolic line labels, steps, scenarios
   structures/piles-files/ chapitre 3 plugin: stack and queue profiles, memory model,
                          C sources + symbolic line labels, steps, scenarios
   structures/shared/     shared linked-node SVG renderer, camera and geometry
   ui/                    shared shell, layout, panels, main menu, hash routing
-  registry.ts            registers ldc, lsc and pilesFiles, resolves #/chapitre-<n>
+  registry.ts            registers each chapter and resolves #/chapitre-<n>
 ```
 
-The core engine does not know about lists, stacks or queues, and `ui/` never manipulates nodes. Adding a chapter (for example chapter 1 or 5) means a new `src/structures/<id>/` folder plus one registration line: the menu card (badge from `chapter`, `title`, `description`) and the `#/chapitre-<n>` route are derived from the registry — `core/` and `ui/` stay untouched. Until a chapter is implemented, it can be listed as a disabled "Bientôt disponible" card in `fr.menu.soonItems`.
+The core engine does not know about lists, stacks, queues, or trees, and `ui/` never manipulates nodes. Adding a chapter means a new `src/structures/<id>/` folder plus one registration line: the menu card (badge from `chapter`, `title`, `description`) and the `#/chapitre-<n>` route are derived from the registry — `core/` and `ui/` stay untouched. Until a chapter is implemented, it can be listed as a disabled "Bientôt disponible" card in `fr.menu.soonItems`.
 
 The main menu is the entry point (`#/`); each card opens `#/chapitre-<chapter>`. Navigation is a hand-written `hashchange` hook (no server, works from `file://`), so the demo shell is mounted only on its own route: the demo's keyboard shortcuts are unregistered while the menu is displayed.
 

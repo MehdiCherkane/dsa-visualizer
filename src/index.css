@@ -1425,16 +1425,24 @@ body.is-resizing-horizontal * {
 }
 
 .limit-message {
-  overflow: hidden;
-  color: var(--alert);
-  font-size: 9.5px;
-  font-weight: 650;
-  text-overflow: ellipsis;
   display: none;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: var(--gold);
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 .operation-bar.maxed .limit-message {
-  display: block;
+  display: inline-flex;
+}
+
+.limit-message svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
 }
 
 /* scenario strip (seasonal row below operation bar) */
@@ -1673,15 +1681,14 @@ body.is-resizing-horizontal * {
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.28;
+  overflow-wrap: anywhere;
 }
 
 .watch-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: baseline;
-  justify-content: space-between;
   gap: 10px;
   border-radius: 4px;
   padding: 1.5px 4px;
@@ -1699,14 +1706,13 @@ body.is-resizing-horizontal * {
 }
 
 .var-value {
-  overflow: hidden;
   color: var(--ink);
   font-family: var(--mono);
   font-size: 12px;
   font-weight: 650;
   text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .var-null {
@@ -1872,7 +1878,7 @@ body.is-resizing-horizontal * {
   display: flex;
   flex-direction: column;
   flex: 0 0 auto;
-  height: clamp(110px, var(--dock-height, 160px), 32vh);
+  height: clamp(110px, var(--dock-height, 160px), 28vh);
   min-height: 0;
   border: 1px solid var(--line);
   border-radius: 13px;
@@ -2699,6 +2705,7 @@ body.is-resizing-horizontal * {
   height: 76px;
   min-height: 76px;
   max-height: 76px;
+  flex: 0 0 76px;
   overflow: hidden;
   padding: 0 16px;
 }
@@ -2897,6 +2904,7 @@ body.is-resizing-horizontal * {
   height: 104px;
   min-height: 104px;
   max-height: 104px;
+  flex-basis: 104px;
   padding: 0 20px;
   gap: 16px;
 }

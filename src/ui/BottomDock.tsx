@@ -35,7 +35,7 @@ interface BottomDockProps<S extends BaseSnapshot> {
 
 function dockMaxHeight(): number {
   if (typeof window === 'undefined') return DOCK_MAX_HEIGHT
-  return Math.min(DOCK_MAX_HEIGHT, Math.max(DOCK_MIN_HEIGHT, window.innerHeight * 0.32))
+  return Math.min(DOCK_MAX_HEIGHT, Math.max(DOCK_MIN_HEIGHT, window.innerHeight * 0.28))
 }
 
 export function BottomDock<S extends BaseSnapshot>({
