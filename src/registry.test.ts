@@ -3,8 +3,8 @@ import { defaultPlugin, pluginForChapter, plugins } from './registry'
 
 describe('registre des chapitres', () => {
   it('expose les chapitres 2, 3, 4 et 5', () => {
-    expect(plugins.map((plugin) => plugin.chapter)).toEqual([4, 5, 2, 3])
-    expect(plugins.map((plugin) => plugin.id)).toEqual(['ldc', 'lddc', 'lsc', 'piles-files'])
+    expect(plugins.map((plugin) => plugin.chapter)).toEqual([2, 3, 4, 5])
+    expect(plugins.map((plugin) => plugin.id)).toEqual(['lsc', 'piles-files', 'ldc', 'lddc'])
     expect(defaultPlugin.chapter).toBe(4)
   })
 

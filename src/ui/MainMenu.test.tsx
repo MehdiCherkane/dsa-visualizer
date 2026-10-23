@@ -20,7 +20,9 @@ function renderMenu(): void {
 }
 
 function card(): HTMLAnchorElement {
-  const element = container.querySelector<HTMLAnchorElement>('.chapter-card:not(.is-soon)')
+  const element =
+    container.querySelector<HTMLAnchorElement>('.chapter-card[href="#/chapitre-4"]') ??
+    container.querySelector<HTMLAnchorElement>('.chapter-card:not(.is-soon)')
   if (!element) throw new Error('Aucune carte de chapitre rendue')
   return element
 }

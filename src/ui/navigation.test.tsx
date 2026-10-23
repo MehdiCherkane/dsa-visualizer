@@ -79,7 +79,7 @@ describe('navigation par hash', () => {
     renderApp()
     expect(query('.menu-app')).not.toBeNull()
 
-    const card = query<HTMLAnchorElement>('.chapter-card:not(.is-soon)')
+    const card = query<HTMLAnchorElement>('.chapter-card[href="#/chapitre-4"]')
     expect(card).not.toBeNull()
     act(() => {
       card?.click()

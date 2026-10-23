@@ -8,7 +8,7 @@ A single-page, fully offline French teaching platform for data structures in C (
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (144 tests)
+npm test      # vitest suite (157 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
@@ -16,7 +16,7 @@ npm run dev   # local dev server
 
 `npm run build` produces **one self-contained `dist/index.html`** (`vite-plugin-singlefile`). Open it by double-click: no server and no network access are required — no CDNs, no external fonts or images.
 
-Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point), `#/chapitre-2` (single linked lists), `#/chapitre-3` (stacks and queues) and `#/chapitre-4` (doubly linked lists). Unknown hashes fall back to the menu, and `Échap` or the `← Menu` header button leaves the demo.
+Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point), `#/chapitre-2` (single linked lists), `#/chapitre-3` (stacks and queues), `#/chapitre-4` (doubly linked lists) and `#/chapitre-5` (circular doubly linked lists). Unknown hashes fall back to the menu, and `Échap` or the `← Menu` header button leaves the demo.
 
 ## Chapters
 
@@ -34,6 +34,11 @@ Navigation is hash-based so it also works from `file://`: `#/` (main menu, the e
 
 - **Entiers** (`int`): the course list `9 ⇄ 2 ⇄ 5` and all classic operations — display forward/backward, insert head/tail/after/before, delete head/by-value, search, destroy, reverse.
 - **Étudiants** (`etudiant`): a student registry (`E1 = {101, AAA, aaa}`, …) with `inscrireEtudiant` and `radierEtudiant`.
+
+### Chapitre 5 — Listes doublement chaînées circulaires (`lddc`)
+
+- **Entiers** (`int`): the circular ring `9 ⇄ 2 ⇄ 5 ⇄ (retour sur 9)` in radial circular geometry; display forward/backward, $O(1)$ insert head/tail via `debut->precedent`, delete head/by-value, search, destroy, and head turn `passerAuSuivant`.
+- **Étudiants** (`etudiant`): a circular student registry (`E1 = {101, AAA, aaa}`, …) with display forward/backward, `inscrireEtudiant` in $O(1)$, `radierEtudiant`, `passerAuSuivant` and `detruireListe`.
 
 For every operation, the demo shows:
 
