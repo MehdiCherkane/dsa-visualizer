@@ -274,7 +274,7 @@
 }
 
 .tree-null-active-marker text {
-  fill: #fff;
+  fill: var(--badge-ink);
   font-family: var(--mono);
   font-weight: 800;
 }
@@ -365,7 +365,7 @@
 }
 
 .tree-visit-badge text {
-  fill: #fff;
+  fill: var(--badge-ink);
   font-family: var(--mono);
   font-size: calc(10px * var(--tree-label-compensation, 1));
   font-weight: 800;
@@ -439,6 +439,18 @@
   z-index: 3;
   left: 6px;
   bottom: 12px;
+}
+
+/* Tall canvases keep the legend in the top-left corner, clear of the leaf
+   row; short canvases anchor it above the button at the bottom. */
+.tree-viz-legend-control.is-top {
+  top: 86px;
+  bottom: auto;
+}
+
+.tree-viz-legend-control.is-top .tree-viz-legend-popover {
+  top: 34px;
+  bottom: auto;
 }
 
 .tree-viz-legend-button {

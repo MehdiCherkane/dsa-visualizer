@@ -653,6 +653,7 @@ export function DemoApp<S extends BaseSnapshot>({
             onFinish={finishOperation}
             onCancel={cancelOperation}
             operationActive={operationActive}
+            operationFinished={Boolean(activeOperation?.committed)}
             listCount={listCount}
             maxed={maxed}
           />

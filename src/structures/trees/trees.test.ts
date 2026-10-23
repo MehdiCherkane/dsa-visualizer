@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Step } from '../../core/types'
-import { measureTree } from './geometry'
+import { fr } from '../../i18n/fr'
+import { layoutTree, measureTree, placeEdgeLabels, TREE_NODE_RADIUS } from './geometry'
 import {
   courseTreeSnapshot,
   emptyTreeSnapshot,
@@ -184,5 +185,131 @@ describe('chapitre 6 — parcours récursifs', () => {
       'parcoursInfixe',
       'parcoursPostfixe',
     ])
+  })
+
+  it('garde l’ordre des phases dans chaque cadre, pour les trois parcours', () => {
+    const expectedPhases: Record<TraversalOrder, string[]> = {
+      prefixe: ['visite', 'gauche', 'droit'],
+      infixe: ['gauche', 'visite', 'droit'],
+      postfixe: ['gauche', 'droit', 'visite'],
+    }
+    for (const order of Object.keys(runners) as TraversalOrder[]) {
+      for (const step of runners[order](courseTreeSnapshot())) {
+        for (const frame of step.snapshot.callStack?.frames ?? []) {
+          expect(frame.phases.map((phase) => phase.name), order).toEqual(expectedPhases[order])
+        }
+      }
+    }
+  })
+
+  it('ne termine la visite postfixe qu’au retour du cadre', () => {
+    const steps = runners.postfixe(courseTreeSnapshot())
+    for (const step of steps) {
+      const top = step.snapshot.callStack?.frames.at(-1)
+      const visit = top?.phases.find((phase) => phase.name === 'visite')
+      if (visit?.state === 'done') {
+        expect(top?.line).toBe(7)
+        expect(top?.status).toBe('active')
+      }
+      if (visit?.state === 'current') {
+        expect(top?.line).toBe(6)
+      }
+    }
+    const firstTop = steps[0]!.snapshot.callStack?.frames.at(-1)
+    expect(firstTop?.phases.at(-1)?.name).toBe('visite')
+  })
+
+  it('relie chaque appel NULL à la case enfant qui l’a produit', () => {
+    for (const order of Object.keys(runners) as TraversalOrder[]) {
+      const steps = runners[order](courseTreeSnapshot())
+      for (const step of steps) {
+        for (const frame of step.snapshot.callStack?.frames ?? []) {
+          if (frame.nodeId !== null) {
+            expect(frame.nullSlot, order).toBeNull()
+            continue
+          }
+          expect(frame.nullSlot, order).not.toBeNull()
+          const parent = getNode(step.snapshot, frame.nullSlot!.parentId)
+          expect(parent).toBeDefined()
+          expect(parent![frame.nullSlot!.field].kind).toBe('null')
+        }
+      }
+    }
+
+    const step46 = runners.prefixe(courseTreeSnapshot())[45]!
+    const top46 = step46.snapshot.callStack!.frames.at(-1)!
+    expect(top46.nodeId).toBeNull()
+    expect(top46.nullSlot).toEqual({ parentId: 3, field: 'gauche' })
+    expect(getNode(step46.snapshot, 3)?.payload).toEqual({ kind: 'int', value: 70 })
+  })
+
+  it('respecte frames = profondeur + 1 à chaque étape', () => {
+    for (const snapshot of [courseTreeSnapshot(), exerciseTreeSnapshot()]) {
+      const depths = new Map(layoutTree(snapshot).nodes.map((node) => [node.node.id, node.depth]))
+      for (const order of Object.keys(runners) as TraversalOrder[]) {
+        let observedMax = 0
+        for (const [index, step] of runners[order](snapshot).entries()) {
+          const stack = step.snapshot.callStack!
+          observedMax = Math.max(observedMax, stack.frames.length)
+          const top = stack.frames.at(-1)
+          if (!top) continue
+          if (top.nodeId !== null) {
+            expect(stack.frames.length, `${order} étape ${index + 1}`).toBe(
+              (depths.get(top.nodeId) ?? -1) + 1,
+            )
+          } else {
+            expect(top.nullSlot, `${order} étape ${index + 1}`).not.toBeNull()
+            expect(stack.frames.length, `${order} étape ${index + 1}`).toBe(
+              (depths.get(top.nullSlot!.parentId) ?? -1) + 2,
+            )
+          }
+        }
+        expect(observedMax).toBe(runners[order](snapshot).at(-1)!.snapshot.callStack!.maxDepth)
+      }
+    }
+  })
+
+  it('place les étiquettes d’arête hors des nœuds, des NULL et des autres étiquettes', () => {
+    const overlaps = (a: { x: number; y: number; width: number; height: number }, b: typeof a): boolean =>
+      a.x - a.width / 2 < b.x + b.width / 2 &&
+      a.x + a.width / 2 > b.x - b.width / 2 &&
+      a.y - a.height / 2 < b.y + b.height / 2 &&
+      a.y + a.height / 2 > b.y - b.height / 2
+
+    for (const snapshot of [courseTreeSnapshot(), exerciseTreeSnapshot()]) {
+      const layout = layoutTree(snapshot)
+      for (const scale of [0.25, 0.379, 0.498, 0.75, 1, 1.2, 2, 3]) {
+        const labels = [...placeEdgeLabels(layout, scale, fr.trees.fields).values()]
+        expect(labels, `échelle ${scale}`).toHaveLength(layout.edges.length)
+        for (const label of labels) {
+          for (const node of layout.nodes) {
+            const closestX = Math.min(Math.max(node.x, label.x - label.width / 2), label.x + label.width / 2)
+            const closestY = Math.min(Math.max(node.y, label.y - label.height / 2), label.y + label.height / 2)
+            expect(
+              Math.hypot(node.x - closestX, node.y - closestY),
+              `échelle ${scale}, étiquette ${label.text}`,
+            ).toBeGreaterThanOrEqual(TREE_NODE_RADIUS)
+          }
+          for (const pill of layout.nulls) {
+            const nullRect = {
+              x: pill.x,
+              y: pill.y,
+              width: 54,
+              height: 26,
+            }
+            expect(overlaps(label, nullRect), `échelle ${scale}, ${label.text}/NULL`).toBe(false)
+          }
+          for (const other of labels) {
+            if (other === label) continue
+            expect(overlaps(label, other), `échelle ${scale}, ${label.text}/${other.text}`).toBe(false)
+          }
+        }
+      }
+    }
+  })
+
+  it('nomme la pile sans la confondre avec la hauteur de l’arbre', () => {
+    expect(fr.callStack.summary(1, 4)).toBe('Pile : 1 appel · max 4')
+    expect(fr.callStack.summary(3, 4)).toBe('Pile : 3 appels · max 4')
   })
 })

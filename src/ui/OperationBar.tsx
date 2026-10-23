@@ -13,6 +13,7 @@ interface OperationBarProps<S extends BaseSnapshot> {
   onFinish: () => void
   onCancel: () => void
   operationActive: boolean
+  operationFinished: boolean
   listCount: number
   maxed: boolean
 }
@@ -28,6 +29,7 @@ export function OperationBar<S extends BaseSnapshot>({
   onFinish,
   onCancel,
   operationActive,
+  operationFinished,
   listCount,
   maxed,
 }: OperationBarProps<S>): JSX.Element {
@@ -93,11 +95,13 @@ export function OperationBar<S extends BaseSnapshot>({
           >
             {fr.operation.execute}
           </button>
-          {operationActive ? (
+          {operationActive || operationFinished ? (
             <>
-              <button type="button" className="secondary-button" onClick={onFinish}>
-                {fr.operation.finish}
-              </button>
+              {operationActive ? (
+                <button type="button" className="secondary-button" onClick={onFinish}>
+                  {fr.operation.finish}
+                </button>
+              ) : null}
               <button type="button" className="secondary-button" onClick={onCancel}>
                 {fr.operation.cancel}
               </button>

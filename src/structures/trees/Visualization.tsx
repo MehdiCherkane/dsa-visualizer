@@ -424,7 +424,10 @@ export default function TreeVisualization({
         <div className="tree-dangling-note" role="status">{fr.trees.viz.danglingRoot}</div>
       ) : null}
 
-      <div className="tree-viz-legend-control" ref={legendRef}>
+      <div
+        className={`tree-viz-legend-control${canvas.height >= 360 ? ' is-top' : ''}`}
+        ref={legendRef}
+      >
         <button
           ref={legendTriggerRef}
           type="button"

@@ -31,6 +31,7 @@
   --cell-value: #f7f9fe;
   --cell-value-ink: #1f2a5c;
   --arrow-next: #2f6fe4;
+  --badge-ink: #ffffff;
   --arrow-prev: #d97b12;
   --pin: #8a4dff;
   --pin-soft: #f1e9ff;
@@ -85,6 +86,7 @@
   --cell-value: #e7ecff;
   --cell-value-ink: #1c2547;
   --arrow-next: #6fa2ff;
+  --badge-ink: #0d1730;
   --arrow-prev: #f1a34c;
   --pin: #b18cff;
   --pin-soft: #241a3f;
@@ -1651,7 +1653,7 @@ body.is-resizing-horizontal * {
   border-radius: 999px;
   background: var(--gold);
   padding: 1px 6px;
-  color: #fff;
+  color: #1f2a5c;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.04em;
