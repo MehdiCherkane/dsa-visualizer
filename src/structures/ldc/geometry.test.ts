@@ -1,22 +1,31 @@
 import { describe, expect, it } from 'vitest'
 import type { Camera, Point, Rect } from './geometry'
 import {
+  CELL_W,
   CIRCLE_CX,
   CIRCLE_CY,
+  CIRCLE_MIN_RADIUS,
   DEBUT_CELL_GAP,
   DEBUT_CELL_H,
   DEBUT_CELL_W,
+  NODE_H,
+  NODE_W,
   NULL_STUB,
   PIN_DEBUT_CLEARANCE,
   PIN_NULL_STUB,
+  PRECEDENT_LANE,
   ROW_Y,
+  SUIVANT_LANE,
   cameraAtOne,
   circleGeometry,
   debutCellGeometry,
   debutRoute,
   fitCamera,
+  isNodeFlipped,
   layoutNodes,
   layoutPins,
+  pointerAnchor,
+  pointerSide,
   routeArrow,
   screenPoint,
   snapshotBounds,
@@ -310,6 +319,159 @@ describe('géométrie circulaire du chapitre 5', () => {
     expect(previous!.kind).toBe('curve')
     expect(distance(next!.tail)).toBeGreaterThan(ring.radius)
     expect(distance(previous!.tail)).toBeLessThan(ring.radius)
+  })
+
+  it('agrandit l’anneau à partir de trois nœuds', () => {
+    const three = createCircularSnapshot(
+      'int',
+      [9, 2, 5].map((value) => ({ kind: 'int' as const, value })),
+    )
+    const ring = circleGeometry(three.nodes)
+    expect(ring).not.toBeNull()
+    expect(ring!.count).toBe(3)
+    expect(ring!.radius).toBeGreaterThanOrEqual(CIRCLE_MIN_RADIUS)
+  })
+
+  it('inverse les nœuds du bas pour orienter les pointeurs vers l’anneau', () => {
+    for (const count of [3, 4, 8]) {
+      const snapshot = createCircularSnapshot(
+        'int',
+        Array.from({ length: count }, (_, index) => ({
+          kind: 'int' as const,
+          value: index + 1,
+        })),
+      )
+      const ring = circleGeometry(snapshot.nodes)!
+      const layout = layoutNodes(snapshot.nodes, 'circle')
+
+      for (const node of snapshot.nodes) {
+        const point = layout.get(node.id)!
+        const flipped = isNodeFlipped(point, ring)
+        expect(flipped).toBe(
+          point.y + NODE_H / 2 > ring.cy + 0.5,
+        )
+        expect(pointerSide('suivant', flipped)).toBe(
+          flipped ? 'left' : 'right',
+        )
+        expect(pointerSide('precedent', flipped)).toBe(
+          flipped ? 'right' : 'left',
+        )
+        const suivant = pointerAnchor(node, point, 'suivant', flipped)
+        const precedent = pointerAnchor(node, point, 'precedent', flipped)
+        expect(suivant.x).toBeCloseTo(
+          flipped ? point.x + CELL_W / 2 : point.x + NODE_W - CELL_W / 2,
+          6,
+        )
+        expect(precedent.x).toBeCloseTo(
+          flipped ? point.x + NODE_W - CELL_W / 2 : point.x + CELL_W / 2,
+          6,
+        )
+      }
+    }
+  })
+
+  it('fait partir les flèches des points et arriver sur la bordure opposée', () => {
+    for (const count of [3, 4, 8]) {
+      const snapshot = createCircularSnapshot(
+        'int',
+        Array.from({ length: count }, (_, index) => ({
+          kind: 'int' as const,
+          value: index + 1,
+        })),
+      )
+      const nodes = snapshot.nodes
+      const ring = circleGeometry(nodes)!
+      const layout = layoutNodes(nodes, 'circle')
+
+      for (let index = 0; index < nodes.length; index += 1) {
+        const source = nodes[index]!
+        const sourcePoint = layout.get(source.id)!
+        const sourceFlipped = isNodeFlipped(sourcePoint, ring)
+
+        for (const [field, offset] of [
+          ['suivant', 1],
+          ['precedent', -1],
+        ] as const) {
+          const target = nodes[(index + offset + nodes.length) % nodes.length]!
+          const targetPoint = layout.get(target.id)!
+          const targetFlipped = isNodeFlipped(targetPoint, ring)
+          const route = routeArrow(
+            source,
+            field,
+            target,
+            layout,
+            'circle',
+            nodes,
+          )
+          expect(route).not.toBeNull()
+
+          const expectedTail = pointerAnchor(
+            source,
+            sourcePoint,
+            field,
+            sourceFlipped,
+          )
+          expect(route!.tail.x).toBeCloseTo(expectedTail.x, 6)
+          expect(route!.tail.y).toBeCloseTo(expectedTail.y, 6)
+
+          const endAtRight =
+            field === 'suivant' ? targetFlipped : !targetFlipped
+          const expectedTip = {
+            x: endAtRight ? targetPoint.x + NODE_W : targetPoint.x,
+            y:
+              targetPoint.y +
+              NODE_H *
+                (field === 'suivant' ? PRECEDENT_LANE : SUIVANT_LANE),
+          }
+          expect(route!.tip.x).toBeCloseTo(expectedTip.x, 6)
+          expect(route!.tip.y).toBeCloseTo(expectedTip.y, 6)
+        }
+      }
+    }
+  })
+
+  it('garde des points de contact distincts autour de chaque nœud', () => {
+    const distance = (a: Point, b: Point): number => Math.hypot(a.x - b.x, a.y - b.y)
+
+    for (const count of [3, 4, 8]) {
+      const snapshot = createCircularSnapshot(
+        'int',
+        Array.from({ length: count }, (_, index) => ({ kind: 'int' as const, value: index + 1 })),
+      )
+      const nodes = snapshot.nodes
+      const layout = layoutNodes(nodes, 'circle')
+
+      for (let index = 0; index < nodes.length; index += 1) {
+        const node = nodes[index]!
+        const next = nodes[(index + 1) % nodes.length]!
+        const previous = nodes[(index - 1 + nodes.length) % nodes.length]!
+
+        const outgoingNext = routeArrow(node, 'suivant', next, layout, 'circle', nodes)
+        const incomingNext = routeArrow(previous, 'suivant', node, layout, 'circle', nodes)
+        const outgoingPrevious = routeArrow(node, 'precedent', previous, layout, 'circle', nodes)
+        const incomingPrevious = routeArrow(next, 'precedent', node, layout, 'circle', nodes)
+
+        expect(outgoingNext).not.toBeNull()
+        expect(incomingNext).not.toBeNull()
+        expect(outgoingPrevious).not.toBeNull()
+        expect(incomingPrevious).not.toBeNull()
+
+        const contacts = [
+          outgoingNext!.tail,
+          incomingNext!.tip,
+          outgoingPrevious!.tail,
+          incomingPrevious!.tip,
+        ]
+        for (let first = 0; first < contacts.length; first += 1) {
+          for (let second = first + 1; second < contacts.length; second += 1) {
+            expect(
+              distance(contacts[first]!, contacts[second]!),
+              `nœud ${node.id}, contacts ${first} et ${second}, ${count} nœuds`,
+            ).toBeGreaterThan(18)
+          }
+        }
+      }
+    }
   })
 
   it('place la cellule debut au-dessus du sommet de l’anneau', () => {

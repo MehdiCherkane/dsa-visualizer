@@ -28,9 +28,11 @@ import {
   debutCellGeometry,
   debutRoute,
   fitCamera,
+  isNodeFlipped,
   layoutNodes,
   layoutPins,
   pointerAnchor,
+  pointerSide,
   routeArrow,
   screenPoint,
   snapshotBounds,
@@ -740,7 +742,10 @@ export default function LdcVisualization({
                   <title>
                     {node.freed ? fr.viz.freed : `${fr.common.node} ${node.id} · ${fieldTitle(node)}`}
                   </title>
-                  <NodeShape node={node} />
+                  <NodeShape
+                    node={node}
+                    flipped={Boolean(ring && isNodeFlipped(point, ring))}
+                  />
                 </motion.g>
               )
             })}
@@ -836,7 +841,12 @@ export default function LdcVisualization({
               return POINTER_FIELDS.flatMap((field) => {
                 const pointer = node[field]
                 if (pointer.kind === 'uninit') return []
-                const anchor = pointerAnchor(node, point, field)
+                const anchor = pointerAnchor(
+                  node,
+                  point,
+                  field,
+                  Boolean(ring && isNodeFlipped(point, ring)),
+                )
                 return [
                   <circle
                     key={`dot-${node.id}-${field}`}
@@ -1181,26 +1191,51 @@ function NullGround({
   )
 }
 
-function NodeShape({ node }: { node: LdcNode }): JSX.Element {
+function NodeShape({
+  node,
+  flipped = false,
+}: {
+  node: LdcNode
+  flipped?: boolean
+}): JSX.Element {
   const value = node.payload.kind === 'int' ? node.payload.value : null
   const student = node.payload.kind === 'student' ? node.payload.student : null
   const followingUninit = node.suivant.kind === 'uninit'
   const previousUninit = node.precedent.kind === 'uninit'
   const valueUninit = node.payload.kind === 'uninit'
+  const previousX =
+    pointerSide('precedent', flipped) === 'right' ? CELL_W * 2 : 0
+  const followingX =
+    pointerSide('suivant', flipped) === 'right' ? CELL_W * 2 : 0
 
   return (
     <g>
       <g clipPath="url(#ldc-node-clip)">
         <rect width={NODE_W} height={NODE_H} fill="var(--node-bg)" />
-        <rect width={CELL_W} height={NODE_H} fill="var(--cell-prev)" />
-        <rect x={CELL_W * 2} width={CELL_W} height={NODE_H} fill="var(--cell-next)" />
+        <rect
+          x={previousX}
+          width={CELL_W}
+          height={NODE_H}
+          fill="var(--cell-prev)"
+        />
+        <rect
+          x={followingX}
+          width={CELL_W}
+          height={NODE_H}
+          fill="var(--cell-next)"
+        />
         <rect x={CELL_W} width={CELL_W} height={NODE_H} fill="var(--cell-value)" />
         {previousUninit ? (
-          <rect width={CELL_W} height={NODE_H} fill="url(#hatch-uninit)" />
+          <rect
+            x={previousX}
+            width={CELL_W}
+            height={NODE_H}
+            fill="url(#hatch-uninit)"
+          />
         ) : null}
         {followingUninit ? (
           <rect
-            x={CELL_W * 2}
+            x={followingX}
             width={CELL_W}
             height={NODE_H}
             fill="url(#hatch-uninit)"
@@ -1242,7 +1277,7 @@ function NodeShape({ node }: { node: LdcNode }): JSX.Element {
       />
 
       <text
-        x={CELL_W / 2}
+        x={previousX + CELL_W / 2}
         y="17"
         textAnchor="middle"
         className="cell-label cell-label-prev"
@@ -1251,7 +1286,7 @@ function NodeShape({ node }: { node: LdcNode }): JSX.Element {
         {fr.viz.prevCell}
       </text>
       <text
-        x={CELL_W * 2 + CELL_W / 2}
+        x={followingX + CELL_W / 2}
         y="17"
         textAnchor="middle"
         className="cell-label cell-label-next"
@@ -1262,7 +1297,7 @@ function NodeShape({ node }: { node: LdcNode }): JSX.Element {
 
       {previousUninit ? (
         <text
-          x={CELL_W / 2}
+          x={previousX + CELL_W / 2}
           y={NODE_H * 0.72 + 5}
           textAnchor="middle"
           className="cell-uninit cell-label-prev"
@@ -1273,7 +1308,7 @@ function NodeShape({ node }: { node: LdcNode }): JSX.Element {
       ) : null}
       {followingUninit ? (
         <text
-          x={CELL_W * 2 + CELL_W / 2}
+          x={followingX + CELL_W / 2}
           y={NODE_H * 0.38 + 5}
           textAnchor="middle"
           className="cell-uninit cell-label-next"
