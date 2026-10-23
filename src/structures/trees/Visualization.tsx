@@ -2,7 +2,14 @@ import type { CSSProperties, JSX, PointerEvent as ReactPointerEvent, RefObject, 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { VisualizationProps } from '../../core/types'
 import { fr } from '../../i18n/fr'
-import { layoutTree, measureTree, TREE_NODE_HEIGHT, TREE_NODE_RADIUS, TREE_NODE_WIDTH } from './geometry'
+import {
+  layoutTree,
+  measureTree,
+  placeEdgeLabels,
+  TREE_NODE_HEIGHT,
+  TREE_NODE_RADIUS,
+  TREE_NODE_WIDTH,
+} from './geometry'
 import type { TreeSnapshot } from './memory'
 import { rootPointer } from './memory'
 import './TreeVisualization.css'
@@ -67,7 +74,31 @@ export default function TreeVisualization({
   const layout = useMemo(() => layoutTree(snapshot), [snapshot])
   const [canvasRef, canvas] = useCanvasSize()
   const [viewState, setViewState] = useState<ViewState | null>(null)
+  const [legendOpen, setLegendOpen] = useState(false)
   const dragRef = useRef<DragState | null>(null)
+  const legendRef = useRef<HTMLDivElement | null>(null)
+  const legendTriggerRef = useRef<HTMLButtonElement | null>(null)
+
+  useEffect(() => {
+    if (!legendOpen) return
+    const onPointer = (event: PointerEvent): void => {
+      if (legendRef.current && !legendRef.current.contains(event.target as Node)) {
+        setLegendOpen(false)
+      }
+    }
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      setLegendOpen(false)
+      requestAnimationFrame(() => legendTriggerRef.current?.focus())
+    }
+    document.addEventListener('pointerdown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [legendOpen])
   const currentViewState = viewState?.key === cameraResetKey ? viewState : null
   const mode = currentViewState?.mode ?? 'auto'
   const setManualViewBox = (next: ViewBox | null | ((current: ViewBox | null) => ViewBox | null)): void => {
@@ -113,6 +144,13 @@ export default function TreeVisualization({
   const viewBox = mode === 'manual' ? currentViewState?.viewBox ?? defaultViewBox : defaultViewBox
   const renderScale = Math.min(canvas.width / viewBox.width, canvas.height / viewBox.height)
   const zoom = Math.round(renderScale * 100)
+  const edgeLabels = useMemo(
+    () => placeEdgeLabels(layout, renderScale, fr.trees.fields),
+    [layout, renderScale],
+  )
+  const activeNullSlot = topCall && topCall.nodeId === null ? topCall.nullSlot : null
+  const nullMarkerRadius = 6 / Math.max(renderScale, 0.05)
+  const nullMarkerFont = 8 / Math.max(renderScale, 0.05)
   // Keep the value readable without letting it collide with the address line
   // when the whole tree is fitted into a short dock.
   const compensation = clamp(1 / Math.max(renderScale, 0.1), 1, 1.45)
@@ -261,23 +299,77 @@ export default function TreeVisualization({
           </g>
         ) : null}
 
-        {layout.edges.map((edge) => (
-          <g
-            key={`${edge.parentId}:${edge.field}`}
-            className={`tree-edge tree-edge-${edge.field}${changedFields.has(`${edge.parentId}:${edge.field}`) ? ' is-changed' : ''}${stackEdgeSet.has(`${edge.parentId}:${edge.childId}`) ? ' is-path' : ''}${traversal && stackEdgeSet.size > 0 && !stackEdgeSet.has(`${edge.parentId}:${edge.childId}`) ? ' is-dim' : ''}`}
-          >
-            <path d={edge.path} markerEnd={`url(#tree-arrow-${edge.field === 'gauche' ? 'left' : 'right'})`} />
-            <text x={edge.labelX} y={edge.labelY - 7} textAnchor="middle">{edge.field}</text>
-          </g>
-        ))}
+        {layout.edges.map((edge) => {
+          const label = edgeLabels.get(`${edge.parentId}:${edge.field}`)
+          return (
+            <g
+              key={`${edge.parentId}:${edge.field}`}
+              className={`tree-edge tree-edge-${edge.field}${changedFields.has(`${edge.parentId}:${edge.field}`) ? ' is-changed' : ''}${stackEdgeSet.has(`${edge.parentId}:${edge.childId}`) ? ' is-path' : ''}${traversal && stackEdgeSet.size > 0 && !stackEdgeSet.has(`${edge.parentId}:${edge.childId}`) ? ' is-dim' : ''}`}
+            >
+              <path d={edge.path} markerEnd={`url(#tree-arrow-${edge.field === 'gauche' ? 'left' : 'right'})`} />
+              {label ? (
+                <g className="tree-edge-label">
+                  <rect
+                    x={label.x - label.width / 2}
+                    y={label.y - label.height / 2}
+                    width={label.width}
+                    height={label.height}
+                    rx={label.height / 2}
+                  />
+                  <text
+                    x={label.x}
+                    y={label.y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={label.fontSize}
+                  >
+                    {label.text}
+                  </text>
+                </g>
+              ) : null}
+            </g>
+          )
+        })}
 
-        {layout.nulls.map((entry) => (
-          <g key={`${entry.parentId}:${entry.field}`} className={`tree-null tree-null-${entry.field}${entry.uninitialized ? ' is-uninitialized' : ''}`}>
-            <path d={entry.path} markerEnd={`url(#tree-arrow-${entry.field === 'gauche' ? 'left' : 'right'})`} />
-            <rect x={entry.x - 27} y={entry.y - 13} width="54" height="26" rx="13" />
-            <text x={entry.x} y={entry.y + 4} textAnchor="middle">{entry.uninitialized ? '?' : fr.trees.viz.null}</text>
-          </g>
-        ))}
+        {layout.nulls.map((entry) => {
+          const isActiveNull =
+            activeNullSlot?.parentId === entry.parentId && activeNullSlot.field === entry.field
+          return (
+            <g
+              key={`${entry.parentId}:${entry.field}`}
+              className={`tree-null tree-null-${entry.field}${entry.uninitialized ? ' is-uninitialized' : ''}${isActiveNull ? ' is-active' : ''}`}
+            >
+              {isActiveNull ? <title>{fr.trees.viz.activeNull}</title> : null}
+              <path d={entry.path} markerEnd={`url(#tree-arrow-${entry.field === 'gauche' ? 'left' : 'right'})`} />
+              {isActiveNull ? (
+                <>
+                  <rect
+                    className="tree-null-active-ring"
+                    x={entry.x - 31}
+                    y={entry.y - 17}
+                    width="62"
+                    height="34"
+                    rx="17"
+                  />
+                  <g
+                    className="tree-null-active-marker"
+                    transform={`translate(${entry.x + 24} ${entry.y - 15})`}
+                    aria-hidden="true"
+                  >
+                    <circle r={nullMarkerRadius} />
+                    <text y={nullMarkerFont * 0.36} textAnchor="middle" fontSize={nullMarkerFont}>
+                      n
+                    </text>
+                  </g>
+                </>
+              ) : null}
+              <rect x={entry.x - 27} y={entry.y - 13} width="54" height="26" rx="13" />
+              <text x={entry.x} y={entry.y + 4} textAnchor="middle">
+                {entry.uninitialized ? '?' : fr.trees.viz.null}
+              </text>
+            </g>
+          )
+        })}
 
         {layout.nodes.map(({ node, x, y }) => {
           const isActive = activeId === node.id
@@ -331,18 +423,34 @@ export default function TreeVisualization({
       {root.kind === 'node' && snapshot.nodes.find((node) => node.id === root.id)?.freed ? (
         <div className="tree-dangling-note" role="status">{fr.trees.viz.danglingRoot}</div>
       ) : null}
-      </div>
 
-      <div className="tree-viz-footer">
-        <details className="tree-viz-legend">
-          <summary>{fr.trees.viz.legend}</summary>
-          <div aria-label={fr.trees.viz.legend}>
+      <div className="tree-viz-legend-control" ref={legendRef}>
+        <button
+          ref={legendTriggerRef}
+          type="button"
+          className="tree-viz-legend-button"
+          aria-expanded={legendOpen}
+          aria-haspopup="dialog"
+          aria-controls="tree-legend-popover"
+          onClick={() => setLegendOpen((value) => !value)}
+        >
+          <span aria-hidden="true">☰</span>
+          {fr.trees.viz.legend}
+        </button>
+        {legendOpen ? (
+          <div
+            id="tree-legend-popover"
+            className="tree-viz-legend-popover"
+            role="dialog"
+            aria-label={fr.trees.viz.legend}
+          >
             <span><i className="tree-legend-left" />{fr.trees.fields.gauche}</span>
             <span><i className="tree-legend-right" />{fr.trees.fields.droit}</span>
             <span><i className="tree-legend-root" />{fr.trees.viz.root}</span>
             <span><i className="tree-legend-active" />{fr.trees.viz.active}</span>
           </div>
-        </details>
+        ) : null}
+      </div>
       </div>
     </div>
   )

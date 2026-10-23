@@ -218,7 +218,7 @@ export function CallStackPanel({
         <div className="call-stack-title">
           <span className="panel-title">{fr.callStack.title}</span>
           <span className="call-stack-metrics">
-            {fr.callStack.currentHeight} <b>{visibleFrames.length}</b> · {fr.callStack.maximumHeight} <b>{maxHeight}</b>
+            {fr.callStack.summary(visibleFrames.length, maxHeight)}
           </span>
         </div>
         <label className="call-stack-null-toggle">

@@ -21,13 +21,6 @@
   overflow: hidden;
 }
 
-.tree-viz-footer {
-  flex: 0 0 auto;
-  border-top: 1px solid var(--line);
-  background: color-mix(in srgb, var(--panel) 96%, transparent);
-  padding: 3px 8px;
-}
-
 .tree-viz-toolbar {
   position: absolute;
   z-index: 2;
@@ -193,14 +186,23 @@
   opacity: 0.28;
 }
 
-.tree-edge text {
+.tree-edge-label rect {
+  fill: color-mix(in srgb, var(--viz-bg) 90%, var(--panel));
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.tree-edge-label text {
   fill: var(--ink-2);
-  stroke: var(--viz-bg);
-  stroke-width: 5px;
-  paint-order: stroke;
   font-family: var(--ui);
-  font-size: calc(14px * var(--tree-label-compensation, 1));
   font-weight: 650;
+  letter-spacing: 0.01em;
+  paint-order: stroke;
+}
+
+.tree-edge.is-dim .tree-edge-label {
+  opacity: 0.6;
 }
 
 .tree-null path {
@@ -236,6 +238,45 @@
 .tree-null.is-uninitialized rect {
   stroke-dasharray: 4 3;
   opacity: 0.62;
+}
+
+/* Active NULL call: same gold treatment as an active node, plus an "n" marker. */
+.tree-null.is-active path {
+  stroke: var(--gold);
+  stroke-width: 3;
+  opacity: 1;
+}
+
+.tree-null.is-active > rect:not(.tree-null-active-ring) {
+  fill: var(--gold-soft);
+  stroke: var(--gold);
+  stroke-width: 2;
+}
+
+.tree-null.is-active > text {
+  fill: var(--ink);
+  font-weight: 800;
+}
+
+.tree-null-active-ring {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--gold) 55%, transparent));
+}
+
+.tree-null-active-marker circle {
+  fill: var(--gold);
+  stroke: var(--panel);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.tree-null-active-marker text {
+  fill: #fff;
+  font-family: var(--mono);
+  font-weight: 800;
 }
 
 .tree-node {
@@ -393,53 +434,69 @@
   font: 600 12px var(--ui);
 }
 
-.tree-viz-legend {
-  position: static;
-  max-width: none;
-  border: 0;
-  background: transparent;
-  color: var(--ink-2);
-  font: 500 11px var(--ui);
+.tree-viz-legend-control {
+  position: absolute;
+  z-index: 3;
+  left: 6px;
+  bottom: 12px;
 }
 
-.tree-viz-legend summary {
-  cursor: pointer;
-  list-style: none;
-  padding: 4px 2px;
-  color: var(--ink-2);
-  font-weight: 700;
-}
-
-.tree-viz-legend summary::-webkit-details-marker {
-  display: none;
-}
-
-.tree-viz-legend summary::before {
-  content: '☰';
-  margin-right: 6px;
-  color: var(--gold);
-}
-
-.tree-viz-legend[open] summary {
-  border-bottom: 1px solid var(--line);
-}
-
-.tree-viz-legend > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  padding: 7px 10px;
-}
-
-.tree-viz-legend span {
+.tree-viz-legend-button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  box-shadow: var(--shadow-soft);
+  color: var(--ink-2);
+  cursor: pointer;
+  font: 600 10px var(--ui);
 }
 
-.tree-viz-legend i {
+.tree-viz-legend-button span {
+  color: var(--gold);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.tree-viz-legend-button:hover,
+.tree-viz-legend-button[aria-expanded='true'] {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+  color: var(--ink);
+}
+
+.tree-viz-legend-popover {
+  position: absolute;
+  left: 0;
+  bottom: 34px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  width: 96px;
+  padding: 8px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
+  box-shadow: var(--shadow-soft);
+  color: var(--ink-2);
+  font: 500 9.5px var(--ui);
+}
+
+.tree-viz-legend-popover span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.tree-viz-legend-popover i {
   display: inline-block;
-  width: 16px;
+  flex: none;
+  width: 14px;
   height: 3px;
   border-radius: 3px;
 }
@@ -458,9 +515,9 @@
   .tree-concepts { top: 8px; }
   .tree-metrics { top: 49px; }
 
-  .tree-viz-legend {
-    gap: 7px;
-    font-size: 10px;
+  .tree-viz-legend-control {
+    left: 5px;
+    bottom: 8px;
   }
 
   .tree-viz-toolbar {

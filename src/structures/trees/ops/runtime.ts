@@ -10,6 +10,7 @@ import {
 import type {
   TreeCallFrame,
   TreeCallPhaseName,
+  TreeCallSlot,
   TreeCallStack,
   TreeNode,
   TreeSnapshot,
@@ -154,12 +155,14 @@ export class TreeRecorder {
     fn: string,
     pointer: PointerValue,
     phaseOrder: readonly TreeCallPhaseName[],
+    nullSlot: TreeCallSlot | null = null,
   ): void {
     const stack = this.callStack
     const frame: TreeCallFrame = {
       id: this.nextCallFrameId,
       fn,
       nodeId: pointer.kind === 'node' ? pointer.id : null,
+      nullSlot: pointer.kind === 'node' ? null : nullSlot,
       line: 0,
       status: 'active',
       phases: phaseOrder.map((name) => ({ name, state: 'pending' })),

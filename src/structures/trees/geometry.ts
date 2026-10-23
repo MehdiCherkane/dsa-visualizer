@@ -25,9 +25,27 @@ export interface TreeLayoutEdge {
   childId: number
   field: 'gauche' | 'droit'
   path: string
+  /** Anchor of the label before the perpendicular offset is applied. */
   labelX: number
   labelY: number
 }
+
+export interface TreeEdgeLabel {
+  text: string
+  x: number
+  y: number
+  width: number
+  height: number
+  fontSize: number
+}
+
+/** Kept in screen pixels so labels never inherit the tree's fit scale. */
+const EDGE_LABEL_FONT_PX = 10
+const EDGE_LABEL_PAD_X_PX = 5
+const EDGE_LABEL_PAD_Y_PX = 3
+const EDGE_LABEL_MARGIN_PX = 2
+const EDGE_LABEL_CHAR_RATIO = 0.58
+const EDGE_LABEL_OFFSETS_PX = [6, 10, 14, 18, 22, 26, 30, 36, 42, 50, 60, 72, 88]
 
 export interface TreeLayoutNull {
   parentId: number
@@ -198,6 +216,138 @@ export function layoutTree(snapshot: TreeSnapshot): TreeLayout {
   }
 
   return { width, height, rootX: positions.get(root.id)?.x ?? null, nodes, edges, nulls }
+}
+
+interface ScreenRect {
+  left: number
+  top: number
+  right: number
+  bottom: number
+}
+
+function rectsOverlap(a: ScreenRect, b: ScreenRect, margin = 0): boolean {
+  return (
+    a.left < b.right + margin &&
+    a.right > b.left - margin &&
+    a.top < b.bottom + margin &&
+    a.bottom > b.top - margin
+  )
+}
+
+function circleHitsRect(
+  cx: number,
+  cy: number,
+  radius: number,
+  rect: ScreenRect,
+  margin = 0,
+): boolean {
+  const closestX = Math.min(Math.max(cx, rect.left), rect.right)
+  const closestY = Math.min(Math.max(cy, rect.top), rect.bottom)
+  return Math.hypot(cx - closestX, cy - closestY) < radius + margin
+}
+
+/**
+ * Places the `gauche` / `droit` labels outside the edge and outside every
+ * node, NULL pill and other label. Sizes are expressed in screen pixels and
+ * converted back to world units, so the pills stay small and readable at
+ * every fit scale instead of growing with the tree.
+ */
+export function placeEdgeLabels(
+  layout: TreeLayout,
+  renderScale: number,
+  labels: Record<'gauche' | 'droit', string>,
+): Map<string, TreeEdgeLabel> {
+  const scale = Math.max(renderScale, 0.05)
+  const positions = new Map(layout.nodes.map((node) => [node.node.id, node]))
+  const nodeObstacles = layout.nodes.map((node) => ({
+    x: node.x * scale,
+    y: node.y * scale,
+    radius: TREE_NODE_RADIUS * scale,
+  }))
+  const nullObstacles = layout.nulls.map((entry) => ({
+    left: (entry.x - 27) * scale,
+    right: (entry.x + 27) * scale,
+    top: (entry.y - 13) * scale,
+    bottom: (entry.y + 13) * scale,
+  }))
+  const placed: ScreenRect[] = []
+  const result = new Map<string, TreeEdgeLabel>()
+
+  for (const edge of layout.edges) {
+    const parent = positions.get(edge.parentId)
+    const child = positions.get(edge.childId)
+    if (!parent || !child) continue
+    const text = labels[edge.field]
+    const dx = child.x - parent.x
+    const dy = child.y - parent.y
+    const length = Math.hypot(dx, dy) || 1
+    const normal = { x: -dy / length, y: dx / length }
+    const side = edge.field === 'gauche' ? -1 : 1
+    const outward =
+      normal.x * side >= 0 ? normal : { x: -normal.x, y: -normal.y }
+    const fontPx = EDGE_LABEL_FONT_PX
+    const widthPx = text.length * fontPx * EDGE_LABEL_CHAR_RATIO + EDGE_LABEL_PAD_X_PX * 2
+    const heightPx = fontPx + EDGE_LABEL_PAD_Y_PX * 2
+    const anchorX = edge.labelX * scale
+    const anchorY = edge.labelY * scale
+
+    let chosen: ScreenRect | null = null
+    let chosenX = anchorX
+    let chosenY = anchorY
+    for (const direction of [1, -1]) {
+      if (chosen) break
+      for (const offset of EDGE_LABEL_OFFSETS_PX) {
+        const x = anchorX + outward.x * offset * direction
+        const y = anchorY + outward.y * offset * direction
+        const rect: ScreenRect = {
+          left: x - widthPx / 2,
+          right: x + widthPx / 2,
+          top: y - heightPx / 2,
+          bottom: y + heightPx / 2,
+        }
+        const hitsNode = nodeObstacles.some((node) =>
+          circleHitsRect(node.x, node.y, node.radius, rect, EDGE_LABEL_MARGIN_PX),
+        )
+        const hitsNull = nullObstacles.some((pill) =>
+          rectsOverlap(rect, pill, EDGE_LABEL_MARGIN_PX),
+        )
+        const hitsLabel = placed.some((other) =>
+          rectsOverlap(rect, other, EDGE_LABEL_MARGIN_PX),
+        )
+        if (hitsNode || hitsNull || hitsLabel) continue
+        chosen = rect
+        chosenX = x
+        chosenY = y
+        break
+      }
+    }
+
+    if (!chosen) {
+      // The course trees always leave room; keep a safe fallback for future
+      // deeper trees rather than drawing a label on a node.
+      const offset = EDGE_LABEL_OFFSETS_PX.at(-1) ?? 60
+      chosenX = anchorX + outward.x * offset
+      chosenY = anchorY + outward.y * offset
+      chosen = {
+        left: chosenX - widthPx / 2,
+        right: chosenX + widthPx / 2,
+        top: chosenY - heightPx / 2,
+        bottom: chosenY + heightPx / 2,
+      }
+    }
+
+    placed.push(chosen)
+    result.set(`${edge.parentId}:${edge.field}`, {
+      text,
+      x: chosenX / scale,
+      y: chosenY / scale,
+      width: widthPx / scale,
+      height: heightPx / scale,
+      fontSize: fontPx / scale,
+    })
+  }
+
+  return result
 }
 
 export function measureTree(snapshot: TreeSnapshot, activeId: number | null = null): TreeMetrics {

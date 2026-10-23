@@ -97,6 +97,7 @@ export const fr = {
       zoomOut: 'Zoom arrière',
       zoomReset: 'Ajuster à l’arbre',
       active: 'Appel actif',
+      activeNull: 'Appel actif : n = NULL',
       visited: 'Visité',
       legend: 'Légende',
       concepts: 'Repères du cours',
@@ -261,8 +262,8 @@ export const fr = {
     title: 'Pile d’appels',
     region: 'Pile d’appels du parcours récursif',
     showNull: 'Afficher les appels NULL',
-    currentHeight: 'Hauteur',
-    maximumHeight: 'maximum',
+    summary: (count: number, maximum: number) =>
+      `Pile : ${plural(count, 'appel', 'appels')} · max ${maximum}`,
     empty: 'Pile vide : parcours terminé',
     main: 'main',
     top: 'sommet',

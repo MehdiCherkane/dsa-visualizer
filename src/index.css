@@ -1551,10 +1551,6 @@ body.is-resizing-horizontal * {
   font-size: 9.5px;
 }
 
-.call-stack-metrics b {
-  color: var(--ink-2);
-}
-
 .call-stack-null-toggle {
   display: inline-flex;
   align-items: center;
@@ -4329,13 +4325,5 @@ body.is-resizing-horizontal * {
 
   .presentation .bottom-dock {
     height: clamp(110px, var(--dock-height, 160px), 15vh);
-  }
-
-  .presentation .tree-viz-footer {
-    padding: 2px 8px;
-  }
-
-  .presentation .tree-viz-legend summary {
-    padding: 2px;
   }
 }

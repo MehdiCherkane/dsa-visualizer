@@ -22,6 +22,12 @@ export type TreeCallPhaseName = 'visite' | 'gauche' | 'droit'
 export type TreeCallPhaseState = 'pending' | 'current' | 'done'
 export type TreeCallStatus = 'active' | 'wait-left' | 'wait-right'
 
+/** The child slot that produced a call, used to locate the active NULL pill. */
+export interface TreeCallSlot {
+  parentId: number
+  field: 'gauche' | 'droit'
+}
+
 /**
  * A frozen debugger-like record used solely to teach the recursive traversal.
  * It is separate from `frames`, whose purpose is the generic Variables panel.
@@ -30,6 +36,8 @@ export interface TreeCallFrame {
   id: number
   fn: string
   nodeId: number | null
+  /** Set only on a NULL call: the parent/field pair whose child is NULL. */
+  nullSlot: TreeCallSlot | null
   line: number
   status: TreeCallStatus
   phases: Array<{
@@ -119,6 +127,7 @@ export function cloneSnapshot(snapshot: TreeSnapshot): TreeSnapshot {
           maxNonNullDepth: snapshot.callStack.maxNonNullDepth,
           frames: snapshot.callStack.frames.map((frame) => ({
             ...frame,
+            nullSlot: frame.nullSlot ? { ...frame.nullSlot } : null,
             phases: frame.phases.map((phase) => ({ ...phase })),
           })),
         }

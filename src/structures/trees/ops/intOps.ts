@@ -1,7 +1,7 @@
 import type { OperationDef, ParamValues, PointerValue, Step } from '../../../core/types'
 import { fr } from '../../../i18n/fr'
 import { getNode, rootPointer } from '../memory'
-import type { TreeSnapshot } from '../memory'
+import type { TreeCallSlot, TreeSnapshot } from '../memory'
 import { NULL_POINTER, NODE_POINTER, TreeRecorder } from './runtime'
 
 const intValue = (value: number) => ({ kind: 'int' as const, value })
@@ -85,9 +85,10 @@ function runTraversalNode(
   fn: string,
   order: TraversalOrder,
   pointer: PointerValue,
+  nullSlot: TreeCallSlot | null = null,
 ): void {
   recorder.pushFrame(fn, { n: pointer })
-  recorder.pushCallFrame(fn, pointer, traversalPhases(order))
+  recorder.pushCallFrame(fn, pointer, traversalPhases(order), nullSlot)
   recorder.pauseCall(0)
   recorder.step(fn, 0, fr.trees.captions.call(fn, pointer))
   const isNull = pointer.kind !== 'node'
@@ -132,7 +133,7 @@ function runTraversalNode(
     const child = node[action]
     recorder.beginCallPhase(action, line)
     recorder.step(fn, line, fr.trees.captions.recursiveCall(action, value))
-    runTraversalNode(recorder, fn, order, child)
+    runTraversalNode(recorder, fn, order, child, { parentId: node.id, field: action })
     recorder.completeCallPhase(action)
   })
 
