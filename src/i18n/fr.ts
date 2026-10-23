@@ -30,7 +30,6 @@ export const fr = {
     chapterLabel: (chapter: number) => `Chapitre ${chapter}`,
     cardHint: 'Démonstration pas à pas, utilisable hors ligne',
     soon: 'Bientôt disponible',
-    soonTitle: 'Prochains chapitres',
     soonAria: (title: string) => `« ${title} » : bientôt disponible`,
     soonItems: [
       {
