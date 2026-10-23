@@ -21,6 +21,8 @@ const blur = async (page) => {
   })
 }
 
+const CHAPTER2 = `${BASE}/#/chapitre-2`
+const CHAPTER3 = `${BASE}/#/chapitre-3`
 const CHAPTER4 = `${BASE}/#/chapitre-4`
 const MENU = `${BASE}/#/`
 
@@ -347,6 +349,28 @@ await menuNav.waitForSelector('.menu-app', { timeout: 10000 })
 const menuHashAfterBack = await menuNav.evaluate(() => window.location.hash)
 if (menuHashAfterBack !== '#/') throw new Error(`← Menu did not return: ${menuHashAfterBack}`)
 await menuNav.close()
+
+// chapters 2 and 3: hash routes, shared SVG renderer and the file profile
+const lscPage = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
+await lscPage.goto(CHAPTER2, { waitUntil: 'networkidle' })
+await lscPage.waitForSelector('.viz-svg', { timeout: 10000 })
+await loadScenario(lscPage, 'Le cours')
+await shot(lscPage, '19-lsc-cours-1920', 800)
+const lscDock = (await lscPage.locator('.bottom-dock').textContent()) ?? ''
+if (!lscDock.includes('debut')) throw new Error('chapter 2 dock does not expose debut')
+await lscPage.close()
+
+const filePage = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
+await filePage.goto(CHAPTER3, { waitUntil: 'networkidle' })
+await filePage.waitForSelector('.viz-svg', { timeout: 10000 })
+await filePage.getByRole('button', { name: 'File', exact: true }).click()
+await loadScenario(filePage, 'La file du cours')
+const fileDock = (await filePage.locator('.bottom-dock').textContent()) ?? ''
+if (!fileDock.includes('debut') || !fileDock.includes('fin')) {
+  throw new Error('chapter 3 file dock does not expose debut and fin')
+}
+await shot(filePage, '20-file-cours-1920', 800)
+await filePage.close()
 
 await browser.close()
 console.log(`done -> ${OUT}`)

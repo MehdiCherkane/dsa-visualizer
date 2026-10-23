@@ -87,8 +87,11 @@ export function Header<S extends BaseSnapshot>({
           <span className="menu-button-label">{fr.menu.backLabel}</span>
         </button>
         <div className="header-context">
-          <div className="profile-switch" aria-label={fr.profiles.label}>
-            <span className="profile-label">{fr.profiles.label}</span>
+          <div
+            className="profile-switch"
+            aria-label={plugin.profileSwitchLabel ?? fr.profiles.label}
+          >
+            <span className="profile-label">{plugin.profileSwitchLabel ?? fr.profiles.label}</span>
             <div className="profile-options" style={profileStyle}>
               <span
                 className="profile-thumb"

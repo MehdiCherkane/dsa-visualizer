@@ -2,13 +2,13 @@
 
 A single-page, fully offline French teaching platform for data structures in C (`Structures de données`), built with Vite + React + TypeScript. Each chapter is an independent plugin behind one shared player, visualization shell, and chapter menu. The project replaces the professor's static course PDFs with interactive, step-by-step demos.
 
-**Chapter 4 — Listes doublement chaînées (`ldc`) is available now.** Other chapters are being developed by the team and will appear in the menu as they become ready.
+**Chapters 2, 3 and 4 are available now:** singly linked lists (`lsc`), dynamic stacks and queues (`pile` / `file`), and doubly linked lists (`ldc`). Chapters 1 and 5 remain planned.
 
 ## Run
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (102 tests)
+npm test      # vitest suite (144 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
@@ -16,13 +16,21 @@ npm run dev   # local dev server
 
 `npm run build` produces **one self-contained `dist/index.html`** (`vite-plugin-singlefile`). Open it by double-click: no server and no network access are required — no CDNs, no external fonts or images.
 
-Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point) and `#/chapitre-<n>` for each registered chapter (`#/chapitre-4` is live today). Unknown hashes fall back to the menu, and `Échap` or the `← Menu` header button leaves the demo.
+Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point), `#/chapitre-2` (single linked lists), `#/chapitre-3` (stacks and queues) and `#/chapitre-4` (doubly linked lists). Unknown hashes fall back to the menu, and `Échap` or the `← Menu` header button leaves the demo.
 
 ## Chapters
 
-### Available now — Chapter 4: Listes doublement chaînées (`ldc`)
+### Chapitre 2 — Listes simplement chaînées (`lsc`)
 
-Two profiles, one C demo:
+- **Entiers** (`int`): the course list `9 → 2 → 5`; display, insert head/tail, delete head/by-value, search and destroy.
+- **Étudiants** (`etudiant`): a student registry (`E1 = {101, AAA, aaa}`, …) with display, `inscrireEtudiant`, `radierEtudiant` and `detruireListe`.
+
+### Chapitre 3 — Piles et files dynamiques (`pile` / `file`)
+
+- **Pile** (`pile`): LIFO stack with `sommet` and `precedent`; push, pop, empty check, destroy, plus the course exercises `empilerCopie` and `corrigerCopie`.
+- **File** (`file`): FIFO queue with `debut` / `fin` and `suivant`; enqueue, dequeue (including the `fin = NULL` trap when the last node leaves), empty check, destroy, plus student arrivals and service.
+
+### Chapitre 4 — Listes doublement chaînées (`ldc`)
 
 - **Entiers** (`int`): the course list `9 ⇄ 2 ⇄ 5` and all classic operations — display forward/backward, insert head/tail/after/before, delete head/by-value, search, destroy, reverse.
 - **Étudiants** (`etudiant`): a student registry (`E1 = {101, AAA, aaa}`, …) with `inscrireEtudiant` and `radierEtudiant`.
@@ -30,10 +38,10 @@ Two profiles, one C demo:
 For every operation, the demo shows:
 
 - the exact canonical C code with the current statement highlighted;
-- a mutable SVG layout: `precedent` / `valeur` / `suivant` cells, forward (solid blue) and backward (dashed orange) arrows, `NULL` terminators, fake heap addresses, freed-node hatching, and pointer pins (`debut`, `courant`, `nouveau`, `temp`, `dernier`, …);
+- a mutable SVG layout: `precedent` / `valeur` / `suivant` cells, forward (solid blue) and backward (dashed orange) arrows, `NULL` terminators, fake heap addresses, freed-node hatching, and pointer pins (`debut`, `sommet`, `fin`, `courant`, `nouveau`, `temp`, `dernier`, …);
 - pointer rewrites animated red (old, dashed) → green (new);
 - a step-by-step player with French captions, condition evaluations, badges (`cas-particulier`, `debut-modifie`), live printf console, watch panel (globals + locals), and a call journal;
-- 8 ready-made scenarios from the professor's course, loadable from the header.
+- 8 ready-made scenarios for the doubly linked list plus dedicated scenarios for each new chapter, loadable from the header.
 
 One step = one executed C statement (including every condition/loop evaluation). Snapshots are fully frozen; stepping backwards is exact.
 
@@ -42,36 +50,38 @@ One step = one executed C statement (including every condition/loop evaluation).
 The main menu already lists planned chapters as disabled **Bientôt disponible** cards:
 
 - **Chapter 1 — Piles et files statiques**
-- **Chapter 2 — Listes simplement chaînées**
-- **Chapter 3 — Piles et files dynamiques**
 - **Chapter 5 — Listes doublement chaînées circulaires**
 
-Team members are developing these modules in parallel. A chapter becomes available once its plugin is registered in `src/registry.ts`; the shared engine and UI do not need to change.
+A chapter becomes available once its plugin is registered in `src/registry.ts`; the shared engine and UI do not need to change.
 
 ## Architecture
 
 ```
 src/
   core/                  generic engine: result types, playback state machine
-  structures/<id>/       one self-contained chapter plugin: memory model, C sources
-                         + symbolic line labels, step generators, SVG renderer, scenarios
+  structures/ldc/        chapitre 4 plugin: doubly linked list memory model,
+                         C sources + symbolic line labels, steps, renderer, scenarios
+  structures/lsc/        chapitre 2 plugin: singly linked list memory model,
+                         C sources + symbolic line labels, steps, scenarios
+  structures/piles-files/ chapitre 3 plugin: stack and queue profiles, memory model,
+                         C sources + symbolic line labels, steps, scenarios
+  structures/shared/     shared linked-node SVG renderer, camera and geometry
   ui/                    shared shell, layout, panels, main menu, hash routing
-  registry.ts            registers available chapter plugins and resolves #/chapitre-<n>
+  registry.ts            registers ldc, lsc and pilesFiles, resolves #/chapitre-<n>
 ```
 
-The core engine and the UI are chapter-agnostic; the current Chapter 4 implementation lives in `src/structures/ldc/`. Adding a chapter means a new `src/structures/<id>/` folder plus one registration line. The menu card (badge from `chapter`, `title`, `description`) and the `#/chapitre-<n>` route are derived from the registry, so `core/` and `ui/` stay untouched. Until a chapter is implemented, it stays a disabled "Bientôt disponible" card in `fr.menu.soonItems`.
-
-Chapter 2 groundwork is already landing under `src/structures/lsc/`; it will appear in the menu once its plugin is registered.
+The core engine does not know about lists, stacks or queues, and `ui/` never manipulates nodes. Adding a chapter (for example chapter 1 or 5) means a new `src/structures/<id>/` folder plus one registration line: the menu card (badge from `chapter`, `title`, `description`) and the `#/chapitre-<n>` route are derived from the registry — `core/` and `ui/` stay untouched. Until a chapter is implemented, it can be listed as a disabled "Bientôt disponible" card in `fr.menu.soonItems`.
 
 The main menu is the entry point (`#/`); each card opens `#/chapitre-<chapter>`. Navigation is a hand-written `hashchange` hook (no server, works from `file://`), so the demo shell is mounted only on its own route: the demo's keyboard shortcuts are unregistered while the menu is displayed.
 
-Chapter 4 guarantees enforced by tests:
+Key guarantees enforced by tests:
 
-- each operation equals a plain-array oracle on empty / 1 / 2 / 3 / 8-element lists (head, middle, tail, absent, duplicates);
-- `checkInvariants` holds after every random 20-operation sequence (no cycles, mirror forward/backward walk, no reachable freed node);
+- the LDC operations equal a plain-array oracle on empty / 1 / 2 / 3 / 8-element lists (head, middle, tail, absent, duplicates);
+- the chapter 2 and 3 operations finish on the expected arrays and satisfy their structural invariants;
+- `checkInvariants` holds after every random 20-operation LDC sequence (no cycles, mirror forward/backward walk, no reachable freed node);
 - every symbolic line label points at the C line that contains its expected substring;
 - every step has a non-empty French caption; snapshots are frozen and mutating them throws;
-- the Visualization renders the first and last step of every scenario without error;
+- the LDC Visualization renders the first and last step of every scenario without error;
 - workspace and dock resizing, clamping, persistence, and keyboard controls have unit and DOM coverage.
 
 ## UI shortcuts
@@ -93,7 +103,7 @@ Chapter 4 guarantees enforced by tests:
 - The code panel auto-fits presentation mode from the measured monospace width and available height, clamped to 14–26px, with horizontal scroll as fallback. The left viz card contains the caption band, playback row, operation row, and scenario strip.
 - The journal lives in the bottom dock; `D` toggles the dock, `P` hides only the journal while keeping Variables and Console visible. Panel focus buttons maximize one dock pane; presentation shows only Variables and Console.
 - Below 1020px the workspace stacks, all separators are hidden, and the dock panels wrap at auto height.
-- Verified visually by `scripts/shots.mjs` (Playwright) at 1920×1080 and 1280×720: empty, delete-middle, heap insertion, shared-node pins, reverse swap, 8 nodes, manual zoom/pan, presentation code fit, dock, dark theme, and scenario/help popovers.
+- Verified visually by `scripts/shots.mjs` (Playwright) at 1920×1080 and 1280×720: empty, delete-middle, heap insertion, shared-node pins, reverse swap, 8 nodes, manual zoom/pan, presentation code fit, dock, dark theme, scenario/help popovers, plus chapter 2 course and chapter 3 queue smoke screens.
 
 ## Chapter 4 assumptions
 

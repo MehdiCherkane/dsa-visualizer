@@ -30,8 +30,13 @@ function chipKind(text: string): string {
   if (text === 'suivant') return 'code-suivant'
   if (text === 'precedent') return 'code-precedent'
   if (text === 'debut') return 'code-debut'
+  if (text === 'sommet') return 'code-sommet'
+  if (text === 'fin') return 'code-fin'
   if (text === 'courant') return 'code-courant'
   if (text === 'nouveau') return 'code-nouveau'
+  if (text === 'ancienDebut' || text === 'ancienSommet' || text === 'ancienPremier') {
+    return 'code-ancien'
+  }
   if (text === 'NULL') return 'code-null'
   if (/^0x[0-9A-Fa-f]+$/.test(text)) return 'code-address'
   if (/^\d+$/.test(text)) return 'code-number'

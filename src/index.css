@@ -677,7 +677,8 @@ body.is-resizing-horizontal * {
   box-shadow: none;
 }
 
-.ldc-svg {
+.ldc-svg,
+.viz-svg {
   display: block;
   width: 100%;
   height: 100%;
@@ -809,6 +810,33 @@ body.is-resizing-horizontal * {
 
 .arrow-new {
   stroke: var(--success);
+}
+
+.arrow-gold {
+  stroke: var(--gold);
+}
+
+.arrow-fin {
+  stroke: var(--success);
+}
+
+.arrow-alias {
+  stroke: var(--arrow-prev);
+  stroke-dasharray: 4 4;
+}
+
+.pointer-dot-gold {
+  fill: var(--gold);
+}
+
+.node-group.is-shared rect.node-outline {
+  stroke: var(--gold);
+  stroke-width: 2.5;
+}
+
+.pin-alias .pin-tag {
+  fill: var(--pin-soft);
+  stroke: var(--gold);
 }
 
 .pointer-dot {
@@ -2774,9 +2802,16 @@ body.is-resizing-horizontal * {
   background: var(--chip-precedent-bg);
 }
 
-.code-debut {
+.code-debut,
+.code-sommet,
+.code-fin {
   color: var(--chip-debut);
   background: var(--chip-debut-bg);
+}
+
+.code-ancien {
+  color: var(--alert);
+  background: var(--alert-soft);
 }
 
 .code-courant {
@@ -2808,6 +2843,9 @@ body.is-resizing-horizontal * {
 .caption-token.code-suivant,
 .caption-token.code-precedent,
 .caption-token.code-debut,
+.caption-token.code-sommet,
+.caption-token.code-fin,
+.caption-token.code-ancien,
 .caption-token.code-courant,
 .caption-token.code-nouveau,
 .caption-token.code-null,
@@ -3670,20 +3708,20 @@ body.is-resizing-horizontal * {
 }
 
 .debut-cell-outline {
-  fill: color-mix(in srgb, var(--gold) 10%, var(--panel));
-  stroke: var(--gold);
+  fill: color-mix(in srgb, var(--global-color, var(--gold)) 10%, var(--panel));
+  stroke: var(--global-color, var(--gold));
   stroke-width: 2.5;
 }
 
 .debut-cell-label {
-  fill: var(--gold);
+  fill: var(--global-color, var(--gold));
   font-family: var(--mono);
   font-size: 20px;
   font-weight: 800;
 }
 
 .debut-cell-dot {
-  fill: var(--gold);
+  fill: var(--global-color, var(--gold));
   stroke: var(--viz-bg);
   stroke-width: 1.6;
 }
