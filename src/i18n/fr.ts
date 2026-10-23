@@ -611,6 +611,7 @@ export const fr = {
     next: 'suivant',
     prev: 'precedent',
     debut: 'debut : variable globale',
+    fin: 'fin : variable globale',
     sommet: 'sommet : variable globale',
     file: 'debut et fin : variables globales',
     local: 'variable locale',

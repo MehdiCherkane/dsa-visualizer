@@ -816,6 +816,10 @@ body.is-resizing-horizontal * {
   stroke: var(--gold);
 }
 
+.arrow-fin {
+  stroke: var(--success);
+}
+
 .arrow-alias {
   stroke: var(--arrow-prev);
   stroke-dasharray: 4 4;
@@ -3704,20 +3708,20 @@ body.is-resizing-horizontal * {
 }
 
 .debut-cell-outline {
-  fill: color-mix(in srgb, var(--gold) 10%, var(--panel));
-  stroke: var(--gold);
+  fill: color-mix(in srgb, var(--global-color, var(--gold)) 10%, var(--panel));
+  stroke: var(--global-color, var(--gold));
   stroke-width: 2.5;
 }
 
 .debut-cell-label {
-  fill: var(--gold);
+  fill: var(--global-color, var(--gold));
   font-family: var(--mono);
   font-size: 20px;
   font-weight: 800;
 }
 
 .debut-cell-dot {
-  fill: var(--gold);
+  fill: var(--global-color, var(--gold));
   stroke: var(--viz-bg);
   stroke-width: 1.6;
 }

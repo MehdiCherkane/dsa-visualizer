@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import type {
+  CSSProperties,
   JSX,
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
@@ -31,7 +32,7 @@ import {
   emptyBounds,
   fitCamera,
   globalAnchor,
-  globalCellGeometry,
+  layoutGlobals,
   layoutNodes,
   pointerAnchor,
   routeField,
@@ -43,11 +44,13 @@ import {
 } from './linkedViz'
 import type {
   Camera,
+  GlobalPlacement,
   LinkedModel,
   NullStub,
   Point,
   Rect,
   Size,
+  VizField,
   VizNode,
   VizPin,
 } from './linkedViz'
@@ -87,6 +90,25 @@ function pinColor(name: string): string {
 
 function pinWidth(name: string): number {
   return Math.max(46, name.length * 8 + 20)
+}
+
+function globalColor(name: string): string {
+  return name === 'fin' ? 'var(--success)' : 'var(--gold)'
+}
+
+function globalMarker(name: string): string {
+  return name === 'fin' ? 'arrow-fin' : 'arrow-debut'
+}
+
+function globalLegendLabel(name: string): string {
+  switch (name) {
+    case 'fin':
+      return fr.legend.fin
+    case 'sommet':
+      return fr.legend.sommet
+    default:
+      return fr.legend.debut
+  }
 }
 
 function useElementSize(): [RefObject<HTMLDivElement | null>, Size] {
@@ -261,16 +283,27 @@ function GlobalCell({
   cell,
   count,
   pulse,
+  placement,
+  color,
 }: {
   name: string
   legend: string
   cell: Rect
   count: number
   pulse: boolean
+  placement: GlobalPlacement
+  color: string
 }): JSX.Element {
-  const anchor = globalAnchor(cell)
+  const anchor =
+    placement === 'bottom'
+      ? { x: cell.x + cell.width / 2, y: cell.y }
+      : globalAnchor(cell)
+  const captionY = placement === 'bottom' ? cell.y + cell.height + 15 : cell.y - 7
   return (
-    <g className={pulse ? 'debut-cell debut-cell-pulse' : 'debut-cell'}>
+    <g
+      className={pulse ? 'debut-cell debut-cell-pulse' : 'debut-cell'}
+      style={{ '--global-color': color } as CSSProperties}
+    >
       <rect
         className="debut-cell-outline"
         x={cell.x}
@@ -292,7 +325,7 @@ function GlobalCell({
         <text
           className="debut-cell-caption"
           x={cell.x + cell.width / 2}
-          y={cell.y - 7}
+          y={captionY}
           textAnchor="middle"
         >
           {legend}
@@ -303,8 +336,18 @@ function GlobalCell({
   )
 }
 
-function NodeShape({ node, fieldLabel }: { node: VizNode; fieldLabel: string }): JSX.Element {
+function NodeShape({
+  node,
+  fieldLabel,
+  field,
+}: {
+  node: VizNode
+  fieldLabel: string
+  field: VizField
+}): JSX.Element {
   const pointerX = VALUE_W + FIELD_W / 2
+  const fieldFill = field === 'suivant' ? 'var(--cell-next)' : 'var(--cell-prev)'
+  const fieldClass = field === 'suivant' ? 'cell-label-next' : 'cell-label-prev'
   return (
     <g>
       <g clipPath="url(#linked-node-clip)">
@@ -314,7 +357,7 @@ function NodeShape({ node, fieldLabel }: { node: VizNode; fieldLabel: string }):
           x={VALUE_W}
           width={FIELD_W}
           height={NODE_H}
-          fill={node.pointer.kind === 'null' ? 'var(--cell-next)' : 'var(--cell-value)'}
+          fill={fieldFill}
         />
         {node.uninit ? (
           <rect width={VALUE_W} height={NODE_H} fill="url(#hatch-uninit)" />
@@ -349,7 +392,7 @@ function NodeShape({ node, fieldLabel }: { node: VizNode; fieldLabel: string }):
         x={pointerX}
         y="16"
         textAnchor="middle"
-        className="cell-label cell-label-next"
+        className={`cell-label ${fieldClass}`}
         fontSize="9.5"
       >
         {fieldLabel}
@@ -483,6 +526,10 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
   const globals = useMemo(() => model.globals(snapshot), [model, snapshot])
   const pins = useMemo(() => model.pins(snapshot), [model, snapshot])
   const layout = useMemo(() => layoutNodes(nodes, model.orientation), [nodes, model.orientation])
+  const globalCells = useMemo(
+    () => layoutGlobals(globals, nodes, layout, model.orientation),
+    [globals, nodes, layout, model.orientation],
+  )
   const pinPlacements = useMemo(
     () => layoutPins(pins, nodes, layout, model.orientation),
     [pins, nodes, layout, model.orientation],
@@ -858,19 +905,33 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
   const oldGlobalRoutes = globalChanges.flatMap((change) => {
     if (change.kind !== 'variable' || !isPointerValue(change.from)) return []
     const index = globals.findIndex((global) => global.name === change.name)
-    if (index < 0) return []
-    const cell = globalCellGeometry(index, globals.length, model.orientation)
+    const placed = globalCells.get(change.name)
+    if (index < 0 || !placed) return []
     const target = findNode(change.from)
-    const route = routeGlobal(cell, target, target ? layout.get(target.id) ?? null : null, index, model.orientation)
+    const route = routeGlobal(
+      placed.rect,
+      target,
+      target ? layout.get(target.id) ?? null : null,
+      index,
+      model.orientation,
+      placed.placement,
+    )
     return [{ key: `${change.name}-old-${stepIndex}`, route }]
   })
   const newGlobalRoutes = globalChanges.flatMap((change) => {
     if (change.kind !== 'variable' || !isPointerValue(change.to)) return []
     const index = globals.findIndex((global) => global.name === change.name)
-    if (index < 0) return []
-    const cell = globalCellGeometry(index, globals.length, model.orientation)
+    const placed = globalCells.get(change.name)
+    if (index < 0 || !placed) return []
     const target = findNode(change.to)
-    const route = routeGlobal(cell, target, target ? layout.get(target.id) ?? null : null, index, model.orientation)
+    const route = routeGlobal(
+      placed.rect,
+      target,
+      target ? layout.get(target.id) ?? null : null,
+      index,
+      model.orientation,
+      placed.placement,
+    )
     return [{ key: `${change.name}-new-${stepIndex}`, route }]
   })
 
@@ -929,6 +990,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
               ['arrow-alert', 'var(--alert)'],
               ['arrow-success', 'var(--success)'],
               ['arrow-debut', 'var(--gold)'],
+              ['arrow-fin', 'var(--success)'],
             ] as const
           ).map(([id, fill]) => (
             <marker
@@ -1019,7 +1081,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
                   <title>
                     {node.freed ? fr.viz.freed : `${fr.common.node} ${node.id} · ${node.address}`}
                   </title>
-                  <NodeShape node={node} fieldLabel={model.fieldLabel} />
+                  <NodeShape node={node} fieldLabel={model.fieldLabel} field={model.field} />
                 </motion.g>
               )
             })}
@@ -1134,24 +1196,27 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
           ))}
 
           {globals.map((global, index) => {
-            const cell = globalCellGeometry(index, globals.length, model.orientation)
+            const placed = globalCells.get(global.name)
+            if (!placed) return null
             const target = findNode(global.value)
             const route = routeGlobal(
-              cell,
+              placed.rect,
               target,
               target ? layout.get(target.id) ?? null : null,
               index,
               model.orientation,
+              placed.placement,
             )
+            const color = globalColor(global.name)
             return (
               <g key={`global-${global.name}`}>
                 <path
                   d={route.path}
-                  className="arrow arrow-gold"
+                  className={`arrow ${global.name === 'fin' ? 'arrow-fin' : 'arrow-gold'}`}
                   style={{ strokeWidth }}
-                  markerEnd={route.nullStub ? undefined : 'url(#arrow-debut)'}
+                  markerEnd={route.nullStub ? undefined : `url(#${globalMarker(global.name)})`}
                 />
-                {route.nullStub ? <NullGround stub={route.nullStub} color="var(--gold)" /> : null}
+                {route.nullStub ? <NullGround stub={route.nullStub} color={color} /> : null}
               </g>
             )
           })}
@@ -1187,16 +1252,19 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
             />
           ))}
 
-          {globals.map((global, index) => {
-            const cell = globalCellGeometry(index, globals.length, model.orientation)
+          {globals.map((global) => {
+            const placed = globalCells.get(global.name)
+            if (!placed) return null
             return (
               <GlobalCell
                 key={`global-cell-${global.name}-${stepIndex}`}
                 name={global.name}
-                legend={model.globalLegend}
-                cell={cell}
+                legend={globalLegendLabel(global.name)}
+                cell={placed.rect}
                 count={globals.length}
                 pulse={pulseGlobal}
+                placement={placed.placement}
+                color={globalColor(global.name)}
               />
             )
           })}
@@ -1297,12 +1365,23 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
           </svg>
           {model.field === 'suivant' ? fr.legend.next : fr.legend.prev}
         </span>
-        <span className="legend-item">
-          <svg viewBox="0 0 28 12" aria-hidden="true">
-            <rect x="4" y="2" width="20" height="8" rx="2" fill="none" stroke="var(--gold)" strokeWidth="2" />
-          </svg>
-          {model.globalLegend}
-        </span>
+        {globals.map((global) => (
+          <span className="legend-item" key={`legend-global-${global.name}`}>
+            <svg viewBox="0 0 28 12" aria-hidden="true">
+              <rect
+                x="4"
+                y="2"
+                width="20"
+                height="8"
+                rx="2"
+                fill="none"
+                stroke={globalColor(global.name)}
+                strokeWidth="2"
+              />
+            </svg>
+            {globalLegendLabel(global.name)}
+          </span>
+        ))}
         <span className="legend-item">
           <svg viewBox="0 0 28 12" aria-hidden="true">
             <circle cx="14" cy="6" r="4" fill="var(--ink-2)" />

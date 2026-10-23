@@ -26,7 +26,6 @@ const pileModel: LinkedModel<PfSnapshot> = {
   emptyText: fr.viz.emptyPile,
   emptyInsert: fr.viz.insertEmptyPile,
   ariaLabel: fr.chapters.pilesFiles.title,
-  globalLegend: fr.legend.sommet,
   nodes(snapshot) {
     if (snapshot.profile !== 'pile') return []
     return snapshot.nodes.map<VizNode>((node) => ({
@@ -56,7 +55,6 @@ const fileModel: LinkedModel<PfSnapshot> = {
   emptyText: fr.viz.emptyFile,
   emptyInsert: fr.viz.insertEmptyFile,
   ariaLabel: fr.chapters.pilesFiles.title,
-  globalLegend: fr.legend.file,
   nodes(snapshot) {
     if (snapshot.profile !== 'file') return []
     return snapshot.nodes.map<VizNode>((node) => ({
@@ -75,7 +73,7 @@ const fileModel: LinkedModel<PfSnapshot> = {
     if (snapshot.profile !== 'file') return []
     return [
       { name: 'debut', value: snapshot.globals.debut },
-      { name: 'fin', value: snapshot.globals.fin },
+      { name: 'fin', value: snapshot.globals.fin, placement: 'bottom' },
     ]
   },
   pins: framePins,
