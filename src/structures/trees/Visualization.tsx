@@ -11,6 +11,8 @@ import {
   NULL_GROUND_LABEL_SIZE,
   NULL_GROUND_STEM,
   placeEdgeLabels,
+  ROOT_ARROW_MARKER,
+  rootPointerGeometry,
   TREE_NODE_HEIGHT,
   TREE_NODE_RADIUS,
   TREE_NODE_WIDTH,
@@ -116,6 +118,9 @@ export default function TreeVisualization({
     })
   }
   const root = rootPointer(snapshot)
+  const rootFreed =
+    root.kind === 'node' && Boolean(snapshot.nodes.find((node) => node.id === root.id)?.freed)
+  const rootPin = rootPointerGeometry(layout)
   const traversal = snapshot.traversal
   const callStack = snapshot.callStack
   const topCall = callStack?.frames.at(-1)
@@ -285,8 +290,17 @@ export default function TreeVisualization({
           <marker id="tree-arrow-right" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto">
             <path d="M 0 0 L 8 4 L 0 8 z" fill="var(--arrow-prev)" />
           </marker>
-          <marker id="tree-arrow-root" viewBox="0 0 8 8" refX="4" refY="8" markerWidth="6" markerHeight="6" markerUnits="userSpaceOnUse" orient="auto">
-            <path d="M 0 0 L 8 0 L 4 8 z" fill="var(--gold)" />
+          <marker
+            id="tree-arrow-root"
+            viewBox="0 0 8 8"
+            refX={ROOT_ARROW_MARKER.refX}
+            refY={ROOT_ARROW_MARKER.refY}
+            markerWidth={ROOT_ARROW_MARKER.markerWidth}
+            markerHeight={ROOT_ARROW_MARKER.markerHeight}
+            markerUnits={ROOT_ARROW_MARKER.markerUnits}
+            orient={ROOT_ARROW_MARKER.orient}
+          >
+            <path d={ROOT_ARROW_MARKER.path} fill="var(--gold)" />
           </marker>
           <pattern id="tree-freed-hatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
             <rect width="8" height="8" fill="var(--freed-overlay)" />
@@ -294,11 +308,11 @@ export default function TreeVisualization({
           </pattern>
         </defs>
 
-        {root.kind === 'node' && layout.rootX !== null ? (
-          <g className={`tree-root-pin${snapshot.nodes.find((node) => node.id === root.id)?.freed ? ' is-dangling' : ''}`}>
-            <rect x={layout.rootX - 55} y="4" width="110" height="34" rx="10" />
-            <text x={layout.rootX} y="21" textAnchor="middle" dominantBaseline="central">{fr.trees.viz.root}</text>
-            <path d={`M ${layout.rootX} 38 L ${layout.rootX} ${layout.nodes[0]?.y ? layout.nodes[0].y - TREE_NODE_HEIGHT / 2 - 12 : 68}`} markerEnd="url(#tree-arrow-root)" />
+        {root.kind === 'node' || layout.nodes.length === 0 ? (
+          <g className={`tree-root-pin${rootFreed ? ' is-dangling' : ''}`}>
+            <rect x={rootPin.x - 55} y={rootPin.pinTop} width="110" height="34" rx="10" />
+            <text x={rootPin.x} y={rootPin.pinTop + 17} textAnchor="middle" dominantBaseline="central">{fr.trees.viz.root}</text>
+            <path d={`M ${rootPin.x} ${rootPin.pinBottom} L ${rootPin.x} ${rootPin.tipY}`} markerEnd="url(#tree-arrow-root)" />
           </g>
         ) : null}
 

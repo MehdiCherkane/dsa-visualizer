@@ -6,6 +6,8 @@ import {
   measureTree,
   NULL_GROUND_BOUNDS,
   placeEdgeLabels,
+  ROOT_ARROW_MARKER,
+  rootPointerGeometry,
   TREE_NODE_RADIUS,
 } from './geometry'
 import {
@@ -321,5 +323,34 @@ describe('chapitre 6 — parcours récursifs', () => {
   it('nomme la pile sans la confondre avec la hauteur de l’arbre', () => {
     expect(fr.callStack.summary(1, 4)).toBe('Pile : 1 appel · max 4')
     expect(fr.callStack.summary(3, 4)).toBe('Pile : 3 appels · max 4')
+  })
+
+  it('trace un pointeur racine vertical jusqu’au bord du nœud', () => {
+    const layout = layoutTree(courseTreeSnapshot())
+    const pointer = rootPointerGeometry(layout)
+    expect(pointer.x).toBe(layout.nodes[0]!.x)
+    expect(pointer.tipY).toBe(layout.nodes[0]!.y - TREE_NODE_RADIUS - 1.25)
+    expect(pointer.pinBottom).toBe(pointer.tipY - 16)
+    expect(pointer.pinTop).toBe(pointer.pinBottom - 34)
+    expect(pointer.pinTop).toBeLessThan(pointer.pinBottom)
+    expect(pointer.pinBottom).toBeLessThan(pointer.tipY)
+  })
+
+  it('trace le pointeur racine vers le NULL de l’arbre vide', () => {
+    const layout = layoutTree(emptyTreeSnapshot())
+    const pointer = rootPointerGeometry(layout)
+    expect(pointer.x).toBe(layout.width / 2)
+    expect(pointer.tipY).toBe(layout.height / 2 - 72 - 1.5)
+    expect(pointer.pinBottom).toBe(pointer.tipY - 16)
+  })
+
+  it('oriente la tête de la racine vers le bas avec la taille du trait', () => {
+    expect(ROOT_ARROW_MARKER.path).toBe('M 0 0 L 8 4 L 0 8 z')
+    expect(ROOT_ARROW_MARKER.refX).toBe(8)
+    expect(ROOT_ARROW_MARKER.refY).toBe(4)
+    expect(ROOT_ARROW_MARKER.orient).toBe('auto')
+    expect(ROOT_ARROW_MARKER.markerUnits).toBe('strokeWidth')
+    expect(ROOT_ARROW_MARKER.markerWidth).toBeGreaterThan(0)
+    expect(ROOT_ARROW_MARKER.markerHeight).toBe(ROOT_ARROW_MARKER.markerWidth)
   })
 })

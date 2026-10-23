@@ -404,7 +404,8 @@
 .tree-root-pin path {
   fill: none;
   stroke: var(--gold);
-  stroke-width: 3;
+  stroke-width: 2.25;
+  stroke-linecap: round;
 }
 
 .tree-root-pin.is-dangling rect {

@@ -5,6 +5,54 @@ import type { TreeNode, TreeSnapshot } from './memory'
 export const TREE_NODE_RADIUS = 40
 export const TREE_NODE_WIDTH = TREE_NODE_RADIUS * 2
 export const TREE_NODE_HEIGHT = TREE_NODE_RADIUS * 2
+
+const TREE_NODE_STROKE = 2.5
+const EMPTY_NODE_RADIUS = 72
+const EMPTY_NODE_STROKE = 3
+const ROOT_PIN_HEIGHT = 34
+const ROOT_PIN_STEM = 16
+
+/**
+ * The root pointer is a straight vertical stem from the bottom of the
+ * "racine" cell to the outer edge of the target ring (or the empty-tree
+ * NULL ring). Both ends share the same x.
+ */
+export interface RootPointerGeometry {
+  x: number
+  pinTop: number
+  pinBottom: number
+  tipY: number
+}
+
+export function rootPointerGeometry(layout: TreeLayout): RootPointerGeometry {
+  const root = layout.nodes[0]
+  const targetY = root
+    ? root.y - TREE_NODE_RADIUS - TREE_NODE_STROKE / 2
+    : layout.height / 2 - EMPTY_NODE_RADIUS - EMPTY_NODE_STROKE / 2
+  const x = layout.rootX ?? layout.width / 2
+  return {
+    x,
+    pinTop: targetY - ROOT_PIN_STEM - ROOT_PIN_HEIGHT,
+    pinBottom: targetY - ROOT_PIN_STEM,
+    tipY: targetY,
+  }
+}
+
+/**
+ * The triangle points along +x, because `orient="auto"` aligns marker +x
+ * with the path tangent. A down-pointing triangle here would appear rotated
+ * left on the vertical root stem. The marker size is expressed in stroke
+ * widths so it tracks the 2.25px connector at every zoom.
+ */
+export const ROOT_ARROW_MARKER = {
+  path: 'M 0 0 L 8 4 L 0 8 z',
+  refX: 8,
+  refY: 4,
+  markerWidth: 3.5,
+  markerHeight: 3.5,
+  markerUnits: 'strokeWidth',
+  orient: 'auto',
+} as const
 const HORIZONTAL_GAP = 220
 const LEVEL_GAP = 105
 const TOP = 96
