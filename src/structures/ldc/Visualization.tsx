@@ -24,6 +24,7 @@ import {
   ROW_BAND_TOP,
   cameraAtOne,
   circleGeometry,
+  circleHeapBand,
   clamp,
   debutCellGeometry,
   debutRoute,
@@ -185,6 +186,10 @@ export default function LdcVisualization({
   const pins = useMemo(() => collectPins(snapshot), [snapshot])
   const ring = useMemo(
     () => (layoutMode === 'circle' ? circleGeometry(nodes) : null),
+    [nodes, layoutMode],
+  )
+  const circleHeap = useMemo(
+    () => (layoutMode === 'circle' ? circleHeapBand(nodes) : null),
     [nodes, layoutMode],
   )
   const pinPlacements = useMemo(
@@ -530,6 +535,7 @@ export default function LdcVisualization({
     return routeArrow(source, field, target, layout, layoutMode, nodes)
   }
 
+  const showHeapBand = circleHeap !== null || (layoutMode === 'row' && hasHeap)
   const emptyBandExtra = nodes.length === 0 ? 36 : 0
   const bandX = fitBounds.x - BAND_PAD - emptyBandExtra
   const bandWidth = Math.max(
@@ -652,13 +658,15 @@ export default function LdcVisualization({
               r={ring.radius + NODE_W / 2 + 26}
             />
           ) : null}
-          {hasHeap ? (
+          {showHeapBand ? (
             <rect
               className="lane-band lane-band-heap"
-              x={bandX}
-              y={HEAP_BAND_TOP}
-              width={bandWidth}
-              height={HEAP_BAND_BOTTOM - HEAP_BAND_TOP}
+              x={circleHeap ? circleHeap.x : bandX}
+              y={circleHeap ? circleHeap.y : HEAP_BAND_TOP}
+              width={circleHeap ? circleHeap.width : bandWidth}
+              height={
+                circleHeap ? circleHeap.height : HEAP_BAND_BOTTOM - HEAP_BAND_TOP
+              }
               rx="14"
             />
           ) : null}
@@ -671,10 +679,10 @@ export default function LdcVisualization({
             rx="14"
             style={ring ? { display: 'none' } : undefined}
           />
-          {hasHeap ? (
+          {showHeapBand ? (
             <text
-              x={bandX + 14}
-              y={HEAP_BAND_TOP + 22}
+              x={(circleHeap ? circleHeap.x : bandX) + 14}
+              y={(circleHeap ? circleHeap.y : HEAP_BAND_TOP) + 22}
               className="lane-band-label"
               fontSize="13"
             >
