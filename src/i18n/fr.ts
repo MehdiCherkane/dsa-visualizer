@@ -38,11 +38,6 @@ export const fr = {
         title: 'Piles et files statiques',
         description: 'Piles et files implantées dans des tableaux de taille fixe.',
       },
-      {
-        chapter: 5,
-        title: 'Listes doublement chaînées circulaires',
-        description: 'Listes à double lien dont le dernier nœud reboucle sur le premier.',
-      },
     ],
     footer: 'Tout fonctionne hors ligne : un seul fichier, aucune connexion.',
     backArrow: '←',
@@ -60,6 +55,11 @@ export const fr = {
     },
     ldc: {
       description: 'Profils Entiers et Étudiants, 8 scénarios guidés.',
+    },
+    lddc: {
+      title: 'Listes doublement chaînées circulaires',
+      description:
+        'Le dernier nœud reboucle sur le premier : parcours en boucle, insertions en O(1) via debut->precedent.',
     },
   },
   common: {
@@ -526,6 +526,144 @@ export const fr = {
         title: 'Arrivées et service',
         description:
           'Enregistrer les étudiants 201, 202, 203, puis servir deux étudiants et afficher la file restante.',
+      },
+    },
+  },
+  lddc: {
+    ops: {
+      afficherListe: {
+        label: 'Afficher la liste',
+        complexity: 'O(n)',
+        note: 'Parcours do…while : on s’arrête quand courant revient sur debut.',
+      },
+      afficherListeEnvers: {
+        label: 'Afficher à l’envers',
+        complexity: 'O(n)',
+        note: 'debut->precedent donne le dernier nœud, puis le parcours remonte par precedent.',
+      },
+      insererEnTete: {
+        label: 'Insérer en tête',
+        complexity: 'O(1)',
+        note: 'debut->precedent est le dernier nœud : le raccord se fait sans parcours.',
+      },
+      insererEnFin: {
+        label: 'Insérer en fin',
+        complexity: 'O(1)',
+        note: 'Le dernier nœud est accessible via debut->precedent : ajout en temps constant.',
+      },
+      supprimerEnTete: {
+        label: 'Supprimer en tête',
+        complexity: 'O(1)',
+        note: 'debut avance, puis le dernier et le nouveau premier se raccordent.',
+      },
+      supprimerValeur: {
+        label: 'Supprimer une valeur',
+        complexity: 'O(n)',
+        note: 'Parcours do…while puis détachement O(1) avec precedent et suivant.',
+      },
+      rechercher: {
+        label: 'Rechercher une valeur',
+        complexity: 'O(n)',
+        note: 'Le parcours circulaire s’arrête quand courant revient sur debut.',
+      },
+      passerAuSuivant: {
+        label: 'Passer au suivant',
+        complexity: 'O(1)',
+        note: 'debut avance d’un cran : le tour continue, la liste garde la même taille.',
+      },
+      detruireListe: {
+        label: 'Détruire la liste',
+        complexity: 'O(n)',
+        note: 'Suppressions en tête successives jusqu’à debut == NULL.',
+      },
+      inscrireEtudiant: {
+        label: 'Inscrire un étudiant',
+        complexity: 'O(1)',
+        note: 'Ajout en fin via debut->precedent : aucun parcours du registre.',
+      },
+      radierEtudiant: {
+        label: 'Radier un étudiant',
+        complexity: 'O(n)',
+        note: 'Recherche circulaire par numéro, puis détachement O(1).',
+      },
+    },
+    captions: {
+      reasonSingleNode: '`debut->suivant == debut` : un seul nœud, qui pointe vers lui-même.',
+      reasonMultipleNodes: '`debut->suivant != debut` : la liste contient plusieurs nœuds.',
+      lastFromPrecedent:
+        '`debut->precedent` est le dernier nœud : il est trouvé en O(1), sans parcours.',
+      selfLinks:
+        'La liste était vide : `suivant` et `precedent` du nouveau nœud pointent vers lui-même.',
+      circularStop: '`courant` est revenu sur `debut` : le parcours circulaire s’arrête.',
+      circularContinue: '`courant` n’est pas revenu sur `debut` : le parcours continue.',
+      notFoundLoop: 'Le parcours est revenu sur `debut` sans trouver la valeur : retour `0`.',
+      rotateHead:
+        '`debut` avance sur `debut->suivant` : le tour continue, la liste garde la même taille.',
+      removeSingleNode: 'Le nœud est seul et pointe vers lui-même : `free` puis `debut = NULL`.',
+      reasonHeadCircular:
+        '`courant` pointe sur `debut` : il faut déplacer `debut` avant de libérer.',
+      reasonNotHeadCircular: '`courant` ne pointe pas sur `debut` : `debut` reste inchangé.',
+    },
+    scenarios: {
+      cours: {
+        title: 'Le cours : le cercle 9 → 2 → 5',
+        description:
+          'Charge la LDC circulaire du cours : le dernier nœud (5) pointe vers debut (9).',
+      },
+      tour: {
+        title: 'Tour de passage des exposés',
+        description:
+          'Inscrire 101, 102 puis 103 en fin (O(1)), puis passer deux fois au suivant : 103 puis 101 prennent la tête du tour.',
+      },
+      tete: {
+        title: 'Insertion en tête O(1)',
+        description:
+          'Insérer 7 en tête via debut->precedent : le dernier nœud est trouvé sans parcours.',
+      },
+      queue: {
+        title: 'Insertion en fin O(1)',
+        description:
+          'Insérer 7 en fin grâce à debut->precedent, puis vérifier que le nouveau dernier pointe vers debut.',
+      },
+      suppression: {
+        title: 'Supprimer une valeur',
+        description:
+          'Supprimer 2 (au milieu) puis 9 (en tête) : le dernier reste toujours raccordé à debut.',
+      },
+      unique: {
+        title: 'Le nœud unique',
+        description:
+          'Supprimer 9 du cercle à un seul nœud, puis insérer 4 : le nouveau nœud pointe vers lui-même.',
+      },
+      envers: {
+        title: 'Parcours inverse',
+        description:
+          'debut->precedent donne le dernier nœud, puis le parcours remonte par precedent jusqu’au dernier.',
+      },
+      recherche: {
+        title: 'Recherche circulaire',
+        description:
+          'Rechercher 2 puis 99 : le parcours s’arrête quand courant revient sur debut.',
+      },
+      detruire: {
+        title: 'Détruire la liste',
+        description:
+          'Détruire 9 → 2 → 5 nœud par nœud et vérifier que debut devient NULL.',
+      },
+      registre: {
+        title: 'Registre circulaire',
+        description:
+          'Inscrire E1, E2, E3 en fin de cercle, puis radier le numéro 102.',
+      },
+      tourEtudiants: {
+        title: 'Tour de passage (étudiants)',
+        description:
+          'Inscrire trois étudiants puis faire avancer debut deux fois : le tour de passage continue.',
+      },
+      detruireEtudiants: {
+        title: 'Détruire le registre',
+        description:
+          'Détruire le registre circulaire nœud par nœud et vérifier que debut devient NULL.',
       },
     },
   },

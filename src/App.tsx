@@ -3,6 +3,7 @@ import { fr } from './i18n/fr'
 import { pluginForChapter, plugins } from './registry'
 import { DemoApp } from './ui/App'
 import { MainMenu } from './ui/MainMenu'
+import { SiteBackdrop } from './ui/SiteBackdrop'
 import { MENU_HASH, navigate, useHashRoute } from './ui/useHashRoute'
 
 export default function App() {
@@ -24,7 +25,12 @@ export default function App() {
   }, [plugin])
 
   if (!plugin) {
-    return <MainMenu plugins={plugins} theme={theme} onTheme={toggleTheme} />
+    return (
+      <>
+        <SiteBackdrop />
+        <MainMenu plugins={plugins} theme={theme} onTheme={toggleTheme} />
+      </>
+    )
   }
 
   return (

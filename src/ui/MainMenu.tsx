@@ -44,11 +44,13 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
 
       <main className="menu-main" aria-labelledby="menu-title">
         <section className="menu-hero">
-          <p className="menu-eyebrow">{fr.menu.eyebrow}</p>
-          <h1 id="menu-title" className="menu-title">
-            {fr.menu.title}
-          </h1>
-          <p className="menu-subtitle">{fr.menu.subtitle}</p>
+          <div className="menu-hero-copy">
+            <p className="menu-eyebrow">{fr.menu.eyebrow}</p>
+            <h1 id="menu-title" className="menu-title">
+              {fr.menu.title}
+            </h1>
+            <p className="menu-subtitle">{fr.menu.subtitle}</p>
+          </div>
         </section>
 
         <section className="menu-section" aria-labelledby="menu-chapters">

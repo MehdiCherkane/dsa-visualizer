@@ -23,6 +23,7 @@ import {
   ROW_BAND_BOTTOM,
   ROW_BAND_TOP,
   cameraAtOne,
+  circleGeometry,
   clamp,
   debutCellGeometry,
   debutRoute,
@@ -37,7 +38,14 @@ import {
   worldPoint,
   zoomAtCursor,
 } from './geometry'
-import type { Camera, NullStubGeometry, PinInput, Point, Size } from './geometry'
+import type {
+  Camera,
+  LayoutMode,
+  NullStubGeometry,
+  PinInput,
+  Point,
+  Size,
+} from './geometry'
 import { payloadKey } from './memory'
 import type { LdcNode, LdcSnapshot, PointerField } from './memory'
 
@@ -163,19 +171,27 @@ export default function LdcVisualization({
   presentation,
   speed,
   stepIndex,
-}: VisualizationProps<LdcSnapshot>): JSX.Element {
+  layoutMode = 'row',
+}: VisualizationProps<LdcSnapshot> & { layoutMode?: LayoutMode }): JSX.Element {
   const reducedMotion = Boolean(useReducedMotion())
   const [stageRef, stage] = useElementSize()
   const stageW = Math.max(360, stage.width)
   const stageH = Math.max(240, stage.height)
 
   const nodes = snapshot.nodes
-  const layout = useMemo(() => layoutNodes(nodes), [nodes])
+  const layout = useMemo(() => layoutNodes(nodes, layoutMode), [nodes, layoutMode])
   const pins = useMemo(() => collectPins(snapshot), [snapshot])
-  const pinPlacements = useMemo(() => layoutPins(pins, nodes), [pins, nodes])
+  const ring = useMemo(
+    () => (layoutMode === 'circle' ? circleGeometry(nodes) : null),
+    [nodes, layoutMode],
+  )
+  const pinPlacements = useMemo(
+    () => layoutPins(pins, nodes, layoutMode),
+    [pins, nodes, layoutMode],
+  )
   const contentBounds = useMemo(
-    () => snapshotBounds(nodes, pins, snapshot.globals.debut),
-    [nodes, pins, snapshot.globals.debut],
+    () => snapshotBounds(nodes, pins, snapshot.globals.debut, layoutMode),
+    [nodes, pins, snapshot.globals.debut, layoutMode],
   )
   const operationBounds = useMemo(() => {
     if (!operationSteps || operationSteps.length === 0) return null
@@ -185,10 +201,11 @@ export default function LdcVisualization({
           operationStep.snapshot.nodes,
           collectPins(operationStep.snapshot),
           operationStep.snapshot.globals.debut,
+          layoutMode,
         ),
       ),
     )
-  }, [operationSteps])
+  }, [operationSteps, layoutMode])
   const fitBounds = operationBounds ?? contentBounds
   const hasHeap =
     nodes.some((node) => node.lane === 'heap') ||
@@ -505,10 +522,10 @@ export default function LdcVisualization({
     pointer: PointerValue,
   ): ReturnType<typeof routeArrow> => {
     if (pointer.kind === 'uninit') return null
-    if (pointer.kind === 'null') return routeArrow(source, field, null, layout)
+    if (pointer.kind === 'null') return routeArrow(source, field, null, layout, layoutMode, nodes)
     const target = nodes.find((candidate) => candidate.id === pointer.id) ?? null
     if (!target) return null
-    return routeArrow(source, field, target, layout)
+    return routeArrow(source, field, target, layout, layoutMode, nodes)
   }
 
   const emptyBandExtra = nodes.length === 0 ? 36 : 0
@@ -519,18 +536,18 @@ export default function LdcVisualization({
   )
   const emptyBandTop = EMPTY_BAND_TOP
   const emptyBandHeight = EMPTY_BAND_HEIGHT
-  const debutGeometry = debutCellGeometry(nodes)
-  const debutArrow = debutRoute(nodes, snapshot.globals.debut)
+  const debutGeometry = debutCellGeometry(nodes, layoutMode)
+  const debutArrow = debutRoute(nodes, snapshot.globals.debut, layoutMode)
   const debutChange = step.changes.find(
     (change) => change.kind === 'variable' && change.scope === 'global' && change.name === 'debut',
   )
   const oldDebutRoute =
     debutChange?.kind === 'variable' && isPointerValue(debutChange.from)
-      ? debutRoute(nodes, debutChange.from)
+      ? debutRoute(nodes, debutChange.from, layoutMode)
       : null
   const newDebutRoute =
     debutChange?.kind === 'variable' && isPointerValue(debutChange.to)
-      ? debutRoute(nodes, debutChange.to)
+      ? debutRoute(nodes, debutChange.to, layoutMode)
       : null
   const emptyOverlay = screenPoint(camera, {
     x: bandX + bandWidth / 2,
@@ -625,6 +642,14 @@ export default function LdcVisualization({
         <rect width={stageW} height={stageH} fill="url(#camera-grid)" />
 
         <g transform={`translate(${camera.x} ${camera.y}) scale(${camera.k})`}>
+          {ring ? (
+            <circle
+              className="lane-band lane-band-circle"
+              cx={ring.cx}
+              cy={ring.cy}
+              r={ring.radius + NODE_W / 2 + 26}
+            />
+          ) : null}
           {hasHeap ? (
             <rect
               className="lane-band lane-band-heap"
@@ -642,6 +667,7 @@ export default function LdcVisualization({
             width={bandWidth}
             height={nodes.length === 0 ? emptyBandHeight : ROW_BAND_BOTTOM - ROW_BAND_TOP}
             rx="14"
+            style={ring ? { display: 'none' } : undefined}
           />
           {hasHeap ? (
             <text
@@ -654,8 +680,16 @@ export default function LdcVisualization({
             </text>
           ) : null}
           <text
-            x={bandX + (nodes.length === 0 ? 8 : 14)}
-            y={(nodes.length === 0 ? emptyBandTop : ROW_BAND_TOP) + 22}
+            x={
+              ring
+                ? ring.cx - (ring.radius + NODE_W / 2 + 26) + 18
+                : bandX + (nodes.length === 0 ? 8 : 14)
+            }
+            y={
+              ring
+                ? ring.cy - (ring.radius + NODE_W / 2 + 26) + 24
+                : (nodes.length === 0 ? emptyBandTop : ROW_BAND_TOP) + 22
+            }
             className="lane-band-label"
             fontSize="13"
           >

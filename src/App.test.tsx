@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import App from './App'
 import { fr } from './i18n/fr'
 import { defaultPlugin } from './registry'
+import { MENU_HASH } from './ui/useHashRoute'
 
 describe('coquille de l’application', () => {
   beforeAll(() => {
@@ -34,5 +35,19 @@ describe('coquille de l’application', () => {
   it('affiche les paramètres de l’opération par défaut', () => {
     const markup = renderToStaticMarkup(<App />)
     expect(markup).toContain(fr.params.valeur)
+  })
+
+  it('ajoute la décoration de fond au menu principal', () => {
+    const previousHash = window.location.hash
+    window.location.hash = MENU_HASH
+
+    try {
+      const markup = renderToStaticMarkup(<App />)
+      expect(markup).toContain('class="site-backdrop"')
+      expect(markup).toContain('site-backdrop-zellige')
+      expect(markup).toContain(fr.menu.title)
+    } finally {
+      window.location.hash = previousHash
+    }
   })
 })

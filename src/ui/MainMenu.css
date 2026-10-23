@@ -10,6 +10,7 @@
 .menu-main {
   display: flex;
   flex-direction: column;
+  justify-content: safe center;
   gap: 26px;
   min-height: 0;
   overflow-x: hidden;
@@ -22,6 +23,11 @@
   max-width: 1100px;
   margin: 0 auto;
   padding: 24px 28px 0;
+}
+
+.menu-hero-copy {
+  min-width: 0;
+  max-width: 680px;
 }
 
 .menu-eyebrow {
