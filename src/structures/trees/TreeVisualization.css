@@ -229,13 +229,13 @@
 }
 
 .tree-null-bar {
-  stroke: var(--ink-2);
+  stroke: currentColor;
   stroke-width: 4;
   stroke-linecap: round;
 }
 
 .tree-null-label {
-  fill: var(--ink-2);
+  fill: currentColor;
   font-family: var(--mono);
   font-weight: 700;
 }

@@ -10,20 +10,22 @@ const LEVEL_GAP = 105
 const TOP = 96
 const SIDE_PADDING = 64
 /** Leaves always draw one extra NULL row; keep room for its ground symbol. */
-const BOTTOM_PADDING = 70
+const BOTTOM_PADDING = 62
 
 /**
- * Chapter 4's NULL ground symbol, enlarged to the tree's node scale.
+ * Chapter 4's NULL ground symbol, sized to the tree's node scale.
  * The three bars get shorter downwards and the label sits below them.
+ * All values are 18% smaller than the first tree version.
  */
-export const NULL_GROUND_HALF_WIDTHS = [22, 14, 7] as const
-export const NULL_GROUND_BAR_OFFSETS = [0, 9, 18] as const
-export const NULL_GROUND_LABEL_DY = 48
-export const NULL_GROUND_LABEL_SIZE = 28
+export const NULL_GROUND_HALF_WIDTHS = [18, 11.5, 6] as const
+export const NULL_GROUND_BAR_OFFSETS = [0, 7, 15] as const
+export const NULL_GROUND_LABEL_DY = 39
+export const NULL_GROUND_LABEL_SIZE = 23
+export const NULL_GROUND_STEM = 13
 export const NULL_GROUND_BOUNDS = {
-  halfWidth: 40,
-  top: -16,
-  bottom: 64,
+  halfWidth: 33,
+  top: -13,
+  bottom: 53,
 } as const
 
 export interface TreeLayoutNode {
@@ -218,7 +220,7 @@ export function layoutTree(snapshot: TreeSnapshot): TreeLayout {
         const side = field === 'gauche' ? -1 : 1
         // Stop on the active ring's top edge (or the stem start when idle).
         // The renderer draws a vertical stem down to the ground symbol.
-        const edge = connector(parent, { x, y: y - 16 }, side)
+        const edge = connector(parent, { x, y: y - NULL_GROUND_STEM }, side)
         nulls.push({
           parentId: node.id,
           field,

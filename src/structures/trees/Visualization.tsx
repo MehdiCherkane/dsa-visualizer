@@ -9,6 +9,7 @@ import {
   NULL_GROUND_HALF_WIDTHS,
   NULL_GROUND_LABEL_DY,
   NULL_GROUND_LABEL_SIZE,
+  NULL_GROUND_STEM,
   placeEdgeLabels,
   TREE_NODE_HEIGHT,
   TREE_NODE_RADIUS,
@@ -284,7 +285,7 @@ export default function TreeVisualization({
           <marker id="tree-arrow-right" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto">
             <path d="M 0 0 L 8 4 L 0 8 z" fill="var(--arrow-prev)" />
           </marker>
-          <marker id="tree-arrow-root" viewBox="0 0 8 8" refX="4" refY="8" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto">
+          <marker id="tree-arrow-root" viewBox="0 0 8 8" refX="4" refY="8" markerWidth="6" markerHeight="6" markerUnits="userSpaceOnUse" orient="auto">
             <path d="M 0 0 L 8 0 L 4 8 z" fill="var(--gold)" />
           </marker>
           <pattern id="tree-freed-hatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
@@ -295,9 +296,9 @@ export default function TreeVisualization({
 
         {root.kind === 'node' && layout.rootX !== null ? (
           <g className={`tree-root-pin${snapshot.nodes.find((node) => node.id === root.id)?.freed ? ' is-dangling' : ''}`}>
-            <rect x={layout.rootX - 55} y="6" width="110" height="34" rx="10" />
-            <text x={layout.rootX} y="28" textAnchor="middle" dominantBaseline="central">{fr.trees.viz.root}</text>
-            <path d={`M ${layout.rootX} 40 L ${layout.rootX} ${layout.nodes[0]?.y ? layout.nodes[0].y - TREE_NODE_HEIGHT / 2 - 8 : 68}`} markerEnd="url(#tree-arrow-root)" />
+            <rect x={layout.rootX - 55} y="4" width="110" height="34" rx="10" />
+            <text x={layout.rootX} y="21" textAnchor="middle" dominantBaseline="central">{fr.trees.viz.root}</text>
+            <path d={`M ${layout.rootX} 38 L ${layout.rootX} ${layout.nodes[0]?.y ? layout.nodes[0].y - TREE_NODE_HEIGHT / 2 - 12 : 68}`} markerEnd="url(#tree-arrow-root)" />
           </g>
         ) : null}
 
@@ -346,18 +347,18 @@ export default function TreeVisualization({
               <line
                 className="tree-null-stem"
                 x1={entry.x}
-                y1={entry.y - 16}
+                y1={entry.y - NULL_GROUND_STEM}
                 x2={entry.x}
                 y2={entry.y}
               />
               {isActiveNull ? (
                 <rect
                   className="tree-null-active-ring"
-                  x={entry.x - 38}
-                  y={entry.y - 16}
-                  width="76"
-                  height="80"
-                  rx="18"
+                  x={entry.x - 31}
+                  y={entry.y - 13}
+                  width="62"
+                  height="66"
+                  rx="15"
                 />
               ) : null}
               {NULL_GROUND_HALF_WIDTHS.map((halfWidth, index) => (
@@ -382,11 +383,11 @@ export default function TreeVisualization({
               {isActiveNull ? (
                 <g
                   className="tree-null-active-marker"
-                  transform={`translate(${entry.x + 30} ${entry.y - 6})`}
+                  transform={`translate(${entry.x + 25} ${entry.y - 5})`}
                   aria-hidden="true"
                 >
-                  <circle r="10" />
-                  <text y="4.2" textAnchor="middle" fontSize="12">
+                  <circle r="8.2" />
+                  <text y="3.4" textAnchor="middle" fontSize="9.8">
                     n
                   </text>
                 </g>
