@@ -65,11 +65,14 @@ export type LayoutMode = 'row' | 'circle'
 
 export const CIRCLE_CX = 640
 export const CIRCLE_CY = 560
+/** A three-node ring needs more room than the compact formula below gives it. */
+export const CIRCLE_MIN_RADIUS = 200
 
 export interface CircleGeometry {
   cx: number
   cy: number
   radius: number
+  count: number
 }
 
 export function clamp(value: number, min: number, max: number): number {
@@ -82,8 +85,11 @@ export function circleGeometry(nodes: LdcNode[]): CircleGeometry | null {
   const radius =
     count === 1
       ? 0
-      : Math.max(160, (NODE_W / 2 + 26) / Math.sin(Math.PI / count))
-  return { cx: CIRCLE_CX, cy: CIRCLE_CY, radius }
+      : Math.max(
+          count >= 3 ? CIRCLE_MIN_RADIUS : 160,
+          (NODE_W / 2 + 26) / Math.sin(Math.PI / count),
+        )
+  return { cx: CIRCLE_CX, cy: CIRCLE_CY, radius, count }
 }
 
 export function layoutNodes(
@@ -127,9 +133,30 @@ export function laneY(point: Point, field: PointerField): number {
   return point.y + NODE_H * (field === 'suivant' ? SUIVANT_LANE : PRECEDENT_LANE)
 }
 
-export function pointerAnchor(_node: LdcNode, point: Point, field: PointerField): Point {
+export function pointerSide(
+  field: PointerField,
+  flipped = false,
+): 'left' | 'right' {
+  if (field === 'suivant') return flipped ? 'left' : 'right'
+  return flipped ? 'right' : 'left'
+}
+
+export function isNodeFlipped(
+  point: Point,
+  ring: CircleGeometry | null,
+): boolean {
+  return ring !== null && point.y + NODE_H / 2 > ring.cy + 0.5
+}
+
+export function pointerAnchor(
+  _node: LdcNode,
+  point: Point,
+  field: PointerField,
+  flipped = false,
+): Point {
+  const side = pointerSide(field, flipped)
   return {
-    x: field === 'suivant' ? point.x + NODE_W - CELL_W / 2 : point.x + CELL_W / 2,
+    x: side === 'right' ? point.x + NODE_W - CELL_W / 2 : point.x + CELL_W / 2,
     y: laneY(point, field),
   }
 }
@@ -310,19 +337,10 @@ export interface ArrowRoute {
   stub?: NullStubGeometry
 }
 
-function rectBoundaryPoint(center: Point, direction: Point): Point {
-  const dx = direction.x
-  const dy = direction.y
-  if (Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6) return center
-  const tx = Math.abs(dx) < 1e-6 ? Number.POSITIVE_INFINITY : NODE_W / 2 / Math.abs(dx)
-  const ty = Math.abs(dy) < 1e-6 ? Number.POSITIVE_INFINITY : NODE_H / 2 / Math.abs(dy)
-  const distance = Math.min(tx, ty)
-  return { x: center.x + dx * distance, y: center.y + dy * distance }
-}
-
 /**
- * Routes a link around the ring: `suivant` runs on the outside, `precedent`
- * on the inside, so the two directions stay visually distinct.
+ * Routes a circular link locally around the ring. Every arrow starts at its
+ * colored pointer dot, rounds the target on the side facing the source and
+ * lands horizontally on the opposite border of that target.
  */
 function circularRoute(
   field: PointerField,
@@ -330,52 +348,65 @@ function circularRoute(
   targetPoint: Point,
   ring: CircleGeometry,
 ): ArrowRoute {
-  const sourceCenter = {
-    x: sourcePoint.x + NODE_W / 2,
-    y: sourcePoint.y + NODE_H / 2,
-  }
-  const targetCenter = {
-    x: targetPoint.x + NODE_W / 2,
-    y: targetPoint.y + NODE_H / 2,
-  }
-  const sourceAngle = Math.atan2(sourceCenter.y - ring.cy, sourceCenter.x - ring.cx)
-  const targetAngle = Math.atan2(targetCenter.y - ring.cy, targetCenter.x - ring.cx)
   const outward = field === 'suivant'
-
-  let delta = targetAngle - sourceAngle
-  if (outward) {
-    while (delta <= 0) delta += Math.PI * 2
-  } else {
-    while (delta >= 0) delta -= Math.PI * 2
+  const sourceFlipped = isNodeFlipped(sourcePoint, ring)
+  const targetFlipped = isNodeFlipped(targetPoint, ring)
+  const startSide = pointerSide(field, sourceFlipped)
+  const start = {
+    x:
+      startSide === 'right'
+        ? sourcePoint.x + NODE_W - CELL_W / 2
+        : sourcePoint.x + CELL_W / 2,
+    y: sourcePoint.y + NODE_H * (outward ? SUIVANT_LANE : PRECEDENT_LANE),
   }
 
-  const sourceDirection = { x: Math.cos(sourceAngle), y: Math.sin(sourceAngle) }
-  const targetDirection = { x: Math.cos(targetAngle), y: Math.sin(targetAngle) }
-  const start = rectBoundaryPoint(
-    sourceCenter,
-    outward ? sourceDirection : { x: -sourceDirection.x, y: -sourceDirection.y },
-  )
-  const end = rectBoundaryPoint(
-    targetCenter,
-    outward ? targetDirection : { x: -targetDirection.x, y: -targetDirection.y },
-  )
+  // The arrow enters the target on the cell side opposite to the source
+  // pointer: a forward link lands on the PREC side, a backward link on SUIV.
+  const endAtRight = outward ? targetFlipped : !targetFlipped
+  const end = {
+    x: endAtRight ? targetPoint.x + NODE_W : targetPoint.x,
+    y:
+      targetPoint.y +
+      NODE_H * (outward ? PRECEDENT_LANE : SUIVANT_LANE),
+  }
 
-  const arcRadius = Math.max(40, ring.radius + (outward ? 86 : -72))
+  const sourceSign = startSide === 'right' ? 1 : -1
+  const targetSign = endAtRight ? 1 : -1
+  const sourceCenterY = sourcePoint.y + NODE_H / 2
+  const targetCenterY = targetPoint.y + NODE_H / 2
+  const wrapAbove =
+    Math.abs(sourceCenterY - targetCenterY) < 1
+      ? !outward
+      : sourceCenterY < targetCenterY
+
+  // Approach the target from just outside its opposite border, then round the
+  // last corner so the tip lands horizontally on the border.
+  const margin = 34
+  const outside = { x: end.x + targetSign * margin, y: end.y }
+  const corner = {
+    x: outside.x,
+    y: end.y + (wrapAbove ? -margin : margin),
+  }
+  const delta = { x: corner.x - start.x, y: corner.y - start.y }
   const c1 = {
-    x: ring.cx + Math.cos(sourceAngle + delta * 0.32) * arcRadius,
-    y: ring.cy + Math.sin(sourceAngle + delta * 0.32) * arcRadius,
+    x: start.x + delta.x * 0.35 + sourceSign * 26,
+    y: start.y + delta.y * 0.35,
   }
   const c2 = {
-    x: ring.cx + Math.cos(sourceAngle + delta * 0.68) * arcRadius,
-    y: ring.cy + Math.sin(sourceAngle + delta * 0.68) * arcRadius,
+    x: corner.x,
+    y: corner.y + (wrapAbove ? -36 : 36),
   }
 
   return {
     kind: 'curve',
-    path: `M ${start.x} ${start.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${end.x} ${end.y}`,
+    path: [
+      `M ${start.x} ${start.y}`,
+      `C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${corner.x} ${corner.y}`,
+      `Q ${outside.x} ${outside.y}, ${end.x} ${end.y}`,
+    ].join(' '),
     tail: start,
     tip: end,
-    bounds: boundsOfPoints([start, c1, c2, end], 2),
+    bounds: boundsOfPoints([start, c1, c2, corner, outside, end], 2),
   }
 }
 
@@ -389,7 +420,13 @@ export function routeArrow(
 ): ArrowRoute | null {
   const sourcePoint = layout.get(source.id)
   if (!sourcePoint) return null
-  const tail = pointerAnchor(source, sourcePoint, field)
+  const ring = mode === 'circle' ? circleGeometry(nodes) : null
+  const tail = pointerAnchor(
+    source,
+    sourcePoint,
+    field,
+    isNodeFlipped(sourcePoint, ring),
+  )
 
   if (!target) {
     const stub = nullStubGeometry(source, field, sourcePoint)
@@ -436,7 +473,6 @@ export function routeArrow(
     source.lane === 'row' &&
     target.lane === 'row'
   ) {
-    const ring = circleGeometry(nodes)
     if (ring && ring.radius > 0) {
       return circularRoute(field, sourcePoint, targetPoint, ring)
     }
