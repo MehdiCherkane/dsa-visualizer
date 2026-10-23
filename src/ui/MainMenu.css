@@ -80,11 +80,6 @@
   list-style: none;
 }
 
-/* Upcoming chapters stay on one compact row on wide screens. */
-.chapter-grid.is-soon-grid {
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-}
-
 .chapter-card {
   display: flex;
   flex-direction: column;
