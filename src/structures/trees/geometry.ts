@@ -9,8 +9,22 @@ const HORIZONTAL_GAP = 220
 const LEVEL_GAP = 105
 const TOP = 96
 const SIDE_PADDING = 64
-/** Leaves always draw one extra NULL row; keep room for its pill and margin. */
-const BOTTOM_PADDING = 24
+/** Leaves always draw one extra NULL row; keep room for its ground symbol. */
+const BOTTOM_PADDING = 70
+
+/**
+ * Chapter 4's NULL ground symbol, enlarged to the tree's node scale.
+ * The three bars get shorter downwards and the label sits below them.
+ */
+export const NULL_GROUND_HALF_WIDTHS = [22, 14, 7] as const
+export const NULL_GROUND_BAR_OFFSETS = [0, 9, 18] as const
+export const NULL_GROUND_LABEL_DY = 48
+export const NULL_GROUND_LABEL_SIZE = 28
+export const NULL_GROUND_BOUNDS = {
+  halfWidth: 40,
+  top: -16,
+  bottom: 64,
+} as const
 
 export interface TreeLayoutNode {
   node: TreeNode
@@ -202,6 +216,8 @@ export function layoutTree(snapshot: TreeSnapshot): TreeLayout {
         const x = (width * (childIndex + 0.5)) / childSlots
         const y = parent.y + LEVEL_GAP
         const side = field === 'gauche' ? -1 : 1
+        // Stop on the active ring's top edge (or the stem start when idle).
+        // The renderer draws a vertical stem down to the ground symbol.
         const edge = connector(parent, { x, y: y - 16 }, side)
         nulls.push({
           parentId: node.id,
@@ -234,18 +250,6 @@ function rectsOverlap(a: ScreenRect, b: ScreenRect, margin = 0): boolean {
   )
 }
 
-function circleHitsRect(
-  cx: number,
-  cy: number,
-  radius: number,
-  rect: ScreenRect,
-  margin = 0,
-): boolean {
-  const closestX = Math.min(Math.max(cx, rect.left), rect.right)
-  const closestY = Math.min(Math.max(cy, rect.top), rect.bottom)
-  return Math.hypot(cx - closestX, cy - closestY) < radius + margin
-}
-
 /**
  * Places the `gauche` / `droit` labels outside the edge and outside every
  * node, NULL pill and other label. Sizes are expressed in screen pixels and
@@ -260,15 +264,16 @@ export function placeEdgeLabels(
   const scale = Math.max(renderScale, 0.05)
   const positions = new Map(layout.nodes.map((node) => [node.node.id, node]))
   const nodeObstacles = layout.nodes.map((node) => ({
-    x: node.x * scale,
-    y: node.y * scale,
-    radius: TREE_NODE_RADIUS * scale,
+    left: (node.x - TREE_NODE_RADIUS) * scale,
+    right: (node.x + TREE_NODE_RADIUS) * scale,
+    top: (node.y - TREE_NODE_RADIUS) * scale,
+    bottom: (node.y + TREE_NODE_RADIUS) * scale,
   }))
   const nullObstacles = layout.nulls.map((entry) => ({
-    left: (entry.x - 27) * scale,
-    right: (entry.x + 27) * scale,
-    top: (entry.y - 13) * scale,
-    bottom: (entry.y + 13) * scale,
+    left: (entry.x - NULL_GROUND_BOUNDS.halfWidth) * scale,
+    right: (entry.x + NULL_GROUND_BOUNDS.halfWidth) * scale,
+    top: (entry.y + NULL_GROUND_BOUNDS.top) * scale,
+    bottom: (entry.y + NULL_GROUND_BOUNDS.bottom) * scale,
   }))
   const placed: ScreenRect[] = []
   const result = new Map<string, TreeEdgeLabel>()
@@ -306,7 +311,7 @@ export function placeEdgeLabels(
           bottom: y + heightPx / 2,
         }
         const hitsNode = nodeObstacles.some((node) =>
-          circleHitsRect(node.x, node.y, node.radius, rect, EDGE_LABEL_MARGIN_PX),
+          rectsOverlap(rect, node, EDGE_LABEL_MARGIN_PX),
         )
         const hitsNull = nullObstacles.some((pill) =>
           rectsOverlap(rect, pill, EDGE_LABEL_MARGIN_PX),

@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { Step } from '../../core/types'
 import { fr } from '../../i18n/fr'
-import { layoutTree, measureTree, placeEdgeLabels, TREE_NODE_RADIUS } from './geometry'
+import {
+  layoutTree,
+  measureTree,
+  NULL_GROUND_BOUNDS,
+  placeEdgeLabels,
+  TREE_NODE_RADIUS,
+} from './geometry'
 import {
   courseTreeSnapshot,
   emptyTreeSnapshot,
@@ -283,19 +289,23 @@ describe('chapitre 6 — parcours récursifs', () => {
         expect(labels, `échelle ${scale}`).toHaveLength(layout.edges.length)
         for (const label of labels) {
           for (const node of layout.nodes) {
-            const closestX = Math.min(Math.max(node.x, label.x - label.width / 2), label.x + label.width / 2)
-            const closestY = Math.min(Math.max(node.y, label.y - label.height / 2), label.y + label.height / 2)
+            const nodeRect = {
+              x: node.x,
+              y: node.y,
+              width: TREE_NODE_RADIUS * 2,
+              height: TREE_NODE_RADIUS * 2,
+            }
             expect(
-              Math.hypot(node.x - closestX, node.y - closestY),
+              overlaps(label, nodeRect),
               `échelle ${scale}, étiquette ${label.text}`,
-            ).toBeGreaterThanOrEqual(TREE_NODE_RADIUS)
+            ).toBe(false)
           }
-          for (const pill of layout.nulls) {
+          for (const symbol of layout.nulls) {
             const nullRect = {
-              x: pill.x,
-              y: pill.y,
-              width: 54,
-              height: 26,
+              x: symbol.x,
+              y: symbol.y + (NULL_GROUND_BOUNDS.top + NULL_GROUND_BOUNDS.bottom) / 2,
+              width: NULL_GROUND_BOUNDS.halfWidth * 2,
+              height: NULL_GROUND_BOUNDS.bottom - NULL_GROUND_BOUNDS.top,
             }
             expect(overlaps(label, nullRect), `échelle ${scale}, ${label.text}/NULL`).toBe(false)
           }

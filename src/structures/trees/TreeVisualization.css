@@ -62,6 +62,7 @@
 }
 
 .tree-concepts {
+  z-index: 4;
   top: 12px;
   max-width: min(260px, calc(100% - 24px));
 }
@@ -217,27 +218,40 @@
 .tree-null-gauche path { stroke: var(--arrow-next); }
 .tree-null-droit path { stroke: var(--arrow-prev); }
 
-.tree-null rect {
-  fill: var(--panel);
+/* Chapter 4's three-bar NULL ground symbol. */
+.tree-null-stem {
   stroke: currentColor;
-  stroke-width: 1.5;
+  stroke-width: 2.25;
 }
 
-.tree-null text {
+.tree-null.is-active .tree-null-stem {
+  stroke: var(--gold);
+}
+
+.tree-null-bar {
+  stroke: var(--ink-2);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.tree-null-label {
   fill: var(--ink-2);
   font-family: var(--mono);
-  font-size: calc(11px * var(--tree-label-compensation, 1));
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.tree-null.is-uninitialized text {
+.tree-null.is-uninitialized .tree-null-label {
   fill: var(--muted);
 }
 
 .tree-null.is-uninitialized path,
-.tree-null.is-uninitialized rect {
+.tree-null.is-uninitialized .tree-null-stem {
   stroke-dasharray: 4 3;
   opacity: 0.62;
+}
+
+.tree-null.is-uninitialized .tree-null-bar {
+  opacity: 0.55;
 }
 
 /* Active NULL call: same gold treatment as an active node, plus an "n" marker. */
@@ -247,14 +261,12 @@
   opacity: 1;
 }
 
-.tree-null.is-active > rect:not(.tree-null-active-ring) {
-  fill: var(--gold-soft);
+.tree-null.is-active .tree-null-bar {
   stroke: var(--gold);
-  stroke-width: 2;
 }
 
-.tree-null.is-active > text {
-  fill: var(--ink);
+.tree-null.is-active .tree-null-label {
+  fill: var(--gold);
   font-weight: 800;
 }
 
@@ -444,7 +456,8 @@
 /* Tall canvases keep the legend in the top-left corner, clear of the leaf
    row; short canvases anchor it above the button at the bottom. */
 .tree-viz-legend-control.is-top {
-  top: 86px;
+  top: 100px;
+  left: 12px;
   bottom: auto;
 }
 
