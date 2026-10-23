@@ -18,6 +18,33 @@ export interface TreeTraversalState {
   activeNodeId: number | null
 }
 
+export type TreeCallPhaseName = 'visite' | 'gauche' | 'droit'
+export type TreeCallPhaseState = 'pending' | 'current' | 'done'
+export type TreeCallStatus = 'active' | 'wait-left' | 'wait-right'
+
+/**
+ * A frozen debugger-like record used solely to teach the recursive traversal.
+ * It is separate from `frames`, whose purpose is the generic Variables panel.
+ */
+export interface TreeCallFrame {
+  id: number
+  fn: string
+  nodeId: number | null
+  line: number
+  status: TreeCallStatus
+  phases: Array<{
+    name: TreeCallPhaseName
+    state: TreeCallPhaseState
+    value?: number
+  }>
+}
+
+export interface TreeCallStack {
+  frames: TreeCallFrame[]
+  maxDepth: number
+  maxNonNullDepth: number
+}
+
 export interface TreeSnapshot extends BaseSnapshot {
   globals: Record<string, PointerValue>
   nodes: TreeNode[]
@@ -25,6 +52,7 @@ export interface TreeSnapshot extends BaseSnapshot {
   nextAddressIndex: number
   maxNodes: number
   traversal: TreeTraversalState | null
+  callStack: TreeCallStack | null
 }
 
 export const MAX_NODES = 6
@@ -85,6 +113,16 @@ export function cloneSnapshot(snapshot: TreeSnapshot): TreeSnapshot {
           activeNodeId: snapshot.traversal.activeNodeId,
         }
       : null,
+    callStack: snapshot.callStack
+      ? {
+          maxDepth: snapshot.callStack.maxDepth,
+          maxNonNullDepth: snapshot.callStack.maxNonNullDepth,
+          frames: snapshot.callStack.frames.map((frame) => ({
+            ...frame,
+            phases: frame.phases.map((phase) => ({ ...phase })),
+          })),
+        }
+      : null,
   }
 }
 
@@ -97,6 +135,7 @@ export function emptyTreeSnapshot(): TreeSnapshot {
     nextAddressIndex: 0,
     maxNodes: MAX_NODES,
     traversal: null,
+    callStack: null,
   }
 }
 

@@ -68,6 +68,18 @@ export function runConstruireArbre(state: TreeSnapshot): Step<TreeSnapshot>[] {
 
 type TraversalOrder = 'prefixe' | 'infixe' | 'postfixe'
 
+const traversalActions = (order: TraversalOrder) =>
+  order === 'prefixe'
+    ? ['visit', 'gauche', 'droit'] as const
+    : order === 'infixe'
+      ? ['gauche', 'visit', 'droit'] as const
+      : ['gauche', 'droit', 'visit'] as const
+
+const traversalPhases = (order: TraversalOrder) =>
+  traversalActions(order).map((action) => (action === 'visit' ? 'visite' : action)) as Array<
+    'visite' | 'gauche' | 'droit'
+  >
+
 function runTraversalNode(
   recorder: TreeRecorder,
   fn: string,
@@ -75,31 +87,35 @@ function runTraversalNode(
   pointer: PointerValue,
 ): void {
   recorder.pushFrame(fn, { n: pointer })
+  recorder.pushCallFrame(fn, pointer, traversalPhases(order))
+  recorder.pauseCall(0)
   recorder.step(fn, 0, fr.trees.captions.call(fn, pointer))
   const isNull = pointer.kind !== 'node'
+  recorder.pauseCall(1)
   recorder.step(fn, 1, fr.trees.captions.testNull(pointer), {
     cond: { expr: 'n == NULL', result: isNull },
   })
   if (isNull) {
+    recorder.pauseCall(2)
     recorder.step(fn, 2, fr.trees.captions.nullReturn)
+    recorder.popCallFrame()
     recorder.popFrame()
     return
   }
 
   const node = getNode(recorder.state, pointer.id)
   if (!node || node.freed || node.payload.kind !== 'int') {
+    recorder.pauseCall(2)
     recorder.step(fn, 2, fr.trees.captions.invalidNode)
+    recorder.popCallFrame()
     recorder.popFrame()
     return
   }
   const value = node.payload.value
+  recorder.pauseCall(3)
   recorder.step(fn, 3, fr.trees.captions.continueNode(value))
 
-  const actions = order === 'prefixe'
-    ? ['visit', 'gauche', 'droit'] as const
-    : order === 'infixe'
-      ? ['gauche', 'visit', 'droit'] as const
-      : ['gauche', 'droit', 'visit'] as const
+  const actions = traversalActions(order)
   const lines = order === 'prefixe' ? [4, 5, 6] : order === 'infixe' ? [4, 5, 6] : [4, 5, 6]
 
   actions.forEach((action, index) => {
@@ -108,15 +124,21 @@ function runTraversalNode(
       recorder.incrementTraversed()
       recorder.recordVisit(node.id)
       recorder.addConsole(`${value} `)
+      recorder.beginVisit(line)
       recorder.step(fn, line, fr.trees.captions.visit(value))
+      recorder.completeVisit(value, line)
       return
     }
     const child = node[action]
+    recorder.beginCallPhase(action, line)
     recorder.step(fn, line, fr.trees.captions.recursiveCall(action, value))
     runTraversalNode(recorder, fn, order, child)
+    recorder.completeCallPhase(action)
   })
 
+  recorder.pauseCall(7)
   recorder.step(fn, 7, fr.trees.captions.returnFrom(value))
+  recorder.popCallFrame()
   recorder.popFrame()
 }
 
@@ -193,6 +215,7 @@ const defineOperation = (
   complexity: fr.trees.operations[id as keyof typeof fr.trees.operations].complexity,
   complexityNote: fr.trees.operations[id as keyof typeof fr.trees.operations].note,
   inserts: id === 'construireArbre',
+  showCallStack: id === 'parcoursPrefixe' || id === 'parcoursInfixe' || id === 'parcoursPostfixe',
   run,
 })
 

@@ -9,7 +9,8 @@ const HORIZONTAL_GAP = 220
 const LEVEL_GAP = 105
 const TOP = 96
 const SIDE_PADDING = 64
-const LEGEND_CLEARANCE = 66
+/** Leaves always draw one extra NULL row; keep room for its pill and margin. */
+const BOTTOM_PADDING = 24
 
 export interface TreeLayoutNode {
   node: TreeNode
@@ -140,7 +141,7 @@ export function layoutTree(snapshot: TreeSnapshot): TreeLayout {
 
   const maxDepth = visits.reduce((max, item) => Math.max(max, item.depth), 0)
   const width = Math.max(960, HORIZONTAL_GAP * 2 ** maxDepth + SIDE_PADDING * 2)
-  const height = TOP + maxDepth * LEVEL_GAP + TREE_NODE_HEIGHT + LEGEND_CLEARANCE
+  const height = TOP + (maxDepth + 1) * LEVEL_GAP + BOTTOM_PADDING
   const positions = new Map<number, TreeLayoutNode>()
   const nodes = visits.map((item) => {
     const levelSlots = 2 ** item.depth

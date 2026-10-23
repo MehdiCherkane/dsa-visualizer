@@ -8,6 +8,8 @@ interface CodePanelProps<S extends BaseSnapshot> {
   profile: ProfileDef<S>
   step: Step<S>
   presentation?: boolean
+  hideBreadcrumb?: boolean
+  secondaryLine?: { fn: string; line: number } | null
 }
 
 const measureSample = 'MMMMMMMMMMMMMMMMMMMM'
@@ -44,6 +46,8 @@ export function CodePanel<S extends BaseSnapshot>({
   profile,
   step,
   presentation = false,
+  hideBreadcrumb = false,
+  secondaryLine = null,
 }: CodePanelProps<S>): JSX.Element {
   const [showTypes, setShowTypes] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -110,7 +114,7 @@ export function CodePanel<S extends BaseSnapshot>({
             C
           </span>
           <code className="code-signature">{signature}</code>
-          {stack.length > 1 ? (
+          {!hideBreadcrumb && stack.length > 1 ? (
             <span className="code-breadcrumb" title={fr.code.breadcrumb}>
               {breadcrumb}
             </span>
@@ -135,11 +139,17 @@ export function CodePanel<S extends BaseSnapshot>({
         </span>
         {source.lines.map((line, index) => {
           const isActive = !idle && !showTypes && source.fn === step.fn && index === step.line
+          const isSecondary =
+            !isActive &&
+            !idle &&
+            !showTypes &&
+            secondaryLine?.fn === source.fn &&
+            secondaryLine.line === index
           return (
             <div
               key={`${source.fn}-${index}`}
               ref={isActive ? activeLine : undefined}
-              className={isActive ? 'code-line active' : 'code-line'}
+              className={isActive ? 'code-line active' : isSecondary ? 'code-line secondary-active' : 'code-line'}
               style={presentation && fitSize !== null ? { fontSize: `${fitSize}px` } : undefined}
               aria-current={isActive ? 'step' : undefined}
             >

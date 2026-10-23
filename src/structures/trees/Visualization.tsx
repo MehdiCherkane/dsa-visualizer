@@ -62,6 +62,7 @@ export default function TreeVisualization({
   snapshot,
   step,
   cameraResetKey,
+  highlightedNodeId,
 }: VisualizationProps<TreeSnapshot>): JSX.Element {
   const layout = useMemo(() => layoutTree(snapshot), [snapshot])
   const [canvasRef, canvas] = useCanvasSize()
@@ -80,10 +81,20 @@ export default function TreeVisualization({
   }
   const root = rootPointer(snapshot)
   const traversal = snapshot.traversal
-  const active = snapshot.frames.at(-1)?.vars.n
-  const activeId = traversal?.activeNodeId ?? (active?.kind === 'node' ? active.id : null)
+  const callStack = snapshot.callStack
+  const topCall = callStack?.frames.at(-1)
+  const genericActive = snapshot.frames.at(-1)?.vars.n
+  const activeId =
+    topCall?.nodeId ??
+    traversal?.activeNodeId ??
+    (genericActive?.kind === 'node' ? genericActive.id : null)
+  const callDepth = callStack ? Math.max(0, callStack.frames.length - 1) : null
+  // The teaching stack is the source of truth for waiting/path styling. The
+  // generic `frames` are only a fallback for snapshots produced before it.
   const stackNodeIds = traversal
-    ? snapshot.frames.flatMap((frame) => (frame.vars.n?.kind === 'node' ? [frame.vars.n.id] : []))
+    ? callStack
+      ? callStack.frames.flatMap((frame) => (frame.nodeId === null ? [] : [frame.nodeId]))
+      : snapshot.frames.flatMap((frame) => (frame.vars.n?.kind === 'node' ? [frame.vars.n.id] : []))
     : []
   const stackNodeSet = new Set(stackNodeIds)
   const stackEdgeSet = new Set(
@@ -102,8 +113,27 @@ export default function TreeVisualization({
   const viewBox = mode === 'manual' ? currentViewState?.viewBox ?? defaultViewBox : defaultViewBox
   const renderScale = Math.min(canvas.width / viewBox.width, canvas.height / viewBox.height)
   const zoom = Math.round(renderScale * 100)
-  const fontCompensation = clamp(1 / Math.max(renderScale, 0.1), 1, 1.8)
-  const canvasStyle = { '--tree-font-compensation': String(fontCompensation) } as CSSProperties
+  // Keep the value readable without letting it collide with the address line
+  // when the whole tree is fitted into a short dock.
+  const compensation = clamp(1 / Math.max(renderScale, 0.1), 1, 1.45)
+  const labelCompensation = clamp(1 / Math.max(renderScale, 0.1), 1, 2.1)
+  const compactAddress = renderScale < 0.62
+  const addressCompensation = compactAddress
+    ? clamp(1 / Math.max(renderScale, 0.1), 1, 2.2)
+    : compensation
+  const rootCompensation = clamp(1 / Math.max(renderScale, 0.1), 1, 2)
+  const visitBadgeRadius = 14 * labelCompensation
+  // Keep the enlarged badge just below the node, clear of the address/value
+  // lines and of the outbound edge labels at every zoom level.
+  const visitBadgeX = TREE_NODE_RADIUS
+  const visitBadgeY =
+    TREE_NODE_RADIUS * 2 + visitBadgeRadius + 6 / Math.max(renderScale, 0.1)
+  const canvasStyle = {
+    '--tree-font-compensation': String(compensation),
+    '--tree-label-compensation': String(labelCompensation),
+    '--tree-address-compensation': String(addressCompensation),
+    '--tree-root-compensation': String(rootCompensation),
+  } as CSSProperties
 
   const setCameraMode = (nextMode: 'auto' | 'manual'): void => {
     if (nextMode === 'auto') {
@@ -154,7 +184,8 @@ export default function TreeVisualization({
   }
 
   return (
-    <div ref={canvasRef} className="tree-viz" style={canvasStyle}>
+    <div className="tree-viz" style={canvasStyle}>
+      <div ref={canvasRef} className="tree-viz-stage">
       <div className="tree-viz-toolbar camera-toolbar" aria-label="Commandes de la vue de l’arbre">
         <button className="camera-button" type="button" title={fr.trees.viz.zoomOut} onClick={() => zoomAt(1.2)} aria-label={fr.trees.viz.zoomOut}>−</button>
         <span className="camera-button camera-zoom-label" aria-live="polite">{zoom} %</span>
@@ -189,7 +220,9 @@ export default function TreeVisualization({
         <span>{fr.trees.viz.leaves} <b>{metrics.leaves}</b></span>
         <span>{fr.trees.viz.height} <b>{metrics.height}</b></span>
         {metrics.active ? (
-          <span>{fr.trees.viz.active}: {metrics.active.value ?? '—'} · {fr.trees.viz.depth} {metrics.active.depth} · {fr.trees.viz.degree} {metrics.active.degree}</span>
+          <span>{fr.trees.viz.active}: {metrics.active.value ?? '—'} · {fr.trees.viz.depth} {callDepth ?? metrics.active.depth} · {fr.trees.viz.degree} {metrics.active.degree}</span>
+        ) : topCall ? (
+          <span>{fr.trees.viz.active}: {fr.trees.viz.null} · {fr.trees.viz.depth} {callDepth ?? 0}</span>
         ) : null}
       </div>
 
@@ -222,9 +255,9 @@ export default function TreeVisualization({
 
         {root.kind === 'node' && layout.rootX !== null ? (
           <g className={`tree-root-pin${snapshot.nodes.find((node) => node.id === root.id)?.freed ? ' is-dangling' : ''}`}>
-            <rect x={layout.rootX - 42} y="18" width="84" height="34" rx="10" />
-            <text x={layout.rootX} y="40" textAnchor="middle">{fr.trees.viz.root}</text>
-            <path d={`M ${layout.rootX} 52 L ${layout.rootX} ${layout.nodes[0]?.y ? layout.nodes[0].y - TREE_NODE_HEIGHT / 2 - 2 : 68}`} markerEnd="url(#tree-arrow-root)" />
+            <rect x={layout.rootX - 55} y="12" width="110" height="34" rx="10" />
+            <text x={layout.rootX} y="34" textAnchor="middle" dominantBaseline="central">{fr.trees.viz.root}</text>
+            <path d={`M ${layout.rootX} 46 L ${layout.rootX} ${layout.nodes[0]?.y ? layout.nodes[0].y - TREE_NODE_HEIGHT / 2 - 2 : 68}`} markerEnd="url(#tree-arrow-root)" />
           </g>
         ) : null}
 
@@ -248,26 +281,37 @@ export default function TreeVisualization({
 
         {layout.nodes.map(({ node, x, y }) => {
           const isActive = activeId === node.id
+          const isInspected = highlightedNodeId === node.id
           const visitedAt = visitOrder.get(node.id)
           const isOnStackPath = stackNodeSet.has(node.id)
+          const isWaiting = isOnStackPath && !isActive
           const shouldDim = Boolean(traversal && stackNodeSet.size > 0 && !isOnStackPath && !visitedAt)
           return (
             <g
               key={node.id}
-              className={`tree-node${isActive ? ' is-active' : ''}${visitedAt ? ' is-visited' : ''}${isOnStackPath ? ' is-path' : ''}${shouldDim ? ' is-dim' : ''}${node.freed ? ' is-freed' : ''}${created.has(node.id) ? ' is-created' : ''}${freed.has(node.id) ? ' is-being-freed' : ''}`}
+              className={`tree-node${isActive ? ' is-active' : ''}${isWaiting ? ' is-waiting' : ''}${isInspected ? ' is-inspected' : ''}${visitedAt ? ' is-visited' : ''}${isOnStackPath ? ' is-path' : ''}${shouldDim ? ' is-dim' : ''}${node.freed ? ' is-freed' : ''}${created.has(node.id) ? ' is-created' : ''}${freed.has(node.id) ? ' is-being-freed' : ''}`}
               transform={`translate(${x - TREE_NODE_WIDTH / 2} ${y - TREE_NODE_HEIGHT / 2})`}
             >
               <title>{`${fr.trees.viz.node} ${node.id}, ${node.address}`}</title>
               <circle className="tree-node-card" cx={TREE_NODE_RADIUS} cy={TREE_NODE_RADIUS} r={TREE_NODE_RADIUS} />
               {node.freed ? <circle className="tree-node-hatch" cx={TREE_NODE_RADIUS} cy={TREE_NODE_RADIUS} r={TREE_NODE_RADIUS} /> : null}
-              <text className="tree-node-address" x={TREE_NODE_RADIUS} y={TREE_NODE_RADIUS - 12} textAnchor="middle">{node.address}</text>
+              <text className="tree-node-address" x={TREE_NODE_RADIUS} y={TREE_NODE_RADIUS - 20} textAnchor="middle">
+                {compactAddress ? node.address.replace(/^0x/, '') : node.address}
+              </text>
               <text className="tree-node-value" x={TREE_NODE_RADIUS} y={TREE_NODE_RADIUS + 22} textAnchor="middle">
                 {node.payload.kind === 'int' ? node.payload.value : '…'}
               </text>
               {visitedAt ? (
                 <g className="tree-visit-badge" aria-label={`${fr.trees.viz.visited} ${visitedAt}`}>
-                  <circle cx={TREE_NODE_RADIUS * 1.55} cy={TREE_NODE_RADIUS * 1.55} r="10" />
-                  <text x={TREE_NODE_RADIUS * 1.55} y={TREE_NODE_RADIUS * 1.55 + 4} textAnchor="middle">{visitedAt}</text>
+                  <circle cx={visitBadgeX} cy={visitBadgeY} r={visitBadgeRadius} />
+                  <text
+                    x={visitBadgeX}
+                    y={visitBadgeY}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                  >
+                    {visitedAt}
+                  </text>
                 </g>
               ) : null}
               {node.freed ? <text className="tree-node-freed" x={TREE_NODE_RADIUS} y={TREE_NODE_RADIUS * 1.65} textAnchor="middle">{fr.trees.viz.freed}</text> : null}
@@ -287,16 +331,19 @@ export default function TreeVisualization({
       {root.kind === 'node' && snapshot.nodes.find((node) => node.id === root.id)?.freed ? (
         <div className="tree-dangling-note" role="status">{fr.trees.viz.danglingRoot}</div>
       ) : null}
+      </div>
 
-      <details className="tree-viz-legend">
-        <summary>{fr.trees.viz.legend}</summary>
-        <div aria-label={fr.trees.viz.legend}>
-          <span><i className="tree-legend-left" />{fr.trees.fields.gauche}</span>
-          <span><i className="tree-legend-right" />{fr.trees.fields.droit}</span>
-          <span><i className="tree-legend-root" />{fr.trees.viz.root}</span>
-          <span><i className="tree-legend-active" />{fr.trees.viz.active}</span>
-        </div>
-      </details>
+      <div className="tree-viz-footer">
+        <details className="tree-viz-legend">
+          <summary>{fr.trees.viz.legend}</summary>
+          <div aria-label={fr.trees.viz.legend}>
+            <span><i className="tree-legend-left" />{fr.trees.fields.gauche}</span>
+            <span><i className="tree-legend-right" />{fr.trees.fields.droit}</span>
+            <span><i className="tree-legend-root" />{fr.trees.viz.root}</span>
+            <span><i className="tree-legend-active" />{fr.trees.viz.active}</span>
+          </div>
+        </details>
+      </div>
     </div>
   )
 }

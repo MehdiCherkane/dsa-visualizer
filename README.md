@@ -8,7 +8,7 @@ A single-page, fully offline French teaching platform for data structures in C (
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (157 tests)
+npm test      # vitest suite (172 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
@@ -42,7 +42,7 @@ Navigation is hash-based so it also works from `file://`: `#/` (main menu, the e
 
 ### Chapitre 6 — Arbres binaires (`trees`)
 
-- **Entiers** (`int`): build the six-node course tree with `creerNoeud`, then animate recursive prefix, infix, and postfix traversals and postorder destruction. The exercise tree and empty-tree base case are available as guided scenarios. Binary search tree operations are reserved for Chapter 7.
+- **Entiers** (`int`): build the six-node course tree with `creerNoeud`, then animate recursive prefix, infix, and postfix traversals and postorder destruction. A `Pile d’appels` panel shows each recursive frame, its argument, source line and traversal phases, with optional NULL calls; the exercise tree and empty-tree base case are available as guided scenarios. Binary search tree operations are reserved for Chapter 7.
 
 For linked-list, stack, and queue operations, the demo shows:
 

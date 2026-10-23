@@ -7,8 +7,14 @@ import {
   formatAddress,
   requireNode,
 } from '../memory'
-import type { TreeNode, TreeSnapshot } from '../memory'
-import type { TreeTraversalState } from '../memory'
+import type {
+  TreeCallFrame,
+  TreeCallPhaseName,
+  TreeCallStack,
+  TreeNode,
+  TreeSnapshot,
+  TreeTraversalState,
+} from '../memory'
 
 interface StepExtras {
   cond?: { expr: string; result: boolean }
@@ -21,10 +27,13 @@ export class TreeRecorder {
   private output = ''
   private traversed = 0
   private comparisons = 0
+  private nextCallFrameId = 1
 
   constructor(state: TreeSnapshot) {
     this.state = cloneSnapshot(state)
     this.state.frames = []
+    this.state.traversal = null
+    this.state.callStack = null
   }
 
   get steps(): Step<TreeSnapshot>[] {
@@ -120,6 +129,7 @@ export class TreeRecorder {
 
   beginTraversal(): void {
     this.state.traversal = { visitedNodeIds: [], activeNodeId: null }
+    this.state.callStack = { frames: [], maxDepth: 0, maxNonNullDepth: 0 }
   }
 
   recordVisit(nodeId: number): void {
@@ -131,6 +141,84 @@ export class TreeRecorder {
   private activeTraversalNode(): number | null {
     const value = this.activeFrame?.vars.n
     return value?.kind === 'node' ? value.id : null
+  }
+
+  private get callStack(): TreeCallStack {
+    if (!this.state.callStack) {
+      this.state.callStack = { frames: [], maxDepth: 0, maxNonNullDepth: 0 }
+    }
+    return this.state.callStack
+  }
+
+  pushCallFrame(
+    fn: string,
+    pointer: PointerValue,
+    phaseOrder: readonly TreeCallPhaseName[],
+  ): void {
+    const stack = this.callStack
+    const frame: TreeCallFrame = {
+      id: this.nextCallFrameId,
+      fn,
+      nodeId: pointer.kind === 'node' ? pointer.id : null,
+      line: 0,
+      status: 'active',
+      phases: phaseOrder.map((name) => ({ name, state: 'pending' })),
+    }
+    this.nextCallFrameId += 1
+    stack.frames.push(frame)
+    stack.maxDepth = Math.max(stack.maxDepth, stack.frames.length)
+    stack.maxNonNullDepth = Math.max(
+      stack.maxNonNullDepth,
+      stack.frames.filter((entry) => entry.nodeId !== null).length,
+    )
+  }
+
+  popCallFrame(): void {
+    this.callStack.frames.pop()
+  }
+
+  pauseCall(line: number, status: TreeCallFrame['status'] = 'active'): void {
+    const frame = this.callStack.frames.at(-1)
+    if (!frame) return
+    frame.line = line
+    frame.status = status
+  }
+
+  beginCallPhase(name: Exclude<TreeCallPhaseName, 'visite'>, line: number): void {
+    const frame = this.callStack.frames.at(-1)
+    if (!frame) return
+    frame.line = line
+    frame.status = name === 'gauche' ? 'wait-left' : 'wait-right'
+    const phase = frame.phases.find((entry) => entry.name === name)
+    if (phase) phase.state = 'current'
+  }
+
+  completeCallPhase(name: Exclude<TreeCallPhaseName, 'visite'>): void {
+    const frame = this.callStack.frames.at(-1)
+    const phase = frame?.phases.find((entry) => entry.name === name)
+    if (phase) phase.state = 'done'
+    if (frame) frame.status = 'active'
+  }
+
+  beginVisit(line: number): void {
+    const frame = this.callStack.frames.at(-1)
+    if (!frame) return
+    frame.line = line
+    frame.status = 'active'
+    const phase = frame.phases.find((entry) => entry.name === 'visite')
+    if (phase) phase.state = 'current'
+  }
+
+  completeVisit(value: number, line: number): void {
+    const frame = this.callStack.frames.at(-1)
+    if (!frame) return
+    frame.line = line
+    frame.status = 'active'
+    const phase = frame.phases.find((entry) => entry.name === 'visite')
+    if (phase) {
+      phase.state = 'done'
+      phase.value = value
+    }
   }
 
   step(fn: string, line: number, caption: string, extras: StepExtras = {}): void {

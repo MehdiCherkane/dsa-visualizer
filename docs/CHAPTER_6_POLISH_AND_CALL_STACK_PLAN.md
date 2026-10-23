@@ -1,6 +1,6 @@
 # Chapter 6 — polish and recursive call-stack plan
 
-Status: planned before the implementation work in this document.
+Status: Stage 1 (visual fixes) and Stage 2 (call-stack panel) implemented and browser-checked; follow-up fixes and verification sweep in progress.
 
 ## Scope and constraints
 

@@ -1,5 +1,8 @@
 .tree-viz {
   position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -9,6 +12,20 @@
   background-image: radial-gradient(var(--grid-dot) 0.8px, transparent 0.8px);
   background-size: 18px 18px;
   touch-action: none;
+}
+
+.tree-viz-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tree-viz-footer {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
+  padding: 3px 8px;
 }
 
 .tree-viz-toolbar {
@@ -182,7 +199,7 @@
   stroke-width: 5px;
   paint-order: stroke;
   font-family: var(--ui);
-  font-size: calc(14px * var(--tree-font-compensation, 1));
+  font-size: calc(14px * var(--tree-label-compensation, 1));
   font-weight: 650;
 }
 
@@ -207,7 +224,7 @@
 .tree-null text {
   fill: var(--ink-2);
   font-family: var(--mono);
-  font-size: calc(11px * var(--tree-font-compensation, 1));
+  font-size: calc(11px * var(--tree-label-compensation, 1));
   font-weight: 600;
 }
 
@@ -232,12 +249,6 @@
   filter: drop-shadow(0 4px 5px rgba(31, 42, 92, 0.12));
 }
 
-.tree-node.is-active .tree-node-card {
-  stroke: var(--gold);
-  stroke-width: 4;
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--gold) 50%, transparent));
-}
-
 .tree-node.is-path .tree-node-card {
   stroke: var(--arrow-next);
   stroke-width: 3.5;
@@ -249,13 +260,27 @@
   stroke-width: 3;
 }
 
+/* Keep the non-colour waiting cue on ancestors that were already visited. */
+.tree-node.is-waiting .tree-node-card {
+  stroke-dasharray: 5 3;
+}
+
+/* Active wins over visited/path so the current node stays gold. */
 .tree-node.is-active .tree-node-card {
   stroke: var(--gold);
   stroke-width: 4;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--gold) 50%, transparent));
 }
 
 .tree-node.is-dim {
   opacity: 0.42;
+}
+
+/* The teaching-panel hover/focus must remain visible over every node state. */
+.tree-node.is-inspected .tree-node-card {
+  stroke: var(--gold);
+  stroke-dasharray: 5 3;
+  stroke-width: 4;
 }
 
 .tree-node.is-created .tree-node-card {
@@ -281,7 +306,7 @@
 .tree-node-address {
   fill: var(--ink-2);
   font-family: var(--mono);
-  font-size: calc(12px * var(--tree-font-compensation, 1));
+  font-size: calc(12px * var(--tree-address-compensation, 1));
   font-weight: 550;
 }
 
@@ -300,7 +325,9 @@
 
 .tree-visit-badge text {
   fill: #fff;
-  font: 800 10px var(--mono);
+  font-family: var(--mono);
+  font-size: calc(10px * var(--tree-label-compensation, 1));
+  font-weight: 800;
 }
 
 .tree-node-freed {
@@ -316,7 +343,9 @@
 
 .tree-root-pin text {
   fill: var(--ink);
-  font: 700 14px var(--mono);
+  font-family: var(--mono);
+  font-size: calc(14px * var(--tree-root-compensation, 1));
+  font-weight: 700;
 }
 
 .tree-root-pin path {
@@ -365,14 +394,10 @@
 }
 
 .tree-viz-legend {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  left: auto;
-  max-width: min(400px, calc(100% - 24px));
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  position: static;
+  max-width: none;
+  border: 0;
+  background: transparent;
   color: var(--ink-2);
   font: 500 11px var(--ui);
 }
@@ -380,7 +405,7 @@
 .tree-viz-legend summary {
   cursor: pointer;
   list-style: none;
-  padding: 6px 9px;
+  padding: 4px 2px;
   color: var(--ink-2);
   font-weight: 700;
 }
@@ -434,8 +459,6 @@
   .tree-metrics { top: 49px; }
 
   .tree-viz-legend {
-    right: 8px;
-    left: auto;
     gap: 7px;
     font-size: 10px;
   }
