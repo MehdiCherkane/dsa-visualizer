@@ -58,23 +58,65 @@ const LEVEL_GAP = 105
 const TOP = 96
 const SIDE_PADDING = 64
 /** Leaves always draw one extra NULL row; keep room for its ground symbol. */
-const BOTTOM_PADDING = 62
+const BOTTOM_PADDING = 24
+
+/** All NULL glyph geometry is derived from this single scale. */
+export const NULL_GLYPH_SCALE = 0.8
+
+const NULL_GLYPH_BASE = {
+  halfWidths: [18, 11.5, 6] as const,
+  barOffsets: [0, 7, 15] as const,
+  labelDy: 39,
+  labelSize: 23,
+  stem: 13,
+  bounds: { halfWidth: 33, top: -13, bottom: 53 },
+  barStroke: 4,
+  stemStroke: 2.25,
+  ring: { x: -31, y: -13, width: 62, height: 66, rx: 15 },
+  marker: { dx: 25, dy: -5, radius: 8.2, fontSize: 9.8, textY: 3.4 },
+} as const
+
+export const NULL_GROUND_HALF_WIDTHS = NULL_GLYPH_BASE.halfWidths.map(
+  (value) => value * NULL_GLYPH_SCALE,
+)
+export const NULL_GROUND_BAR_OFFSETS = NULL_GLYPH_BASE.barOffsets.map(
+  (value) => value * NULL_GLYPH_SCALE,
+)
+export const NULL_GROUND_LABEL_DY = NULL_GLYPH_BASE.labelDy * NULL_GLYPH_SCALE
+export const NULL_GROUND_LABEL_SIZE = NULL_GLYPH_BASE.labelSize * NULL_GLYPH_SCALE
+export const NULL_GROUND_STEM = NULL_GLYPH_BASE.stem * NULL_GLYPH_SCALE
+export const NULL_GROUND_BAR_STROKE = NULL_GLYPH_BASE.barStroke * NULL_GLYPH_SCALE
+export const NULL_GROUND_STEM_STROKE = NULL_GLYPH_BASE.stemStroke * NULL_GLYPH_SCALE
+export const NULL_GROUND_BOUNDS = {
+  halfWidth: NULL_GLYPH_BASE.bounds.halfWidth * NULL_GLYPH_SCALE,
+  top: NULL_GLYPH_BASE.bounds.top * NULL_GLYPH_SCALE,
+  bottom: NULL_GLYPH_BASE.bounds.bottom * NULL_GLYPH_SCALE,
+} as const
+export const NULL_GROUND_RING = {
+  x: NULL_GLYPH_BASE.ring.x * NULL_GLYPH_SCALE,
+  y: NULL_GLYPH_BASE.ring.y * NULL_GLYPH_SCALE,
+  width: NULL_GLYPH_BASE.ring.width * NULL_GLYPH_SCALE,
+  height: NULL_GLYPH_BASE.ring.height * NULL_GLYPH_SCALE,
+  rx: NULL_GLYPH_BASE.ring.rx * NULL_GLYPH_SCALE,
+} as const
+export const NULL_GROUND_MARKER = {
+  dx: NULL_GLYPH_BASE.marker.dx * NULL_GLYPH_SCALE,
+  dy: NULL_GLYPH_BASE.marker.dy * NULL_GLYPH_SCALE,
+  radius: NULL_GLYPH_BASE.marker.radius * NULL_GLYPH_SCALE,
+  fontSize: NULL_GLYPH_BASE.marker.fontSize * NULL_GLYPH_SCALE,
+  textY: NULL_GLYPH_BASE.marker.textY * NULL_GLYPH_SCALE,
+} as const
 
 /**
- * Chapter 4's NULL ground symbol, sized to the tree's node scale.
- * The three bars get shorter downwards and the label sits below them.
- * All values are 18% smaller than the first tree version.
+ * The old ring-to-stem vertical gap was
+ * LEVEL_GAP - node radius - base stem = 52 SVG units.
+ * NULL leaves are pulled up only for NULL children, leaving real-node
+ * level spacing untouched.
  */
-export const NULL_GROUND_HALF_WIDTHS = [18, 11.5, 6] as const
-export const NULL_GROUND_BAR_OFFSETS = [0, 7, 15] as const
-export const NULL_GROUND_LABEL_DY = 39
-export const NULL_GROUND_LABEL_SIZE = 23
-export const NULL_GROUND_STEM = 13
-export const NULL_GROUND_BOUNDS = {
-  halfWidth: 33,
-  top: -13,
-  bottom: 53,
-} as const
+export const NULL_EDGE_LENGTH_FACTOR = 0.45
+const NULL_EDGE_BASE_GAP = LEVEL_GAP - TREE_NODE_RADIUS - NULL_GLYPH_BASE.stem
+export const NULL_EDGE_GAP = NULL_EDGE_BASE_GAP * NULL_EDGE_LENGTH_FACTOR
+export const NULL_LEVEL_GAP = TREE_NODE_RADIUS + NULL_EDGE_GAP + NULL_GROUND_STEM
 
 export interface TreeLayoutNode {
   node: TreeNode
@@ -168,23 +210,32 @@ interface Connector {
  * centre of the circles.  The shallow curve keeps the direction unambiguous
  * without the abrupt right-angle bends used by the first tree renderer.
  */
-function connector(from: Point, to: Point, side: -1 | 1, targetRadius = 0): Connector {
+function connector(
+  from: Point,
+  to: Point,
+  side: -1 | 1,
+  targetRadius = 0,
+  curveScale = 1,
+): Connector {
   const dx = to.x - from.x
   const dy = to.y - from.y
   const distance = Math.hypot(dx, dy) || 1
   const unitX = dx / distance
   const unitY = dy / distance
+  const startRadius = TREE_NODE_RADIUS + TREE_NODE_STROKE / 2
   const start = {
-    x: from.x + unitX * (TREE_NODE_RADIUS + 1),
-    y: from.y + unitY * (TREE_NODE_RADIUS + 1),
+    x: from.x + unitX * startRadius,
+    y: from.y + unitY * startRadius,
   }
   const end = {
     x: to.x - unitX * targetRadius,
     y: to.y - unitY * targetRadius,
   }
   const control = {
-    x: (start.x + end.x) / 2 + side * Math.min(30, Math.abs(dx) * 0.12),
-    y: (start.y + end.y) / 2 - 4,
+    x:
+      (start.x + end.x) / 2 +
+      side * Math.min(30, Math.abs(dx) * 0.12) * curveScale,
+    y: (start.y + end.y) / 2 - 4 * curveScale,
   }
   return {
     path: `M ${start.x} ${start.y} Q ${control.x} ${control.y}, ${end.x} ${end.y}`,
@@ -264,11 +315,17 @@ export function layoutTree(snapshot: TreeSnapshot): TreeLayout {
         const childDepth = parent.depth + 1
         const childSlots = 2 ** childDepth
         const x = (width * (childIndex + 0.5)) / childSlots
-        const y = parent.y + LEVEL_GAP
+        const y = parent.y + NULL_LEVEL_GAP
         const side = field === 'gauche' ? -1 : 1
         // Stop on the active ring's top edge (or the stem start when idle).
         // The renderer draws a vertical stem down to the ground symbol.
-        const edge = connector(parent, { x, y: y - NULL_GROUND_STEM }, side)
+        const edge = connector(
+          parent,
+          { x, y: y - NULL_GROUND_STEM },
+          side,
+          0,
+          NULL_EDGE_LENGTH_FACTOR,
+        )
         nulls.push({
           parentId: node.id,
           field,

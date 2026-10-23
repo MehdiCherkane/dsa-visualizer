@@ -221,7 +221,6 @@
 /* Chapter 4's three-bar NULL ground symbol. */
 .tree-null-stem {
   stroke: currentColor;
-  stroke-width: 2.25;
 }
 
 .tree-null.is-active .tree-null-stem {
@@ -230,7 +229,6 @@
 
 .tree-null-bar {
   stroke: currentColor;
-  stroke-width: 4;
   stroke-linecap: round;
 }
 

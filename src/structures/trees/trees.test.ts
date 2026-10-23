@@ -4,7 +4,16 @@ import { fr } from '../../i18n/fr'
 import {
   layoutTree,
   measureTree,
+  NULL_EDGE_GAP,
+  NULL_EDGE_LENGTH_FACTOR,
+  NULL_GLYPH_SCALE,
+  NULL_GROUND_BAR_STROKE,
   NULL_GROUND_BOUNDS,
+  NULL_GROUND_HALF_WIDTHS,
+  NULL_GROUND_LABEL_SIZE,
+  NULL_GROUND_STEM,
+  NULL_GROUND_STEM_STROKE,
+  NULL_LEVEL_GAP,
   placeEdgeLabels,
   ROOT_ARROW_MARKER,
   rootPointerGeometry,
@@ -323,6 +332,28 @@ describe('chapitre 6 — parcours récursifs', () => {
   it('nomme la pile sans la confondre avec la hauteur de l’arbre', () => {
     expect(fr.callStack.summary(1, 4)).toBe('Pile : 1 appel · max 4')
     expect(fr.callStack.summary(3, 4)).toBe('Pile : 3 appels · max 4')
+  })
+
+  it('réduit le glyphe NULL de 20% et raccourcit ses arêtes de 55%', () => {
+    expect(NULL_GLYPH_SCALE).toBe(0.8)
+    expect(NULL_GROUND_HALF_WIDTHS[0]! * 2).toBeCloseTo(28.8)
+    expect(NULL_GROUND_BOUNDS.bottom - NULL_GROUND_BOUNDS.top).toBeCloseTo(52.8)
+    expect(NULL_GROUND_LABEL_SIZE).toBeCloseTo(18.4)
+    expect(NULL_GROUND_BAR_STROKE).toBeCloseTo(3.2)
+    expect(NULL_GROUND_STEM_STROKE).toBeCloseTo(1.8)
+    expect(NULL_GROUND_STEM).toBeCloseTo(10.4)
+    expect(NULL_EDGE_LENGTH_FACTOR).toBe(0.45)
+    expect(NULL_EDGE_GAP).toBeCloseTo(23.4)
+    expect(NULL_LEVEL_GAP).toBeCloseTo(73.8)
+
+    const layout = layoutTree(courseTreeSnapshot())
+    const node40 = layout.nodes.find((node) => node.node.payload.kind === 'int' && node.node.payload.value === 40)!
+    const leaves = layout.nulls.filter((entry) => entry.parentId === node40.node.id)
+    expect(leaves).toHaveLength(2)
+    for (const leaf of leaves) {
+      expect(leaf.y - node40.y).toBeCloseTo(NULL_LEVEL_GAP)
+      expect(leaf.y - NULL_GROUND_STEM - (node40.y + TREE_NODE_RADIUS)).toBeCloseTo(NULL_EDGE_GAP)
+    }
   })
 
   it('trace un pointeur racine vertical jusqu’au bord du nœud', () => {

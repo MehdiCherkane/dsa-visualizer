@@ -6,10 +6,14 @@ import {
   layoutTree,
   measureTree,
   NULL_GROUND_BAR_OFFSETS,
+  NULL_GROUND_BAR_STROKE,
   NULL_GROUND_HALF_WIDTHS,
   NULL_GROUND_LABEL_DY,
   NULL_GROUND_LABEL_SIZE,
+  NULL_GROUND_MARKER,
+  NULL_GROUND_RING,
   NULL_GROUND_STEM,
+  NULL_GROUND_STEM_STROKE,
   placeEdgeLabels,
   ROOT_ARROW_MARKER,
   rootPointerGeometry,
@@ -364,15 +368,16 @@ export default function TreeVisualization({
                 y1={entry.y - NULL_GROUND_STEM}
                 x2={entry.x}
                 y2={entry.y}
+                strokeWidth={NULL_GROUND_STEM_STROKE}
               />
               {isActiveNull ? (
                 <rect
                   className="tree-null-active-ring"
-                  x={entry.x - 31}
-                  y={entry.y - 13}
-                  width="62"
-                  height="66"
-                  rx="15"
+                  x={entry.x + NULL_GROUND_RING.x}
+                  y={entry.y + NULL_GROUND_RING.y}
+                  width={NULL_GROUND_RING.width}
+                  height={NULL_GROUND_RING.height}
+                  rx={NULL_GROUND_RING.rx}
                 />
               ) : null}
               {NULL_GROUND_HALF_WIDTHS.map((halfWidth, index) => (
@@ -383,6 +388,7 @@ export default function TreeVisualization({
                   y1={entry.y + (NULL_GROUND_BAR_OFFSETS[index] ?? 0)}
                   x2={entry.x + halfWidth}
                   y2={entry.y + (NULL_GROUND_BAR_OFFSETS[index] ?? 0)}
+                  strokeWidth={NULL_GROUND_BAR_STROKE}
                 />
               ))}
               <text
@@ -397,11 +403,11 @@ export default function TreeVisualization({
               {isActiveNull ? (
                 <g
                   className="tree-null-active-marker"
-                  transform={`translate(${entry.x + 25} ${entry.y - 5})`}
+                  transform={`translate(${entry.x + NULL_GROUND_MARKER.dx} ${entry.y + NULL_GROUND_MARKER.dy})`}
                   aria-hidden="true"
                 >
-                  <circle r="8.2" />
-                  <text y="3.4" textAnchor="middle" fontSize="9.8">
+                  <circle r={NULL_GROUND_MARKER.radius} />
+                  <text y={NULL_GROUND_MARKER.textY} textAnchor="middle" fontSize={NULL_GROUND_MARKER.fontSize}>
                     n
                   </text>
                 </g>
