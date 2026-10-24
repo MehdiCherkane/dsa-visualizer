@@ -58,6 +58,8 @@ export const CIRCLE_HEAP_FOOTER = 20
 export const BAND_PAD = 28
 export const EMPTY_BAND_TOP = 200
 export const EMPTY_BAND_HEIGHT = 146
+export const EMPTY_BAND_EXTRA = 36
+export const EMPTY_BAND_MIN_WIDTH = 480
 export const EMPTY_NULL_X = PAD_L - 24
 export const DEBUT_CELL_W = 124
 export const DEBUT_CELL_H = 44
@@ -121,11 +123,26 @@ export function layoutNodes(
       .slice()
       .sort((first, second) => first.id - second.id)
     if (heap.length > 0) {
-      const ringLeft = CIRCLE_CX - ((ring?.radius ?? 0) + NODE_W / 2 + 26)
       const stackHeight =
         heap.length * NODE_H + (heap.length - 1) * CIRCLE_HEAP_STACK_GAP
-      const x = ringLeft - CIRCLE_HEAP_GAP - NODE_W
-      const top = CIRCLE_CY - stackHeight / 2
+      let x: number
+      let top: number
+      if (ring) {
+        const ringLeft = CIRCLE_CX - (ring.radius + NODE_W / 2 + 26)
+        x = ringLeft - CIRCLE_HEAP_GAP - NODE_W
+        top = CIRCLE_CY - stackHeight / 2
+      } else {
+        // While the list is still empty, anchor the heap band left of the
+        // fixed empty-list band instead of centering it under the ring.
+        const band = emptyListBand()
+        const heapBandWidth = NODE_W + 8 + BAND_PAD * 2
+        const heapBandX = band.x - BAND_PAD - heapBandWidth
+        x = heapBandX + BAND_PAD
+        const heapBandHeight =
+          stackHeight + 34 + CIRCLE_HEAP_HEADER + CIRCLE_HEAP_FOOTER
+        const heapBandTop = band.y + (band.height - heapBandHeight) / 2
+        top = heapBandTop + CIRCLE_HEAP_HEADER + 30
+      }
       heap.forEach((node, index) => {
         layout.set(node.id, {
           x,
@@ -161,6 +178,33 @@ export function circleHeapBand(nodes: LdcNode[]): Rect | null {
     y: content.y - CIRCLE_HEAP_HEADER,
     width: content.width + BAND_PAD * 2,
     height: content.height + CIRCLE_HEAP_HEADER + CIRCLE_HEAP_FOOTER,
+  }
+}
+
+/**
+ * Fixed band drawn around an empty list. It does not depend on the heap so the
+ * heap can be placed to its left without either band moving under the other.
+ */
+export function emptyListBand(): Rect {
+  const geometry = debutCellGeometry([], 'circle')
+  const labelRect: Rect = {
+    x: geometry.label.x - 70,
+    y: geometry.label.y - 14,
+    width: 140,
+    height: 20,
+  }
+  const route = debutRoute([], { kind: 'null' }, 'circle')
+  const content = unionBounds(
+    route ? [geometry.cell, labelRect, route.bounds] : [geometry.cell, labelRect],
+  )
+  return {
+    x: content.x - BAND_PAD - EMPTY_BAND_EXTRA,
+    y: EMPTY_BAND_TOP,
+    width: Math.max(
+      EMPTY_BAND_MIN_WIDTH,
+      content.width + BAND_PAD * 2 + EMPTY_BAND_EXTRA,
+    ),
+    height: EMPTY_BAND_HEIGHT,
   }
 }
 
@@ -215,7 +259,13 @@ export function debutCellGeometry(
     mode === 'circle' && first ? layoutNodes(nodes, mode).get(first.id) : undefined
   const rowX = firstPoint ? firstPoint.x : first ? PAD_L + first.slot * SLIDE : PAD_L
   const hasHeap = nodes.some((node) => !node.freed && node.lane === 'heap')
-  const rowY = firstPoint ? firstPoint.y : first || hasHeap ? ROW_Y : EMPTY_ROW_Y
+  const rowY = firstPoint
+    ? firstPoint.y
+    : first
+      ? ROW_Y
+      : mode === 'row' && hasHeap
+        ? ROW_Y
+        : EMPTY_ROW_Y
   const centerX = rowX + NODE_W / 2
   const cell: Rect = {
     x: centerX - DEBUT_CELL_W / 2,
@@ -919,7 +969,10 @@ export function snapshotBounds(
   if (debutArrow) rects.push(debutArrow.bounds)
 
   const heapBand = mode === 'circle' ? circleHeapBand(nodes) : null
-  if (heapBand) rects.push(heapBand)
+  if (heapBand) {
+    rects.push(heapBand)
+    if (!ring) rects.push(emptyListBand())
+  }
 
   for (const node of nodes) {
     const point = layout.get(node.id)

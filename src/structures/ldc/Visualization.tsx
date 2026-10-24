@@ -12,7 +12,9 @@ import { fr } from '../../i18n/fr'
 import {
   BAND_PAD,
   CELL_W,
+  EMPTY_BAND_EXTRA,
   EMPTY_BAND_HEIGHT,
+  EMPTY_BAND_MIN_WIDTH,
   EMPTY_BAND_TOP,
   HEAP_BAND_BOTTOM,
   HEAP_BAND_TOP,
@@ -28,6 +30,7 @@ import {
   clamp,
   debutCellGeometry,
   debutRoute,
+  emptyListBand,
   fitCamera,
   isNodeFlipped,
   layoutNodes,
@@ -536,14 +539,25 @@ export default function LdcVisualization({
   }
 
   const showHeapBand = circleHeap !== null || (layoutMode === 'row' && hasHeap)
-  const emptyBandExtra = nodes.length === 0 ? 36 : 0
-  const bandX = fitBounds.x - BAND_PAD - emptyBandExtra
-  const bandWidth = Math.max(
-    nodes.length === 0 ? 480 : 120,
-    fitBounds.width + BAND_PAD * 2 + emptyBandExtra,
-  )
-  const emptyBandTop = EMPTY_BAND_TOP
-  const emptyBandHeight = EMPTY_BAND_HEIGHT
+  const emptyCircleBand =
+    layoutMode === 'circle' && !nodes.some((node) => node.lane === 'row')
+      ? emptyListBand()
+      : null
+  const emptyRowBand = emptyCircleBand !== null || nodes.length === 0
+  const emptyBandExtra = nodes.length === 0 ? EMPTY_BAND_EXTRA : 0
+  const bandX = emptyCircleBand
+    ? emptyCircleBand.x
+    : fitBounds.x - BAND_PAD - emptyBandExtra
+  const bandWidth = emptyCircleBand
+    ? emptyCircleBand.width
+    : Math.max(
+        nodes.length === 0 ? EMPTY_BAND_MIN_WIDTH : 120,
+        fitBounds.width + BAND_PAD * 2 + emptyBandExtra,
+      )
+  const emptyBandTop = emptyCircleBand ? emptyCircleBand.y : EMPTY_BAND_TOP
+  const emptyBandHeight = emptyCircleBand
+    ? emptyCircleBand.height
+    : EMPTY_BAND_HEIGHT
   const debutGeometry = debutCellGeometry(nodes, layoutMode)
   const debutArrow = debutRoute(nodes, snapshot.globals.debut, layoutMode)
   const debutChange = step.changes.find(
@@ -673,9 +687,9 @@ export default function LdcVisualization({
           <rect
             className="lane-band lane-band-row"
             x={bandX}
-            y={nodes.length === 0 ? emptyBandTop : ROW_BAND_TOP}
+            y={emptyRowBand ? emptyBandTop : ROW_BAND_TOP}
             width={bandWidth}
-            height={nodes.length === 0 ? emptyBandHeight : ROW_BAND_BOTTOM - ROW_BAND_TOP}
+            height={emptyRowBand ? emptyBandHeight : ROW_BAND_BOTTOM - ROW_BAND_TOP}
             rx="14"
             style={ring ? { display: 'none' } : undefined}
           />
@@ -693,12 +707,12 @@ export default function LdcVisualization({
             x={
               ring
                 ? ring.cx - (ring.radius + NODE_W / 2 + 26) + 18
-                : bandX + (nodes.length === 0 ? 8 : 14)
+                : bandX + (emptyRowBand ? 8 : 14)
             }
             y={
               ring
                 ? ring.cy - (ring.radius + NODE_W / 2 + 26) + 24
-                : (nodes.length === 0 ? emptyBandTop : ROW_BAND_TOP) + 22
+                : (emptyRowBand ? emptyBandTop : ROW_BAND_TOP) + 22
             }
             className="lane-band-label"
             fontSize="13"

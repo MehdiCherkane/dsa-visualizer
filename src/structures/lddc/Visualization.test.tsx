@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import type { OperationDef, ScenarioDef, Step } from '../../core/types'
 import { fr } from '../../i18n/fr'
+import type { Rect } from '../ldc/geometry'
 import LddcVisualization from './Visualization'
 import { createCircularSnapshot } from './memory'
 import type { LdcSnapshot } from './memory'
@@ -72,6 +73,24 @@ function render(
   )
 }
 
+function svgRect(markup: string, className: string): Rect {
+  const match = markup.match(
+    new RegExp(`<rect[^>]*class="lane-band ${className}"[^>]*>`),
+  )
+  if (!match) throw new Error(`missing ${className}`)
+  const attribute = (name: string): number => {
+    const value = match[0].match(new RegExp(`${name}="([^"]+)"`))?.[1]
+    if (value === undefined) throw new Error(`missing ${name}`)
+    return Number(value)
+  }
+  return {
+    x: attribute('x'),
+    y: attribute('y'),
+    width: attribute('width'),
+    height: attribute('height'),
+  }
+}
+
 describe('rendu SVG de la liste doublement chaînée circulaire', () => {
   for (const scenario of [...intScenarios, ...studentScenarios]) {
     it(`scénario ${scenario.id} : premier et dernier pas`, () => {
@@ -119,6 +138,28 @@ describe('rendu SVG de la liste doublement chaînée circulaire', () => {
     expect(markup).toContain('la liste est vide')
     expect(markup).toContain(fr.viz.emptyInsert)
     expect(markup).toContain('ldc-svg')
+  })
+
+  it('pendant malloc sur une liste vide, le tas reste à gauche de la liste', () => {
+    const operation = intOperations.find(
+      (candidate) => candidate.id === 'insererEnTete',
+    )
+    if (!operation) throw new Error('missing insererEnTete operation')
+    const steps = operation.run(createCircularSnapshot('int', []), { valeur: 7 })
+    const heapOnly = steps.find(
+      (step) =>
+        step.snapshot.nodes.some((node) => node.lane === 'heap') &&
+        !step.snapshot.nodes.some((node) => node.lane === 'row'),
+    )
+    if (!heapOnly) throw new Error('missing heap-only step')
+
+    const markup = render(heapOnly, null)
+    const heap = svgRect(markup, 'lane-band-heap')
+    const list = svgRect(markup, 'lane-band-row')
+
+    expect(heap.x + heap.width).toBeLessThan(list.x)
+    expect(markup).toContain(fr.viz.heap)
+    expect(markup).toContain(fr.viz.row)
   })
 
   it('un seul nœud dessine ses deux flèches sur lui-même', () => {
