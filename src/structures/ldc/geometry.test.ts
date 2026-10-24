@@ -8,6 +8,7 @@ import {
   DEBUT_CELL_GAP,
   DEBUT_CELL_H,
   DEBUT_CELL_W,
+  EMPTY_ROW_Y,
   NODE_H,
   NODE_W,
   NULL_STUB,
@@ -21,6 +22,7 @@ import {
   circleHeapBand,
   debutCellGeometry,
   debutRoute,
+  emptyListBand,
   fitCamera,
   isNodeFlipped,
   layoutNodes,
@@ -38,6 +40,7 @@ import type { LdcNode } from './memory'
 import { createSnapshot } from './memory'
 import { runInsererEnTete } from './ops/intOps'
 import { createCircularSnapshot } from '../lddc/memory'
+import { runInsererEnTete as runCircularInsererEnTete } from '../lddc/ops/intOps'
 
 function center(rect: Rect): Point {
   return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
@@ -330,6 +333,41 @@ describe('géométrie circulaire du chapitre 5', () => {
     expect(
       snapshotBounds(nodes, [], { kind: 'null' }, 'circle').x,
     ).toBeLessThanOrEqual(band.x + 0.001)
+  })
+
+  it('place le tas à gauche de la bande vide sans chevauchement', () => {
+    const steps = runCircularInsererEnTete(createCircularSnapshot('int', []), {
+      valeur: 7,
+    })
+    const heapOnly = steps
+      .map((step) => step.snapshot.nodes)
+      .find(
+        (nodes) =>
+          nodes.some((node) => node.lane === 'heap') &&
+          !nodes.some((node) => node.lane === 'row'),
+      )
+    if (!heapOnly) throw new Error('missing heap-only step')
+
+    const listBand = emptyListBand()
+    const heapBand = circleHeapBand(heapOnly)!
+    expect(heapBand.x + heapBand.width).toBeLessThan(listBand.x)
+
+    const overlap =
+      heapBand.x < listBand.x + listBand.width &&
+      heapBand.x + heapBand.width > listBand.x &&
+      heapBand.y < listBand.y + listBand.height &&
+      heapBand.y + heapBand.height > listBand.y
+    expect(overlap).toBe(false)
+
+    const bounds = snapshotBounds(heapOnly, [], { kind: 'null' }, 'circle')
+    expect(contains(bounds, heapBand)).toBe(true)
+    expect(contains(bounds, listBand)).toBe(true)
+
+    const geometry = debutCellGeometry(heapOnly, 'circle')
+    expect(geometry.cell.y).toBeCloseTo(
+      EMPTY_ROW_Y - DEBUT_CELL_GAP - DEBUT_CELL_H,
+      6,
+    )
   })
 
   it('route suivant à l’extérieur et precedent à l’intérieur du cercle', () => {
