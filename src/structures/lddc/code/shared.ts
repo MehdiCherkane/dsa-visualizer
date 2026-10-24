@@ -15,7 +15,7 @@ export type LabelQuery =
 
 export interface FunctionCode {
   code: CodeSource
-  labels: Record<string, { line: number }>
+  labels: Record<string, { line: number; contains: string }>
 }
 
 export function makeFunction(
@@ -25,12 +25,13 @@ export function makeFunction(
 ): FunctionCode {
   const lines = raw.replace(/^\n+|\n+$/g, '').split('\n')
   const lineNumbers: Record<string, number> = {}
-  const resolved: Record<string, { line: number }> = {}
+  const resolved: Record<string, { line: number; contains: string }> = {}
 
   for (const [key, query] of Object.entries(labels)) {
     const line = resolveLine(fn, key, lines, query)
+    const contains = typeof query === 'number' ? lines[line]! : typeof query === 'string' ? query : query.text
     lineNumbers[key] = line
-    resolved[key] = { line }
+    resolved[key] = { line, contains }
   }
 
   // Every function closes on its last line; this keeps the caller from having
@@ -38,7 +39,7 @@ export function makeFunction(
   if (!resolved.end) {
     const line = lines.length - 1
     lineNumbers.end = line
-    resolved.end = { line }
+    resolved.end = { line, contains: lines[line]! }
   }
 
   return { code: { fn, lines, labels: lineNumbers }, labels: resolved }
@@ -72,6 +73,8 @@ export function collectCode(functions: FunctionCode[]): Record<string, CodeSourc
   return Object.fromEntries(functions.map((entry) => [entry.code.fn, entry.code]))
 }
 
-export function collectLabels(functions: FunctionCode[]): Record<string, Record<string, { line: number }>> {
+export function collectLabels(
+  functions: FunctionCode[],
+): Record<string, Record<string, { line: number; contains: string }>> {
   return Object.fromEntries(functions.map((entry) => [entry.code.fn, entry.labels]))
 }

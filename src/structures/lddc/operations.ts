@@ -5,8 +5,11 @@ import {
   runAfficherListe,
   runAfficherListeEnvers,
   runDetruireListe,
+  runInsererApresValeur,
+  runInsererAvantValeur,
   runInsererEnFin,
   runInsererEnTete,
+  runInverserListe,
   runPasserAuSuivant,
   runRechercher,
   runSupprimerEnTete,
@@ -81,6 +84,30 @@ export const intOperations: OperationDef<LdcSnapshot>[] = [
     run: runInsererEnFin,
   },
   {
+    id: 'insererApresValeur',
+    label: fr.lddc.ops.insererApresValeur.label,
+    params: [
+      numberParam('apres', fr.params.apres, 2, true),
+      numberParam('valeur', fr.params.valeur, 7),
+    ],
+    complexity: fr.lddc.ops.insererApresValeur.complexity,
+    complexityNote: fr.lddc.ops.insererApresValeur.note,
+    inserts: true,
+    run: runInsererApresValeur,
+  },
+  {
+    id: 'insererAvantValeur',
+    label: fr.lddc.ops.insererAvantValeur.label,
+    params: [
+      numberParam('avant', fr.params.avant, 2, true),
+      numberParam('valeur', fr.params.valeur, 7),
+    ],
+    complexity: fr.lddc.ops.insererAvantValeur.complexity,
+    complexityNote: fr.lddc.ops.insererAvantValeur.note,
+    inserts: true,
+    run: runInsererAvantValeur,
+  },
+  {
     id: 'supprimerEnTete',
     label: fr.lddc.ops.supprimerEnTete.label,
     params: noParams,
@@ -124,6 +151,15 @@ export const intOperations: OperationDef<LdcSnapshot>[] = [
     complexityNote: fr.lddc.ops.detruireListe.note,
     inserts: false,
     run: runDetruireListe,
+  },
+  {
+    id: 'inverserListe',
+    label: fr.lddc.ops.inverserListe.label,
+    params: noParams,
+    complexity: fr.lddc.ops.inverserListe.complexity,
+    complexityNote: fr.lddc.ops.inverserListe.note,
+    inserts: false,
+    run: runInverserListe,
   },
 ]
 
