@@ -18,6 +18,7 @@ import {
   SUIVANT_LANE,
   cameraAtOne,
   circleGeometry,
+  circleHeapBand,
   debutCellGeometry,
   debutRoute,
   fitCamera,
@@ -33,6 +34,7 @@ import {
   worldPoint,
   zoomAtCursor,
 } from './geometry'
+import type { LdcNode } from './memory'
 import { createSnapshot } from './memory'
 import { runInsererEnTete } from './ops/intOps'
 import { createCircularSnapshot } from '../lddc/memory'
@@ -300,6 +302,34 @@ describe('géométrie circulaire du chapitre 5', () => {
     const rowPoint = layoutNodes(snapshot.nodes).get(first.id)!
     expect(rowPoint.y).toBe(ROW_Y)
     expect(rowPoint.x).not.toBe(firstPoint.x)
+  })
+
+  it('place le tas à gauche de l’anneau, pas au-dessus', () => {
+    const snapshot = circular()
+    const heapNode: LdcNode = {
+      id: 99,
+      address: '0x1AB8',
+      payload: { kind: 'uninit' },
+      suivant: { kind: 'uninit' },
+      precedent: { kind: 'uninit' },
+      freed: false,
+      slot: snapshot.nodes.length,
+      lane: 'heap',
+    }
+    const nodes = [...snapshot.nodes, heapNode]
+    const ring = circleGeometry(nodes)!
+    const point = layoutNodes(nodes, 'circle').get(heapNode.id)!
+    const ringLeft = ring.cx - ring.radius - NODE_W / 2
+
+    expect(point.x + NODE_W).toBeLessThan(ringLeft)
+    expect(point.y + NODE_H / 2).toBeCloseTo(CIRCLE_CY, 6)
+
+    const band = circleHeapBand(nodes)!
+    expect(band.x).toBeLessThan(point.x)
+    expect(band.x + band.width).toBeLessThan(ringLeft)
+    expect(
+      snapshotBounds(nodes, [], { kind: 'null' }, 'circle').x,
+    ).toBeLessThanOrEqual(band.x + 0.001)
   })
 
   it('route suivant à l’extérieur et precedent à l’intérieur du cercle', () => {

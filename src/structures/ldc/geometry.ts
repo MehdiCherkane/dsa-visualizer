@@ -51,6 +51,10 @@ export const ROW_BAND_TOP = 246
 export const ROW_BAND_BOTTOM = ROW_Y + NODE_H + 46
 export const HEAP_BAND_TOP = 8
 export const HEAP_BAND_BOTTOM = HEAP_Y + NODE_H + 46
+export const CIRCLE_HEAP_GAP = 56
+export const CIRCLE_HEAP_STACK_GAP = 24
+export const CIRCLE_HEAP_HEADER = 44
+export const CIRCLE_HEAP_FOOTER = 20
 export const BAND_PAD = 28
 export const EMPTY_BAND_TOP = 200
 export const EMPTY_BAND_HEIGHT = 146
@@ -112,10 +116,22 @@ export function layoutNodes(
       const cy = CIRCLE_CY + Math.sin(angle) * radius
       layout.set(node.id, { x: cx - NODE_W / 2, y: cy - NODE_H / 2 })
     })
-    for (const node of nodes) {
-      if (node.lane === 'heap') {
-        layout.set(node.id, { x: CIRCLE_CX - NODE_W / 2, y: HEAP_Y })
-      }
+    const heap = nodes
+      .filter((node) => node.lane === 'heap')
+      .slice()
+      .sort((first, second) => first.id - second.id)
+    if (heap.length > 0) {
+      const ringLeft = CIRCLE_CX - ((ring?.radius ?? 0) + NODE_W / 2 + 26)
+      const stackHeight =
+        heap.length * NODE_H + (heap.length - 1) * CIRCLE_HEAP_STACK_GAP
+      const x = ringLeft - CIRCLE_HEAP_GAP - NODE_W
+      const top = CIRCLE_CY - stackHeight / 2
+      heap.forEach((node, index) => {
+        layout.set(node.id, {
+          x,
+          y: top + index * (NODE_H + CIRCLE_HEAP_STACK_GAP),
+        })
+      })
     }
     return layout
   }
@@ -127,6 +143,25 @@ export function layoutNodes(
     })
   }
   return layout
+}
+
+/** Bounds of the left-side heap band used by the chapter 5 circular layout. */
+export function circleHeapBand(nodes: LdcNode[]): Rect | null {
+  const heap = nodes.filter((node) => node.lane === 'heap')
+  if (heap.length === 0) return null
+  const layout = layoutNodes(nodes, 'circle')
+  const nodeRects = heap.flatMap((node) => {
+    const point = layout.get(node.id)
+    return point ? [nodeBounds(point)] : []
+  })
+  if (nodeRects.length === 0) return null
+  const content = unionBounds(nodeRects)
+  return {
+    x: content.x - BAND_PAD,
+    y: content.y - CIRCLE_HEAP_HEADER,
+    width: content.width + BAND_PAD * 2,
+    height: content.height + CIRCLE_HEAP_HEADER + CIRCLE_HEAP_FOOTER,
+  }
 }
 
 export function laneY(point: Point, field: PointerField): number {
@@ -882,6 +917,9 @@ export function snapshotBounds(
   })
   const debutArrow = debutRoute(nodes, debut, mode)
   if (debutArrow) rects.push(debutArrow.bounds)
+
+  const heapBand = mode === 'circle' ? circleHeapBand(nodes) : null
+  if (heapBand) rects.push(heapBand)
 
   for (const node of nodes) {
     const point = layout.get(node.id)
