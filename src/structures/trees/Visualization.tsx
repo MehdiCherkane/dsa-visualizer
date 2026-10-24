@@ -14,6 +14,7 @@ import {
   NULL_GROUND_RING,
   NULL_GROUND_STEM,
   NULL_GROUND_STEM_STROKE,
+  freedBadgeGeometry,
   placeEdgeLabels,
   ROOT_ARROW_MARKER,
   rootPointerGeometry,
@@ -451,10 +452,35 @@ export default function TreeVisualization({
                   </text>
                 </g>
               ) : null}
-              {node.freed ? <text className="tree-node-freed" x={TREE_NODE_RADIUS} y={TREE_NODE_RADIUS * 1.65} textAnchor="middle">{fr.trees.viz.freed}</text> : null}
             </g>
           )
         })}
+
+        {layout.nodes
+          .filter(({ node }) => node.freed)
+          .map(({ node, x, y }) => {
+            const badge = freedBadgeGeometry({ x, y }, renderScale)
+            const value = node.payload.kind === 'int' ? node.payload.value : '…'
+            return (
+              <g
+                key={`freed-${node.id}`}
+                className="tree-freed-badge"
+                transform={`translate(${badge.left} ${badge.top})`}
+              >
+                <title>{`${fr.trees.viz.node} ${value} — ${fr.trees.viz.freed}`}</title>
+                <rect width={badge.width} height={badge.height} rx={badge.height / 2} />
+                <text
+                  x={badge.width / 2}
+                  y={badge.height / 2}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize={badge.font}
+                >
+                  {fr.trees.viz.freed}
+                </text>
+              </g>
+            )
+          })}
 
         {layout.nodes.length === 0 ? (
           <g className="tree-empty-state" transform={`translate(${layout.width / 2} ${layout.height / 2})`}>

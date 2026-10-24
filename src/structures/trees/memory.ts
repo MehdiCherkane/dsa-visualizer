@@ -105,6 +105,7 @@ export function cloneSnapshot(snapshot: TreeSnapshot): TreeSnapshot {
       vars: Object.fromEntries(
         Object.entries(frame.vars).map(([name, value]) => [name, cloneVarValue(value)]),
       ),
+      ...(frame.callLabel === undefined ? {} : { callLabel: frame.callLabel }),
     })),
     nodes: snapshot.nodes.map((node) => ({
       ...node,
@@ -209,6 +210,28 @@ export function rootPointer(snapshot: TreeSnapshot): PointerValue {
 
 export function payloadKey(node: TreeNode): number | null {
   return node.payload.kind === 'int' ? node.payload.value : null
+}
+
+/** Value shown to students in captions and breadcrumbs, never an internal id. */
+export function callArgument(snapshot: TreeSnapshot, value: PointerValue): string {
+  if (value.kind === 'null') return fr.common.null
+  if (value.kind === 'uninit') return fr.common.uninit
+  const node = getNode(snapshot, value.id)
+  if (!node) return '?'
+  const payload = payloadKey(node)
+  return payload === null ? node.address : String(payload)
+}
+
+/** Caption form: `n → 80 (0x1B08)` or `n = NULL`. */
+export function callTarget(snapshot: TreeSnapshot, value: PointerValue): string {
+  if (value.kind === 'null') return `n = ${fr.common.null}`
+  if (value.kind === 'uninit') return `n ${fr.common.uninit}`
+  const node = getNode(snapshot, value.id)
+  if (!node) return 'n → ?'
+  const payload = payloadKey(node)
+  return payload === null
+    ? `n → ${node.address}`
+    : `n → ${payload} (${node.address})`
 }
 
 export function pointerDisplay(snapshot: TreeSnapshot, value: PointerValue): string {

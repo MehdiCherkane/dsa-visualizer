@@ -1,13 +1,17 @@
 import type { OperationDef, ParamValues, PointerValue, Step } from '../../../core/types'
 import { fr } from '../../../i18n/fr'
-import { getNode, rootPointer } from '../memory'
+import { callArgument, callTarget, getNode, rootPointer } from '../memory'
 import type { TreeCallSlot, TreeSnapshot } from '../memory'
 import { NULL_POINTER, NODE_POINTER, TreeRecorder } from './runtime'
 
 const intValue = (value: number) => ({ kind: 'int' as const, value })
 
 function createNode(recorder: TreeRecorder, value: number): number {
-  recorder.pushFrame('creerNoeud', { valeur: intValue(value), nouveau: { kind: 'uninit' } })
+  recorder.pushFrame(
+    'creerNoeud',
+    { valeur: intValue(value), nouveau: { kind: 'uninit' } },
+    `creerNoeud(${value})`,
+  )
   recorder.step('creerNoeud', 0, fr.trees.captions.createEntry(value))
   const node = recorder.allocateNode()
   recorder.setLocal('nouveau', NODE_POINTER(node.id))
@@ -36,7 +40,7 @@ export function runConstruireArbre(state: TreeSnapshot): Step<TreeSnapshot>[] {
     return recorder.steps
   }
 
-  recorder.pushFrame('construireArbre')
+  recorder.pushFrame('construireArbre', {}, 'construireArbre()')
   recorder.step('construireArbre', 0, fr.trees.captions.constructionEntry)
   const root = createNode(recorder, 50)
   recorder.setGlobal('racine', NODE_POINTER(root))
@@ -87,10 +91,10 @@ function runTraversalNode(
   pointer: PointerValue,
   nullSlot: TreeCallSlot | null = null,
 ): void {
-  recorder.pushFrame(fn, { n: pointer })
+  recorder.pushFrame(fn, { n: pointer }, `${fn}(${callArgument(recorder.state, pointer)})`)
   recorder.pushCallFrame(fn, pointer, traversalPhases(order), nullSlot)
   recorder.pauseCall(0)
-  recorder.step(fn, 0, fr.trees.captions.call(fn, pointer))
+  recorder.step(fn, 0, fr.trees.captions.call(fn, callTarget(recorder.state, pointer)))
   const isNull = pointer.kind !== 'node'
   recorder.pauseCall(1)
   recorder.step(fn, 1, fr.trees.captions.testNull(pointer), {
@@ -165,8 +169,12 @@ export const runParcoursPostfixe = (state: TreeSnapshot): Step<TreeSnapshot>[] =
   runTraversal(state, 'postfixe')
 
 function destroyNode(recorder: TreeRecorder, pointer: PointerValue): void {
-  recorder.pushFrame('detruireArbre', { n: pointer })
-  recorder.step('detruireArbre', 0, fr.trees.captions.destroyCall(pointer))
+  recorder.pushFrame(
+    'detruireArbre',
+    { n: pointer },
+    `detruireArbre(${callArgument(recorder.state, pointer)})`,
+  )
+  recorder.step('detruireArbre', 0, fr.trees.captions.destroyCall(callTarget(recorder.state, pointer)))
   const isNull = pointer.kind !== 'node'
   recorder.step('detruireArbre', 1, fr.trees.captions.testNull(pointer), {
     cond: { expr: 'n == NULL', result: isNull },
@@ -227,4 +235,3 @@ export const treeOperations: OperationDef<TreeSnapshot>[] = [
   defineOperation('parcoursPostfixe', (state) => runParcoursPostfixe(state)),
   defineOperation('detruireArbre', (state) => runDetruireArbre(state)),
 ]
-

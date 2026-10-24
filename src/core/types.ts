@@ -21,6 +21,8 @@ export type VarValue =
 export interface FrameState {
   fn: string
   vars: Record<string, VarValue>
+  /** Human-readable call, e.g. `detruireArbre(80)`; used by the breadcrumb. */
+  callLabel?: string
 }
 
 export interface BaseSnapshot {

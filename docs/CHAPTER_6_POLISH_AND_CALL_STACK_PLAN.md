@@ -1,6 +1,6 @@
 # Chapter 6 — polish and recursive call-stack plan
 
-Status: Stage 1 (visual fixes) and Stage 2 (call-stack panel) implemented and browser-checked; follow-up fixes and verification sweep in progress.
+Status: Stage 1 (visual fixes) and Stage 2 (call-stack panel) implemented and verified; the final browser sweep passes 95/95 checks at 1366×768 and 1920×1080.
 
 ## Scope and constraints
 

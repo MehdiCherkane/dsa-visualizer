@@ -126,6 +126,38 @@ export interface TreeLayoutNode {
   y: number
 }
 
+export const FREED_BADGE = {
+  width: 42,
+  height: 13,
+  gap: 0,
+  font: 9,
+  maxScale: 1.6,
+} as const
+
+/**
+ * The freed pill hangs under the ring and above the NULL glyph. It is
+ * compensated so it stays readable at 50% while its bottom stays clear of
+ * the NULL stem (23.4 units below the ring) and of a child ring (25 units).
+ */
+export function freedBadgeGeometry(
+  node: { x: number; y: number },
+  renderScale: number,
+): { left: number; top: number; width: number; height: number; font: number } {
+  const scale = Math.min(
+    FREED_BADGE.maxScale,
+    Math.max(1, 1 / Math.max(renderScale, 0.05)),
+  )
+  const width = FREED_BADGE.width * scale
+  const height = FREED_BADGE.height * scale
+  return {
+    left: node.x - width / 2,
+    top: node.y + TREE_NODE_RADIUS + TREE_NODE_STROKE / 2 + FREED_BADGE.gap * scale,
+    width,
+    height,
+    font: FREED_BADGE.font * scale,
+  }
+}
+
 export interface TreeLayoutEdge {
   parentId: number
   childId: number
@@ -382,6 +414,17 @@ export function placeEdgeLabels(
     top: (entry.y + NULL_GROUND_BOUNDS.top) * scale,
     bottom: (entry.y + NULL_GROUND_BOUNDS.bottom) * scale,
   }))
+  const badgeObstacles = layout.nodes
+    .filter((node) => node.node.freed)
+    .map((node) => {
+      const badge = freedBadgeGeometry(node, scale)
+      return {
+        left: badge.left * scale,
+        right: (badge.left + badge.width) * scale,
+        top: badge.top * scale,
+        bottom: (badge.top + badge.height) * scale,
+      }
+    })
   const placed: ScreenRect[] = []
   const result = new Map<string, TreeEdgeLabel>()
 
@@ -426,7 +469,10 @@ export function placeEdgeLabels(
         const hitsLabel = placed.some((other) =>
           rectsOverlap(rect, other, EDGE_LABEL_MARGIN_PX),
         )
-        if (hitsNode || hitsNull || hitsLabel) continue
+        const hitsBadge = badgeObstacles.some((badge) =>
+          rectsOverlap(rect, badge, EDGE_LABEL_MARGIN_PX),
+        )
+        if (hitsNode || hitsNull || hitsLabel || hitsBadge) continue
         chosen = rect
         chosenX = x
         chosenY = y

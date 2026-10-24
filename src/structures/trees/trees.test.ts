@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { Step } from '../../core/types'
 import { fr } from '../../i18n/fr'
 import {
+  FREED_BADGE,
+  freedBadgeGeometry,
   layoutTree,
   measureTree,
   NULL_EDGE_GAP,
@@ -27,6 +29,7 @@ import {
 } from './memory'
 import type { TreeSnapshot } from './memory'
 import {
+  runDetruireArbre,
   runParcoursInfixe,
   runParcoursPostfixe,
   runParcoursPrefixe,
@@ -383,5 +386,73 @@ describe('chapitre 6 — parcours récursifs', () => {
     expect(ROOT_ARROW_MARKER.markerUnits).toBe('strokeWidth')
     expect(ROOT_ARROW_MARKER.markerWidth).toBeGreaterThan(0)
     expect(ROOT_ARROW_MARKER.markerHeight).toBe(ROOT_ARROW_MARKER.markerWidth)
+  })
+
+  it('nomme les appels de destruction par valeur et adresse, jamais par id', () => {
+    const steps = runDetruireArbre(courseTreeSnapshot())
+    expect(steps).toHaveLength(64)
+    expect(steps[0]!.caption).toBe('Appel de detruireArbre avec n → 50 (0x1A40).')
+    expect(steps.some((step) => step.caption.includes('n → 80 (0x1B08)'))).toBe(true)
+    expect(steps.some((step) => step.caption.includes('n = NULL'))).toBe(true)
+    for (const step of steps) expect(step.caption).not.toMatch(/#\d/)
+
+    for (const order of Object.keys(runners) as TraversalOrder[]) {
+      for (const step of runners[order](courseTreeSnapshot())) {
+        expect(step.caption).not.toMatch(/#\d/)
+      }
+    }
+
+    const deep = steps.find(
+      (step) => step.snapshot.frames.at(-1)?.callLabel === 'detruireArbre(40)',
+    )!
+    expect(deep.snapshot.frames.map((frame) => frame.callLabel)).toEqual([
+      'detruireArbre(50)',
+      'detruireArbre(30)',
+      'detruireArbre(40)',
+    ])
+  })
+
+  it('place le badge « libéré » sous le cercle, hors de la valeur et du NULL', () => {
+    const steps = runDetruireArbre(courseTreeSnapshot())
+    const layout = layoutTree(steps[33]!.snapshot)
+    const node40 = layout.nodes.find((node) => node.node.payload.kind === 'int' && node.node.payload.value === 40)!
+    const node30 = layout.nodes.find((node) => node.node.payload.kind === 'int' && node.node.payload.value === 30)!
+    for (const scale of [0.43, 0.5, 0.87, 3.12, 4]) {
+      const badge = freedBadgeGeometry(node40, scale)
+      expect(badge.top).toBeCloseTo(node40.y + TREE_NODE_RADIUS + 1.25)
+      expect(badge.top + badge.height).toBeLessThan(node40.y + NULL_LEVEL_GAP - NULL_GROUND_STEM)
+      const badge30 = freedBadgeGeometry(node30, scale)
+      expect(badge30.top + badge30.height).toBeLessThan(node40.y - TREE_NODE_RADIUS)
+      expect(badge.width).toBeCloseTo(
+        FREED_BADGE.width * Math.min(FREED_BADGE.maxScale, Math.max(1, 1 / scale)),
+      )
+    }
+
+    const freed = layout.nodes.filter((node) => node.node.freed)
+    const badges = freed.map((node) => {
+      const badge = freedBadgeGeometry(node, 0.64)
+      return { left: badge.left, right: badge.left + badge.width, top: badge.top, bottom: badge.top + badge.height }
+    })
+    for (const label of placeEdgeLabels(layout, 0.64, fr.trees.fields).values()) {
+      for (const badge of badges) {
+        const overlaps =
+          label.x - label.width / 2 < badge.right &&
+          label.x + label.width / 2 > badge.left &&
+          label.y - label.height / 2 < badge.bottom &&
+          label.y + label.height / 2 > badge.top
+        expect(overlaps).toBe(false)
+      }
+    }
+  })
+
+  it('garde les statistiques cohérentes pendant la destruction', () => {
+    const steps = runDetruireArbre(courseTreeSnapshot())
+    for (const step of steps) {
+      const metrics = measureTree(step.snapshot)
+      const freed = step.snapshot.nodes.filter((node) => node.freed).length
+      expect(metrics.size).toBe(6 - freed)
+    }
+    const last = measureTree(steps.at(-1)!.snapshot)
+    expect(last).toEqual({ size: 0, leaves: 0, height: -1, active: null })
   })
 })

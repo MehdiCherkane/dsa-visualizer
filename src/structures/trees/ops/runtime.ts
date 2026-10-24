@@ -45,10 +45,14 @@ export class TreeRecorder {
     return this.state.frames[this.state.frames.length - 1]
   }
 
-  pushFrame(fn: string, vars: Record<string, VarValue> = {}): void {
+  pushFrame(fn: string, vars: Record<string, VarValue> = {}, callLabel?: string): void {
     const copied: Record<string, VarValue> = {}
     for (const [name, value] of Object.entries(vars)) copied[name] = cloneVarValue(value)
-    this.state.frames.push({ fn, vars: copied })
+    this.state.frames.push({
+      fn,
+      vars: copied,
+      ...(callLabel === undefined ? {} : { callLabel }),
+    })
   }
 
   popFrame(): void {

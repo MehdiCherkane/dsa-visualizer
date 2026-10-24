@@ -381,9 +381,20 @@
   font-weight: 800;
 }
 
-.tree-node-freed {
+.tree-freed-badge {
+  pointer-events: none;
+}
+
+.tree-freed-badge rect {
+  fill: var(--alert-soft);
+  stroke: var(--alert);
+  stroke-width: 1.5;
+}
+
+.tree-freed-badge text {
   fill: var(--alert);
-  font: 700 9px var(--ui);
+  font-family: var(--ui);
+  font-weight: 700;
 }
 
 .tree-root-pin rect {

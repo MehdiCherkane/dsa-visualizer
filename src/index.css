@@ -1749,11 +1749,19 @@ body.is-resizing-horizontal * {
 
 .code-breadcrumb {
   overflow: hidden;
+  max-width: 100%;
   color: var(--muted);
+  direction: rtl;
   font-family: var(--mono);
   font-size: 9px;
+  text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.code-breadcrumb-text {
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 .code-body {
