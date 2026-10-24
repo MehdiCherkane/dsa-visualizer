@@ -26,6 +26,7 @@ const pileModel: LinkedModel<PfSnapshot> = {
   emptyText: fr.viz.emptyPile,
   emptyInsert: fr.viz.insertEmptyPile,
   ariaLabel: fr.chapters.pilesFiles.title,
+  showHeap: true,
   nodes(snapshot) {
     if (snapshot.profile !== 'pile') return []
     return snapshot.nodes.map<VizNode>((node) => ({

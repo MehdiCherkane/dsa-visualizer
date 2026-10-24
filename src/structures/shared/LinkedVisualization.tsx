@@ -887,7 +887,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
         }
   const heapNodes = nodes.filter((node) => node.lane === 'heap')
   const heapBand: Rect | null =
-    heapNodes.length > 0
+    heapNodes.length > 0 || model.showHeap
       ? model.orientation === 'horizontal'
         ? { x: bandX, y: HEAP_Y - 66, width: bandWidth, height: NODE_H + 130 }
         : {

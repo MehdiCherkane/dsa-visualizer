@@ -43,6 +43,7 @@ export interface LinkedModel<S extends BaseSnapshot> {
   emptyText: string
   emptyInsert: string
   ariaLabel: string
+  showHeap?: boolean
   nodes: (snapshot: S) => VizNode[]
   globals: (snapshot: S) => VizGlobal[]
   pins: (snapshot: S) => VizPin[]
@@ -93,7 +94,7 @@ export const HEAP_Y = 92
 export const STACK_X = 340
 export const STACK_TOP = 160
 export const STACK_SLIDE = 138
-export const HEAP_STACK_X = 660
+export const HEAP_STACK_X = 760
 
 export const GLOBAL_W = 132
 export const GLOBAL_H = 44
@@ -484,7 +485,7 @@ export function unionBounds(rects: Rect[]): Rect {
 export function emptyBounds(orientation: VizOrientation): Rect {
   return orientation === 'horizontal'
     ? { x: 90, y: 200, width: 720, height: 340 }
-    : { x: 210, y: 40, width: 474, height: 320 }
+    : { x: 180, y: 40, width: 860, height: 320 }
 }
 
 export function contentBounds(
