@@ -8,7 +8,7 @@ A single-page, fully offline French teaching platform for data structures in C (
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (209 tests)
+npm test      # vitest suite (210 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
@@ -37,7 +37,7 @@ Navigation is hash-based so it also works from `file://`: `#/` (main menu, the e
 
 ### Chapitre 5 — Listes doublement chaînées circulaires (`lddc`)
 
-- **Entiers** (`int`): the course ring `9 ⇄ 2 ⇄ 5`, where `5.suivant == 9` and `9.precedent == 5`; display one full turn forward/backward, insert head/tail/after/before, delete head/by-value (empty, single node, head, last, middle, absent, duplicates), search, destroy and reverse.
+- **Entiers** (`int`): opens on the empty-list scenario (`debut == NULL`); the course ring `9 ⇄ 2 ⇄ 5`, where `5.suivant == 9` and `9.precedent == 5`, is one click away in the scenarios menu. Display one full turn forward/backward, insert head/tail/after/before, delete head/by-value (empty, single node, head, last, middle, absent, duplicates), search, destroy and reverse.
 - **Étudiants** (`etudiant`): a circular student registry with `inscrireEtudiant`, `radierEtudiant`, `passerAuSuivant`, display and destroy.
 - A standalone C11 program is provided in [`c/chapitre-5/lddc.c`](c/chapitre-5/lddc.c); it builds the course ring, exercises every integer operation, verifies the circular invariants after each step and leaves no allocation behind (`gcc -std=c11 -Wall -Wextra -pedantic`).
 
@@ -132,6 +132,7 @@ These notes apply specifically to the `lddc` module.
 
 - **Circular model.** Every non-empty list is a ring: `dernier->suivant == debut` and `debut->precedent == dernier`. A single node points to itself in both directions. `NULL` appears only when `debut == NULL` (empty list). There is no `fin` global.
 - **Reused snapshot shape.** Chapter 5 reuses chapter 4's `LdcSnapshot`, `Recorder` and renderer with `layoutMode="circle"`. The shared renderer was only extended with opt-in circle geometry; chapters 2–4 keep their row layout.
+- **Entry scenario.** The integer profile declares `defaultScenarioId: 'vide'`, so opening `#/chapitre-5` (including from the menu) starts on the empty-list scenario. The course ring remains available from the scenarios menu.
 - **Per-step vs final invariants.** A doubly linked ring cannot stay mirror-consistent after *every* individual C assignment (a new node is reachable before its lane changes, an old head is detached before it is freed, reversal temporarily closes a smaller sub-cycle). `checkRingInvariants` therefore checks on every step that the links reachable from `debut` form one closed walk with no NULL or freed node; `checkCircularInvariants` asserts the full reciprocal invariant on each final operation state.
 - **Deletion order.** Single-node deletion clears `debut` before freeing the node, and head deletion re-seats `debut` before unlinking, so the walk from `debut` stays valid while the visualizer shows the freed node hatching.
 - **`inverserListe`.** One full turn swaps `suivant` and `precedent` on every node, then `debut` is re-seated on the old last node; the row layout is reversed in a final step.
