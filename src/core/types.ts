@@ -131,6 +131,10 @@ export interface ProfileDef<S extends BaseSnapshot> {
   scenarios: ScenarioDef<S>[]
   code: Record<string, CodeSource>
   typesCode: CodeSource
+  /** Operation selected when the profile is opened. Defaults to the first operation. */
+  defaultOperationId?: string
+  /** Operation suggested when the user clicks the empty-state insertion button. */
+  emptyInsertOperationId?: string
 }
 
 export interface VisualizationProps<S extends BaseSnapshot> {
@@ -159,4 +163,8 @@ export interface StructurePlugin<S extends BaseSnapshot> {
   countNodes: (snapshot: S) => number
   formatValue: (snapshot: S, value: VarValue) => string
   nodeKey: (snapshot: S, nodeId: number) => ParamValue
+  /** Label above the profile switch. Defaults to `fr.profiles.label`. */
+  profileSwitchLabel?: string
+  /** One-line summary used by the collapsed bottom dock. */
+  summarize?: (snapshot: S) => string
 }

@@ -3,6 +3,12 @@ import type { BaseSnapshot, OperationDef, ParamValues, ProfileDef } from '../cor
 export function defaultOperation<S extends BaseSnapshot>(
   profile: ProfileDef<S>,
 ): OperationDef<S> | undefined {
+  if (profile.defaultOperationId) {
+    const preferred = profile.operations.find(
+      (operation) => operation.id === profile.defaultOperationId,
+    )
+    if (preferred) return preferred
+  }
   return (
     profile.operations.find(
       (operation) => operation.id === 'supprimerValeur' || operation.id === 'radierEtudiant',

@@ -206,10 +206,13 @@ export function DemoApp<S extends BaseSnapshot>({
   const activeCall = activeOperation
     ? formatCall(activeOperation.operation, activeOperation.params)
     : undefined
-  const debutValue = currentStep.snapshot.globals.debut
-  const debutText = debutValue ? plugin.formatValue(currentStep.snapshot, debutValue) : '—'
+  const globalsText =
+    Object.entries(currentStep.snapshot.globals)
+      .map(([name, value]) => `${name} = ${plugin.formatValue(currentStep.snapshot, value)}`)
+      .join(' · ') || '—'
+  const summaryText = plugin.summarize?.(currentStep.snapshot) ?? globalsText
   const outputText = currentStep.console.output.trim().replace(/\s+/g, ' ') || '—'
-  const dockSummary = `debut = ${debutText} · sortie : « ${outputText} » · journal : ${journal.length}`
+  const dockSummary = `${summaryText} · sortie : « ${outputText} » · journal : ${journal.length}`
 
   useEffect(() => {
     if (!activeOperation || activeOperation.committed) return
@@ -301,14 +304,16 @@ export function DemoApp<S extends BaseSnapshot>({
   )
 
   const insertFromEmpty = useCallback(() => {
-    const operationId = profile.id === 'etudiant' ? 'inscrireEtudiant' : 'insererEnTete'
+    const operationId =
+      profile.emptyInsertOperationId ??
+      (profile.id === 'etudiant' ? 'inscrireEtudiant' : 'insererEnTete')
     const operation = profile.operations.find((candidate) => candidate.id === operationId)
     if (!operation) return
     selectOperation(operation.id)
     requestAnimationFrame(() => {
       document.querySelector<HTMLInputElement>('.operation-bar input')?.focus()
     })
-  }, [profile.id, profile.operations, selectOperation])
+  }, [profile.emptyInsertOperationId, profile.id, profile.operations, selectOperation])
 
   const changeParam = useCallback((name: string, value: string) => {
     setParamValues((current) => ({ ...current, [name]: value }))
