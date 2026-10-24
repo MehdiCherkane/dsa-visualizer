@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { defaultPlugin, pluginForChapter, plugins } from './registry'
 
 describe('registre des chapitres', () => {
-  it('expose les chapitres 2, 3, 4 et 5', () => {
-    expect(plugins.map((plugin) => plugin.chapter)).toEqual([4, 5, 2, 3])
-    expect(plugins.map((plugin) => plugin.id)).toEqual(['ldc', 'lddc', 'lsc', 'piles-files'])
+  it('expose les chapitres 2 à 6', () => {
+    expect(plugins.map((plugin) => plugin.chapter)).toEqual([2, 3, 4, 5, 6])
+    expect(plugins.map((plugin) => plugin.id)).toEqual(['lsc', 'piles-files', 'ldc', 'lddc', 'trees'])
     expect(defaultPlugin.chapter).toBe(4)
   })
 
@@ -13,6 +13,7 @@ describe('registre des chapitres', () => {
     expect(pluginForChapter(3)?.id).toBe('piles-files')
     expect(pluginForChapter(4)?.id).toBe('ldc')
     expect(pluginForChapter(5)?.id).toBe('lddc')
+    expect(pluginForChapter(6)?.id).toBe('trees')
     expect(pluginForChapter(1)).toBeUndefined()
   })
 

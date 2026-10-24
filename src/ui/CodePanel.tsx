@@ -8,6 +8,8 @@ interface CodePanelProps<S extends BaseSnapshot> {
   profile: ProfileDef<S>
   step: Step<S>
   presentation?: boolean
+  hideBreadcrumb?: boolean
+  secondaryLine?: { fn: string; line: number } | null
 }
 
 const measureSample = 'MMMMMMMMMMMMMMMMMMMM'
@@ -44,6 +46,8 @@ export function CodePanel<S extends BaseSnapshot>({
   profile,
   step,
   presentation = false,
+  hideBreadcrumb = false,
+  secondaryLine = null,
 }: CodePanelProps<S>): JSX.Element {
   const [showTypes, setShowTypes] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -52,12 +56,15 @@ export function CodePanel<S extends BaseSnapshot>({
   const measureRef = useRef<HTMLSpanElement | null>(null)
   const [fitSize, setFitSize] = useState<number | null>(null)
 
-  const stack = step.snapshot.frames.map((frame) => frame.fn)
-  if (step.fn && stack[stack.length - 1] !== step.fn) stack.push(step.fn)
+  const stack = step.snapshot.frames.map((frame) => ({
+    fn: frame.fn,
+    label: frame.callLabel ?? frame.fn,
+  }))
+  if (step.fn && stack.at(-1)?.fn !== step.fn) stack.push({ fn: step.fn, label: step.fn })
   const source = showTypes ? profile.typesCode : (profile.code[step.fn] ?? profile.typesCode)
   const idle = step.caption === fr.captions.idle
   const signature = showTypes ? fr.code.types : functionSignature(source)
-  const breadcrumb = stack.filter(Boolean).join(' › ')
+  const breadcrumb = stack.map((entry) => entry.label).filter(Boolean).join(' › ')
 
   const handleCopy = (): void => {
     void copyText(source.lines.join('\n')).then(() => {
@@ -110,9 +117,9 @@ export function CodePanel<S extends BaseSnapshot>({
             C
           </span>
           <code className="code-signature">{signature}</code>
-          {stack.length > 1 ? (
-            <span className="code-breadcrumb" title={fr.code.breadcrumb}>
-              {breadcrumb}
+          {!hideBreadcrumb && stack.length > 1 ? (
+            <span className="code-breadcrumb" title={breadcrumb}>
+              <span className="code-breadcrumb-text">{breadcrumb}</span>
             </span>
           ) : null}
         </div>
@@ -135,11 +142,17 @@ export function CodePanel<S extends BaseSnapshot>({
         </span>
         {source.lines.map((line, index) => {
           const isActive = !idle && !showTypes && source.fn === step.fn && index === step.line
+          const isSecondary =
+            !isActive &&
+            !idle &&
+            !showTypes &&
+            secondaryLine?.fn === source.fn &&
+            secondaryLine.line === index
           return (
             <div
               key={`${source.fn}-${index}`}
               ref={isActive ? activeLine : undefined}
-              className={isActive ? 'code-line active' : 'code-line'}
+              className={isActive ? 'code-line active' : isSecondary ? 'code-line secondary-active' : 'code-line'}
               style={presentation && fitSize !== null ? { fontSize: `${fitSize}px` } : undefined}
               aria-current={isActive ? 'step' : undefined}
             >

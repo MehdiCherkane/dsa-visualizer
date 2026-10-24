@@ -13,6 +13,7 @@ interface OperationBarProps<S extends BaseSnapshot> {
   onFinish: () => void
   onCancel: () => void
   operationActive: boolean
+  operationFinished: boolean
   listCount: number
   maxed: boolean
 }
@@ -28,11 +29,14 @@ export function OperationBar<S extends BaseSnapshot>({
   onFinish,
   onCancel,
   operationActive,
+  operationFinished,
   listCount,
   maxed,
 }: OperationBarProps<S>): JSX.Element {
+  const showLimit = maxed && !operationActive
+  const limitMessage = fr.operation.maxNodes(profile.maxNodes)
   return (
-    <section className={maxed ? 'operation-bar maxed' : 'operation-bar'}>
+    <section className={showLimit ? 'operation-bar maxed' : 'operation-bar'}>
       <div className="operation-main">
         <label className="field-label">
           <span>{fr.operation.title}</span>
@@ -87,15 +91,17 @@ export function OperationBar<S extends BaseSnapshot>({
             className="primary-button"
             onClick={onExecute}
             disabled={operationActive || maxed || !selectedOp}
-            title={maxed ? fr.operation.maxNodes : undefined}
+            title={showLimit ? limitMessage : undefined}
           >
             {fr.operation.execute}
           </button>
-          {operationActive ? (
+          {operationActive || operationFinished ? (
             <>
-              <button type="button" className="secondary-button" onClick={onFinish}>
-                {fr.operation.finish}
-              </button>
+              {operationActive ? (
+                <button type="button" className="secondary-button" onClick={onFinish}>
+                  {fr.operation.finish}
+                </button>
+              ) : null}
               <button type="button" className="secondary-button" onClick={onCancel}>
                 {fr.operation.cancel}
               </button>
@@ -113,7 +119,15 @@ export function OperationBar<S extends BaseSnapshot>({
         {operationActive ? (
           <span className="in-progress">{fr.operation.inProgress}</span>
         ) : null}
-        {maxed ? <span className="limit-message">{fr.operation.maxNodes}</span> : null}
+        {showLimit ? (
+          <span className="limit-message" role="status">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M8 7v3.4M8 4.8h.01" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+            {limitMessage}
+          </span>
+        ) : null}
       </div>
     </section>
   )
