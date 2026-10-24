@@ -22,6 +22,14 @@ const S = fr.lddc.scenarios
 
 export const intScenarios: ScenarioDef<LdcSnapshot>[] = [
   {
+    id: 'vide',
+    title: S.vide.title,
+    description: S.vide.description,
+    profileId: 'int',
+    state: empty,
+    steps: [],
+  },
+  {
     id: 'cours',
     title: S.cours.title,
     description: S.cours.description,
@@ -60,6 +68,22 @@ export const intScenarios: ScenarioDef<LdcSnapshot>[] = [
     steps: [{ operationId: 'insererEnFin', params: { valeur: 7 } }],
   },
   {
+    id: 'apres',
+    title: S.apres.title,
+    description: S.apres.description,
+    profileId: 'int',
+    state: base925,
+    steps: [{ operationId: 'insererApresValeur', params: { apres: 2, valeur: 7 } }],
+  },
+  {
+    id: 'avant',
+    title: S.avant.title,
+    description: S.avant.description,
+    profileId: 'int',
+    state: base925,
+    steps: [{ operationId: 'insererAvantValeur', params: { avant: 9, valeur: 7 } }],
+  },
+  {
     id: 'suppression',
     title: S.suppression.title,
     description: S.suppression.description,
@@ -69,6 +93,22 @@ export const intScenarios: ScenarioDef<LdcSnapshot>[] = [
       { operationId: 'supprimerValeur', params: { valeur: 2 } },
       { operationId: 'supprimerValeur', params: { valeur: 9 } },
     ],
+  },
+  {
+    id: 'supprimerTete',
+    title: S.supprimerTete.title,
+    description: S.supprimerTete.description,
+    profileId: 'int',
+    state: base925,
+    steps: [{ operationId: 'supprimerEnTete', params: {} }],
+  },
+  {
+    id: 'supprimerFin',
+    title: S.supprimerFin.title,
+    description: S.supprimerFin.description,
+    profileId: 'int',
+    state: base925,
+    steps: [{ operationId: 'supprimerValeur', params: { valeur: 5 } }],
   },
   {
     id: 'unique',
@@ -108,6 +148,14 @@ export const intScenarios: ScenarioDef<LdcSnapshot>[] = [
     state: base925,
     steps: [{ operationId: 'detruireListe', params: {} }],
   },
+  {
+    id: 'inverser',
+    title: S.inverser.title,
+    description: S.inverser.description,
+    profileId: 'int',
+    state: base925,
+    steps: [{ operationId: 'inverserListe', params: {} }],
+  },
 ]
 
 export const studentScenarios: ScenarioDef<LdcSnapshot>[] = [
@@ -140,7 +188,7 @@ export const studentScenarios: ScenarioDef<LdcSnapshot>[] = [
     ],
   },
   {
-    id: 'detruire',
+    id: 'detruireEtudiants',
     title: S.detruireEtudiants.title,
     description: S.detruireEtudiants.description,
     profileId: 'etudiant',

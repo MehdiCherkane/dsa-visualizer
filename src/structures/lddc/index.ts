@@ -6,6 +6,7 @@ import { studentCode, studentTypes } from './code/student'
 import {
   MAX_NODES,
   countListNodes,
+  createCircularSnapshot,
   emptyCircularSnapshot,
   formatVarValue,
   payloadKey,
@@ -25,11 +26,17 @@ export const lddcPlugin: StructurePlugin<LdcSnapshot> = {
       id: 'int',
       label: fr.profiles.int,
       maxNodes: MAX_NODES,
-      initialState: () => emptyCircularSnapshot('int'),
+      initialState: () =>
+        createCircularSnapshot('int', [
+          { kind: 'int', value: 9 },
+          { kind: 'int', value: 2 },
+          { kind: 'int', value: 5 },
+        ]),
       operations: intOperations,
       scenarios: intScenarios,
       code: intCode,
       typesCode: intTypes,
+      defaultOperationId: 'afficherListe',
       emptyInsertOperationId: 'insererEnTete',
     },
     {
@@ -41,6 +48,7 @@ export const lddcPlugin: StructurePlugin<LdcSnapshot> = {
       scenarios: studentScenarios,
       code: studentCode,
       typesCode: studentTypes,
+      defaultOperationId: 'inscrireEtudiant',
       emptyInsertOperationId: 'inscrireEtudiant',
     },
   ],
