@@ -26,12 +26,12 @@
   --node-bg: #ffffff;
   --node-border: #aeb9d6;
   --node-ink: #1f2a5c;
-  --cell-prev: #fbeacb;
-  --cell-next: #dde9ff;
+  --cell-prev: #fde6c2;
+  --cell-next: #d8e7ff;
   --cell-value: #f7f9fe;
   --cell-value-ink: #1f2a5c;
-  --arrow-next: #2f6fe4;
-  --arrow-prev: #d97b12;
+  --arrow-next: #2563eb;
+  --arrow-prev: #c66a0a;
   --pin: #8a4dff;
   --pin-soft: #f1e9ff;
   --pin-tag-bg: #ffffff;
@@ -80,12 +80,12 @@
   --node-bg: #101733;
   --node-border: #45537f;
   --node-ink: #eef1ff;
-  --cell-prev: #3a2a12;
-  --cell-next: #102a52;
+  --cell-prev: #463213;
+  --cell-next: #12315f;
   --cell-value: #e7ecff;
   --cell-value-ink: #1c2547;
-  --arrow-next: #6fa2ff;
-  --arrow-prev: #f1a34c;
+  --arrow-next: #82b1ff;
+  --arrow-prev: #ffb35f;
   --pin: #b18cff;
   --pin-soft: #241a3f;
   --pin-tag-bg: #0e142a;
@@ -3766,6 +3766,29 @@ body.is-resizing-horizontal * {
   transform: translateX(-50%);
   pointer-events: none;
   text-align: center;
+}
+
+.empty-overlay-docked {
+  left: 50%;
+  bottom: 54px;
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--line-strong) 58%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--panel) 93%, transparent);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(8px);
+}
+
+.empty-overlay-docked .empty-overlay-text {
+  color: var(--ink-2);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.empty-overlay-docked .empty-insert-button {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
 }
 
 .empty-overlay-text {

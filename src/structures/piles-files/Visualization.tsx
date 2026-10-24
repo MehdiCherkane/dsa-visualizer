@@ -42,7 +42,7 @@ const pileModel: LinkedModel<PfSnapshot> = {
   },
   globals(snapshot) {
     if (snapshot.profile !== 'pile') return []
-    return [{ name: 'sommet', value: snapshot.globals.sommet }]
+    return [{ name: 'sommet', value: snapshot.globals.sommet, placement: 'top' }]
   },
   pins: framePins,
 }
@@ -72,7 +72,7 @@ const fileModel: LinkedModel<PfSnapshot> = {
   globals(snapshot) {
     if (snapshot.profile !== 'file') return []
     return [
-      { name: 'debut', value: snapshot.globals.debut },
+      { name: 'debut', value: snapshot.globals.debut, placement: 'top' },
       { name: 'fin', value: snapshot.globals.fin, placement: 'bottom' },
     ]
   },
