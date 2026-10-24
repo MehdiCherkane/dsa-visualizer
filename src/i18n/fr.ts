@@ -31,19 +31,18 @@ export const fr = {
     cardHint: 'Démonstration pas à pas, utilisable hors ligne',
     soon: 'Bientôt disponible',
     soonAria: (title: string) => `« ${title} » : bientôt disponible`,
-    soonItems: [
-      {
-        chapter: 1,
-        title: 'Piles et files statiques',
-        description: 'Piles et files implantées dans des tableaux de taille fixe.',
-      },
-    ],
+    soonItems: [] as Array<{ chapter: number; title: string; description: string }>,
     footer: 'Tout fonctionne hors ligne : un seul fichier, aucune connexion.',
     backArrow: '←',
     backLabel: 'Menu',
     backAria: 'Revenir au menu principal',
   },
   chapters: {
+    staticStructures: {
+      title: 'Piles et files statiques',
+      description:
+        'Tableaux de taille fixe : pile LIFO, trois versions de file, traces et exercices du cours.',
+    },
     lsc: {
       title: 'Listes simplement chaînées',
       description: 'Un seul lien suivant : parcours, insertion, suppression et registre étudiant.',
@@ -396,7 +395,452 @@ export const fr = {
     etudiant: 'Étudiants',
     pile: 'Pile',
     file: 'File',
+    file1: 'File 1 · ordinaire',
+    file2: 'File 2 · décalage',
+    file3: 'File 3 · circulaire',
     switchHint: 'Changer de profil réinitialise la structure.',
+  },
+  staticStructures: {
+    counterLabels: {
+      pile: { traversed: 'cases lues', comparisons: 'tests' },
+      file1: { traversed: 'éléments lus', comparisons: 'tests' },
+      file2: { traversed: 'décalages', comparisons: 'tests' },
+      file3: { traversed: 'éléments lus', comparisons: 'tests' },
+    },
+    ops: {
+      initPile: {
+        label: 'Initialiser la pile',
+        complexity: 'O(1)',
+        note: 'sommet = -1 : aucune case n’est utilisée, même si le tableau existe déjà.',
+      },
+      pileVide: {
+        label: 'Tester si la pile est vide',
+        complexity: 'O(1)',
+        note: 'Un seul test : sommet == -1.',
+      },
+      pilePleine: {
+        label: 'Tester si la pile est pleine',
+        complexity: 'O(1)',
+        note: 'MAX - 1 est le dernier indice valide du tableau.',
+      },
+      empiler: {
+        label: 'Empiler',
+        complexity: 'O(1)',
+        note: 'Tester pilePleine, avancer sommet, puis écrire dans la nouvelle case.',
+      },
+      depiler: {
+        label: 'Dépiler',
+        complexity: 'O(1)',
+        note: 'Lire la valeur au sommet, puis reculer sommet.',
+      },
+      sommetPile: {
+        label: 'Lire le sommet',
+        complexity: 'O(1)',
+        note: 'Consulter la valeur sans la retirer.',
+      },
+      afficherPile: {
+        label: 'Afficher la pile',
+        complexity: 'O(n)',
+        note: 'Parcours de l’indice 0 jusqu’à sommet.',
+      },
+      empilerCopie: {
+        label: 'Empiler une copie',
+        complexity: 'O(1)',
+        note: 'Exercice 1 : empilerCopie délègue à empiler.',
+      },
+      corrigerCopie: {
+        label: 'Corriger une copie',
+        complexity: 'O(1)',
+        note: 'Exercice 1 : corrigerCopie dépile et affiche le numéro corrigé.',
+      },
+      parenthesesEquilibrees: {
+        label: 'Parenthèses équilibrées',
+        complexity: 'O(n)',
+        note: 'Exercice 3 : la pile mémorise les ( encore à refermer.',
+      },
+      initFile: {
+        label: 'Initialiser la file',
+        complexity: 'O(1)',
+        note: 'Les repères reprennent les valeurs initiales de la version choisie.',
+      },
+      fileVide: {
+        label: 'Tester si la file est vide',
+        complexity: 'O(1)',
+        note: 'Le test dépend de la version de la file.',
+      },
+      filePleine: {
+        label: 'Tester si la file est pleine',
+        complexity: 'O(1)',
+        note: 'Le test dépend de la version de la file.',
+      },
+      enfilerOrdinaire: {
+        label: 'Enfiler',
+        complexity: 'O(1)',
+        note: 'Version 1 : av reçoit 0 si la file était vide, puis ar avance.',
+      },
+      defilerOrdinaire: {
+        label: 'Défiler',
+        complexity: 'O(1)',
+        note: 'Version 1 : av avance ; ar ne redescend jamais.',
+      },
+      afficherFileOrdinaire: {
+        label: 'Afficher la file',
+        complexity: 'O(n)',
+        note: 'Parcours de av à ar.',
+      },
+      enfilerDecalage: {
+        label: 'Enfiler',
+        complexity: 'O(1)',
+        note: 'Version 2 : ar est un compteur ; on écrit à l’indice ar puis ar++.',
+      },
+      defilerDecalage: {
+        label: 'Défiler',
+        complexity: 'O(n)',
+        note: 'Version 2 : toutes les cases restantes glissent d’un cran vers la gauche.',
+      },
+      afficherFileDecalage: {
+        label: 'Afficher la file',
+        complexity: 'O(n)',
+        note: 'La tête est toujours à l’indice 0.',
+      },
+      enfilerCirculaire: {
+        label: 'Enfiler',
+        complexity: 'O(1)',
+        note: 'Version 3 : ar avance modulo MAX, av rejoint ar si la file était vide.',
+      },
+      defilerCirculaire: {
+        label: 'Défiler',
+        complexity: 'O(1)',
+        note: 'Version 3 : av avance modulo MAX, ou les deux repères repassent à -1.',
+      },
+      afficherFileCirculaire: {
+        label: 'Afficher la file',
+        complexity: 'O(n)',
+        note: 'Parcours circulaire de av à ar.',
+      },
+      enregistrerArrivee: {
+        label: 'Enregistrer une arrivée',
+        complexity: 'O(1)',
+        note: 'Exercice 2 : enregistrerArrivee délègue à enfiler.',
+      },
+      guichetSuivant: {
+        label: 'Servir le suivant',
+        complexity: 'O(1)',
+        note: 'Exercice 2 : guichetSuivant délègue à defiler puis affiche le numéro.',
+      },
+      recupererMax: {
+        label: 'Récupérer le maximum',
+        complexity: 'O(n)',
+        note: 'Exercice 4 : deux rotations préservent l’ordre FIFO ; un seul maximum est retiré.',
+      },
+    },
+    params: {
+      texte: 'Chaîne à vérifier',
+    },
+    captions: {
+      operationDone:
+        'Opération terminée. Le tableau, les repères et les valeurs périmées sont à jour.',
+      initStack: 'On initialise `sommet` à -1 : la pile ne contient aucune valeur.',
+      initFileOrdinaire: 'On initialise la file : `av = -1` et `ar = -1`.',
+      initFileDecalage: 'On initialise la file : `ar = 0`, car `ar` compte les éléments.',
+      initFileCirculaire: 'On initialise la file circulaire : `av = -1` et `ar = -1`.',
+      stackEmptyReason: (sommet: number, empty: boolean) =>
+        empty
+          ? `\`sommet\` vaut \`${sommet}\` : la pile est vide.`
+          : `\`sommet\` vaut \`${sommet}\` : la pile contient au moins une valeur.`,
+      stackFullReason: (sommet: number, full: boolean, capacity: number) =>
+        full
+          ? `\`sommet\` vaut \`${sommet}\`, soit l’indice \`MAX - 1\` : la pile est pleine.`
+          : `\`sommet\` vaut \`${sommet}\` : il reste de la place jusqu’à l’indice ${capacity - 1}.`,
+      fileEmptyReasonOrdinaire: (av: number, empty: boolean) =>
+        empty
+          ? `\`av\` vaut \`${av}\` : la file est vide.`
+          : `\`av\` vaut \`${av}\` : la file contient au moins un élément.`,
+      fileEmptyReasonDecalage: (ar: number, empty: boolean) =>
+        empty
+          ? `\`ar\` vaut \`${ar}\` : aucun élément dans la file.`
+          : `\`ar\` vaut \`${ar}\` : la file contient ${ar} élément${ar > 1 ? 's' : ''}.`,
+      fileEmptyReasonCirculaire: (av: number, empty: boolean) =>
+        empty
+          ? `\`av\` vaut \`${av}\` : la file est vide.`
+          : `\`av\` vaut \`${av}\` : la file contient au moins un élément.`,
+      fileFullReasonOrdinaire: (ar: number, full: boolean, capacity: number) =>
+        full
+          ? `\`ar\` vaut \`${ar}\` = \`MAX - 1\` : plus aucune case en queue, même si des cases en tête sont libres.`
+          : `\`ar\` vaut \`${ar}\` : on peut encore écrire jusqu’à l’indice ${capacity - 1}.`,
+      fileFullReasonDecalage: (ar: number, full: boolean, capacity: number) =>
+        full
+          ? `\`ar\` vaut \`${ar}\` = \`MAX\` : les ${capacity} cases sont occupées.`
+          : `\`ar\` vaut \`${ar}\` : il reste ${capacity - ar} case${capacity - ar > 1 ? 's' : ''} libre${capacity - ar > 1 ? 's' : ''}.`,
+      fileFullReasonCirculaire: (ar: number, av: number, full: boolean, capacity: number) =>
+        full
+          ? `\`(ar + 1) % MAX\` = \`${(ar + 1) % capacity}\` et \`av\` = \`${av}\` : la file est pleine.`
+          : `\`(ar + 1) % MAX\` = \`${(ar + 1) % capacity}\` et \`av\` = \`${av}\` : la file n’est pas pleine.`,
+      fullErrorPile: 'La pile est pleine : `printf` signale l’erreur et `return` sort sans écrire.',
+      fullErrorFile: 'La file est pleine : `printf` signale l’erreur et `return` sort sans écrire.',
+      pushIncrement: (next: number, index: number) =>
+        `On avance \`sommet\` à \`${next}\` : la nouvelle valeur sera écrite dans la case d’indice ${index}.`,
+      pushWrite: (value: number, index: number) =>
+        `On écrit \`${value}\` dans \`elements[${index}]\`.`,
+      popRead: (value: number, index: number) =>
+        `On lit \`elements[${index}]\` : la valeur \`${value}\` est mémorisée dans \`valeur\`.`,
+      popDecrement: (next: number) =>
+        `On recule \`sommet\` à \`${next}\` : la case libérée reste physiquement dans le tableau.`,
+      popEmpty: (sommet: number) =>
+        `\`sommet\` vaut \`${sommet}\` : rien à dépiler, la fonction retourne -1 sans modifier le tableau.`,
+      peekValue: (value: number, index: number) =>
+        `La valeur au sommet est \`elements[${index}]\` = \`${value}\`.`,
+      peekEmpty: 'La pile est vide : `sommetPile` retourne -1.',
+      displayCell: (value: number, index: number) =>
+        `On affiche \`elements[${index}]\` = \`${value}\`.`,
+      displayDone: (count: number) =>
+        `Parcours terminé : ${count} valeur${count > 1 ? 's' : ''} affichée${count > 1 ? 's' : ''}.`,
+      copyCall: (numero: number) =>
+        `\`empilerCopie\` appelle \`empiler\` avec le numéro de copie \`${numero}\`.`,
+      correction: (value: number) =>
+        `Correction de la copie ${value} : c’est la dernière empilée, donc la première corrigée (LIFO).`,
+      correctionNone: 'La pile est vide : aucune copie à corriger.',
+      enqueueAvZero:
+        'La file était vide : `av` rejoint l’indice 0, la tête de file est créée.',
+      enqueueArIncrement: (next: number) =>
+        `On avance \`ar\` à \`${next}\` : la nouvelle valeur sera écrite à cet indice.`,
+      enqueueWrap: (next: number) =>
+        `\`ar\` revient à \`${next}\` par le modulo : la file réutilise les cases du début du tableau.`,
+      enqueueWrite: (value: number, index: number) =>
+        `On écrit \`${value}\` dans \`elements[${index}]\`.`,
+      enqueueAvRejointAr: (ar: number) =>
+        `La file était vide : \`av\` rejoint \`ar\` = \`${ar}\`.`,
+      dequeueKeep:
+        '`av` ne dépasse pas `ar` : la file conserve les éléments restants.',
+      dequeueKeepCirculaire:
+        '`av != ar` : la file conserve encore des éléments après ce retrait.',
+      resetAv: '`av` repasse à `-1` : la file n’a plus de tête.',
+      resetAr: '`ar` repasse à `-1` : la file n’a plus de queue.',
+      displayAdvance: (next: number) =>
+        `L’indice de parcours avance modulo MAX à \`${next}\`.`,
+      guichetServedReason: (value: number) =>
+        `\`numero\` vaut \`${value}\` : un étudiant peut être servi.`,
+      guichetEmptyReason: '`numero` vaut `-1` : la file était vide.',
+      displayFileEmpty: 'La file est vide : on affiche seulement un retour à la ligne.',
+      recupererMaxSize: (count: number) =>
+        `La file contient \`n = ${count}\` élément${count > 1 ? 's' : ''} (calculé avec av, ar et MAX).`,
+      recupererMaxFirstPass: 'Premier tour : on fait tourner toute la file pour trouver le maximum.',
+      enqueueRejected: 'La valeur n’est pas écrite : `enfiler` sort immédiatement.',
+      dequeueRead: (value: number, index: number) =>
+        `La tête de file est \`elements[${index}]\` = \`${value}\`.`,
+      dequeueAdvanceAv: (next: number) =>
+        `\`av\` avance à \`${next}\` : la case lue sort de la file et sa valeur reste affichée en grisé.`,
+      dequeueReset: '`av` dépasse `ar` : la file devient vide, on remet `av` et `ar` à -1.',
+      dequeueLastReset:
+        '`av == ar` : c’était le dernier élément ; on remet `av` et `ar` à -1.',
+      dequeueCircularAdvance: (next: number) =>
+        `\`av\` avance modulo MAX à \`${next}\`.`,
+      dequeueShiftCell: (index: number, value: number) =>
+        `\`elements[${index + 1}]\` glisse dans \`elements[${index}]\` : on retrouve \`${value}\`.`,
+      dequeueShiftDone: (removed: number, count: number) =>
+        `La valeur \`${removed}\` est sortie ; ${count - 1} valeur${count > 2 ? 's ont' : ' a'} été décalée${count > 2 ? 's' : ''}.`,
+      dequeueDecrement: (next: number) =>
+        `\`ar\` décroît à \`${next}\` : le compteur d’éléments diminue.`,
+      dequeueEmpty: 'La file est vide : `defiler` retourne -1 sans modifier les repères.',
+      guichetServed: (value: number) =>
+        `Guichet : l’étudiant ${value}, premier arrivé, est le premier servi (FIFO).`,
+      guichetEmpty: 'Aucun étudiant à servir : `defiler` retourne -1.',
+      recupererMaxEmpty: 'La file est vide : `recupererMax` retourne -1.',
+      recupererMaxScan: (count: number, max: number) =>
+        `Premier tour : ${count} élément${count > 1 ? 's' : ''} à examiner ; maximum courant = \`${max}\`.`,
+      recupererMaxFound: (value: number) =>
+        `\`${value}\` est supérieur au maximum courant : on le retient.`,
+      recupererMaxRotate: (value: number) =>
+        `On remet \`${value}\` en queue : la rotation conserve l’ordre FIFO.`,
+      recupererMaxRemove: (value: number) =>
+        `Deuxième tour : on retire une seule copie du maximum \`${value}\`.`,
+      recupererMaxKeep: (value: number) =>
+        `\`${value}\` n’est pas le maximum choisi : on le remet en queue.`,
+      recupererMaxDone: (max: number) =>
+        `Le maximum \`${max}\` est retourné ; les autres valeurs ont gardé leur ordre FIFO.`,
+      charOpen: (char: string, index: number) =>
+        `\`texte[${index}]\` vaut \`${char}\` : on empile cette parenthèse ouvrante.`,
+      charClose: (char: string, index: number) =>
+        `\`texte[${index}]\` vaut \`${char}\` : on cherche une ouvrante à dépiler.`,
+      charIgnored: (char: string, index: number) =>
+        `\`texte[${index}]\` vaut \`${char}\` : ce caractère ne change pas la pile.`,
+      nextCharacter: (index: number) =>
+        `Le caractère d’indice ${index} est traité : la boucle passe au suivant.`,
+      loopDone: 'La chaîne est entièrement lue : la boucle s’arrête.',
+      parenthEmptyError:
+        'La pile est vide au moment de dépiler : les parenthèses ne sont pas équilibrées, retour 0.',
+      parenthPop: 'On dépile la `(` correspondante : elle est refermée.',
+      parenthValid: 'Fin de la chaîne : la pile est vide, les parenthèses sont équilibrées (retour 1).',
+      parenthInvalid:
+        'Fin de la chaîne : il reste des `(` non refermées, les parenthèses ne sont pas équilibrées (retour 0).',
+      displayFileDone: (count: number) =>
+        `La file affiche ${count} valeur${count > 1 ? 's' : ''} dans l’ordre FIFO.`,
+    },
+    scenarios: {
+      pileCopies: {
+        title: 'Exercice 1 · la pile de copies',
+        description:
+          'Trois empilements (12, 7, 25) puis deux corrections. La trace du cours donne sommet = 0, 1, 2, 1, 0.',
+      },
+      pilePleine: {
+        title: 'Pile pleine, puis dépiler',
+        description:
+          'Remplir les cinq cases, constater le refus du sixième empilement, dépiler une fois et réessayer.',
+      },
+      parentheses: {
+        title: 'Exercice 3 · parenthèses équilibrées',
+        description:
+          'Vérifier « (()) », puis « (() » et « )( » : la pile détecte l’ouvrante manquante et la fermante orpheline.',
+      },
+      fileTrace: {
+        title: 'Exercice 2 · le guichet',
+        description:
+          'Quatre arrivées (65, 66, 67, 68) puis deux départs. Trace du cours : av/ar = (0,0), (0,1), (0,2), (0,3), (1,3), (2,3).',
+      },
+      fileGaspillage: {
+        title: 'Le défaut de la version 1',
+        description:
+          'La file est pleine, on défile deux fois : enfiler refuse encore alors que deux cases en tête sont libres.',
+      },
+      fileDecalage: {
+        title: 'Le coût du décalage',
+        description:
+          'Défiler deux fois et enfiler ensuite : chaque defiler déplace toutes les valeurs restantes.',
+      },
+      fileReutilisation: {
+        title: 'La file circulaire réutilise les cases',
+        description:
+          'Après deux défilements, ar revient à 0 et les nouvelles valeurs réutilisent le début du tableau.',
+      },
+      recupererMax: {
+        title: 'Exercice 4 · récupérer le maximum',
+        description:
+          'Deux rotations de la file circulaire : trouver le maximum, puis le retirer sans casser l’ordre FIFO des autres valeurs.',
+      },
+    },
+    viz: {
+      ariaLabel: 'Tableau statique, indices et repères de la structure',
+      array: 'elements[MAX]',
+      capacity: (capacity: number) => `capacité ${capacity}`,
+      index: 'indice',
+      sommet: 'sommet',
+      av: 'av',
+      ar: 'ar',
+      head: 'tête',
+      tail: 'queue',
+      live: 'dans la structure',
+      stale: 'hors structure',
+      free: 'libre',
+      rank: 'ordre FIFO',
+      fifo: 'sens FIFO',
+      stateEmptyPile: 'Pile vide',
+      stateEmptyFile: 'File vide',
+      stateEmptyFileDecalage: 'File vide',
+      stateFullPile: 'Pile pleine',
+      stateFullFile: 'File pleine',
+      stateCount: (count: number, capacity: number) =>
+        `${count} / ${capacity} case${count > 1 ? 's' : ''} occupée${count > 1 ? 's' : ''}`,
+      pileHint: 'LIFO : le dernier empilé est le premier dépilé.',
+      emptyPile: 'Pile vide : `sommet = -1`.',
+      emptyFile: 'File vide : `av = ar = -1`.',
+      emptyFileDecalage: 'File vide : `ar = 0`.',
+      fullPile: 'Pile pleine : `sommet = MAX - 1`.',
+      fullFile: 'File pleine : aucune case libre.',
+      fullFileCirculaire: 'File pleine : `(ar + 1) % MAX == av`.',
+      insertPile: '＋ Empiler une première valeur',
+      insertFile: '＋ Enfiler un premier client',
+      returned: 'Valeur retournée',
+      tape: 'Chaîne lue',
+      tapeReady: 'Prête',
+      tapeScanning: 'Lecture en cours',
+      tapeValid: 'Équilibrées',
+      tapeInvalid: 'Déséquilibrées',
+      tapePosition: (index: number, length: number) =>
+        `caractère ${Math.min(index + 1, length)} / ${length}`,
+      ordinaireHint: 'ar ne redescend jamais : les cases libérées sont perdues.',
+      decalageHint: 'defiler décale toutes les cases restantes vers la gauche.',
+      circulaireHint: 'ar revient à 0 par le modulo, sans case réservée.',
+      wrap: 'retour à 0',
+      legend: 'Légende',
+      legendLive: 'case utilisée',
+      legendStale: 'valeur périmée',
+      legendEmpty: 'case libre',
+      fit: 'Ajuster',
+      zoomIn: 'Zoom avant',
+      zoomOut: 'Zoom arrière',
+      zoomReset: 'Revenir à 100 %',
+      auto: 'Auto',
+      manual: 'Manuel',
+      bilanOpen: 'Bilan des 3 files',
+      bilanClose: 'Fermer le bilan',
+    },
+    bilan: {
+      title: 'Bilan des 3 files',
+      subtitle: 'Trois implantations successives, deux avantages à réunir.',
+      columns: {
+        version: 'Version',
+        defiler: 'defiler',
+        space: 'Espace',
+        variables: 'Variables',
+        trap: 'Piège',
+      },
+      rows: [
+        {
+          version: 'Ordinaire',
+          defiler: 'Immédiat',
+          space: 'Gaspillé',
+          variables: 'av, ar',
+          trap: 'ar ne redescend jamais',
+        },
+        {
+          version: 'Décalage',
+          defiler: 'Coûteux (parcours)',
+          space: 'Récupéré',
+          variables: 'ar seul',
+          trap: 'Oublier le décalage',
+        },
+        {
+          version: 'Circulaire',
+          defiler: 'Immédiat',
+          space: 'Récupéré',
+          variables: 'av, ar',
+          trap: 'Gérer les 2 transitions',
+        },
+      ],
+      note:
+        'La version circulaire cumule les deux avantages : accès immédiat en tête et réutilisation des cases.',
+      pileTraceTitle: 'Trace de l’exercice 1 · pile de copies',
+      pileTraceColumns: {
+        step: 'Étape',
+        action: 'Action',
+        content: 'Contenu',
+        sommet: 'sommet',
+      },
+      pileTraceRows: [
+        { step: '1', action: 'empiler(12)', content: '12', sommet: '0' },
+        { step: '2', action: 'empiler(7)', content: '7 12', sommet: '1' },
+        { step: '3', action: 'empiler(25)', content: '25 7 12', sommet: '2' },
+        { step: '4', action: 'corrigerCopie()', content: '7 12', sommet: '1' },
+        { step: '5', action: 'corrigerCopie()', content: '12', sommet: '0' },
+      ],
+      fileTraceTitle: 'Trace de l’exercice 2 · guichet circulaire',
+      fileTraceColumns: {
+        step: 'Étape',
+        action: 'Action',
+        av: 'av',
+        ar: 'ar',
+      },
+      fileTraceRows: [
+        { step: '1', action: 'enfiler(65)', av: '0', ar: '0' },
+        { step: '2', action: 'enfiler(66)', av: '0', ar: '1' },
+        { step: '3', action: 'enfiler(67)', av: '0', ar: '2' },
+        { step: '4', action: 'enfiler(68)', av: '0', ar: '3' },
+        { step: '5', action: 'defiler()', av: '1', ar: '3' },
+        { step: '6', action: 'defiler()', av: '2', ar: '3' },
+      ],
+      traceNote:
+        'La dernière copie empilée est la première corrigée (LIFO) ; le premier étudiant arrivé est le premier servi (FIFO).',
+    },
   },
   lsc: {
     ops: {

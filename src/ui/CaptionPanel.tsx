@@ -18,6 +18,7 @@ function avatarKind<S extends BaseSnapshot>(step: Step<S>): AvatarKind {
         change.kind === 'pointer' ||
         change.kind === 'variable' ||
         change.kind === 'layout' ||
+        change.kind === 'cell' ||
         change.kind === 'remove',
     )
   ) {

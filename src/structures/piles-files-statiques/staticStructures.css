@@ -1,0 +1,719 @@
+/* Chapter 1 — fixed-size arrays, stacks and queues */
+
+.ss-band {
+  fill: color-mix(in srgb, var(--band-row) 78%, transparent);
+  stroke: color-mix(in srgb, var(--line) 70%, transparent);
+  stroke-width: 1.2;
+}
+
+/* ---------------- cells ---------------- */
+
+.ss-cell {
+  transition:
+    fill 180ms ease,
+    stroke 180ms ease,
+    opacity 180ms ease;
+}
+
+.ss-cell.is-live {
+  fill: var(--panel);
+  stroke: var(--node-border);
+  stroke-width: 1.9;
+}
+
+.ss-cell.is-stale {
+  fill: var(--panel-2);
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.ss-cell.is-free {
+  fill: transparent;
+  stroke: var(--line);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 5;
+}
+
+.ss-cell.is-top,
+.ss-cell.is-head {
+  stroke: var(--gold);
+  stroke-width: 2.7;
+}
+
+.ss-cell.is-tail {
+  stroke: var(--success);
+  stroke-width: 2.5;
+}
+
+.ss-cell-value {
+  font-family: var(--mono);
+  font-weight: 800;
+  fill: var(--ink);
+  paint-order: stroke;
+  stroke: color-mix(in srgb, var(--panel) 60%, transparent);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.ss-cell-value.is-stale {
+  fill: var(--muted);
+  opacity: 0.9;
+}
+
+.ss-cell-accent {
+  pointer-events: none;
+}
+
+.ss-cell-flash {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 3;
+  pointer-events: none;
+  animation: ss-cell-flash 540ms ease-out forwards;
+}
+
+@keyframes ss-cell-flash {
+  from {
+    opacity: 0.95;
+    stroke-width: 3;
+  }
+  to {
+    opacity: 0;
+    stroke-width: 7;
+  }
+}
+
+.ss-free-label {
+  fill: var(--muted);
+  font-family: var(--ui);
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* FIFO rank badge inside queue cells */
+
+.ss-rank circle {
+  fill: var(--panel);
+  stroke: var(--line-strong);
+  stroke-width: 1.4;
+}
+
+.ss-rank.is-head circle {
+  fill: var(--gold-soft);
+  stroke: var(--gold);
+  stroke-width: 1.8;
+}
+
+.ss-rank.is-tail circle {
+  fill: var(--success-soft);
+  stroke: var(--success);
+  stroke-width: 1.8;
+}
+
+.ss-rank-text {
+  fill: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.ss-rank.is-head .ss-rank-text {
+  fill: color-mix(in srgb, var(--gold) 65%, var(--ink));
+}
+
+.ss-rank.is-tail .ss-rank-text {
+  fill: var(--success);
+}
+
+/* ---------------- index row ---------------- */
+
+.ss-index {
+  fill: var(--panel);
+  stroke: var(--line);
+  stroke-width: 1.3;
+}
+
+.ss-index.is-marked {
+  fill: var(--gold-soft);
+  stroke: var(--gold);
+  stroke-width: 1.7;
+}
+
+.ss-index-text {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.ss-index-group:hover .ss-index {
+  stroke: var(--line-strong);
+}
+
+/* ---------------- markers: sommet, av, ar ---------------- */
+
+.ss-marker-text {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+
+.ss-marker.is-dashed rect {
+  opacity: 0.92;
+}
+
+.ss-marker.is-changed rect {
+  animation: ss-marker-pop 620ms ease-out;
+}
+
+@keyframes ss-marker-pop {
+  0% {
+    stroke-width: 1.7;
+  }
+  38% {
+    stroke-width: 4.4;
+  }
+  100% {
+    stroke-width: 1.7;
+  }
+}
+
+/* ---------------- FIFO direction and circular wrap ---------------- */
+
+.ss-fifo-line {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+.ss-fifo-label {
+  fill: var(--gold);
+  font-family: var(--ui);
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.ss-wrap-path {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 2;
+  stroke-dasharray: 7 5;
+  opacity: 0.75;
+  transition:
+    stroke 200ms ease,
+    opacity 200ms ease;
+}
+
+.ss-wrap-label {
+  fill: var(--muted);
+  font-family: var(--ui);
+  font-size: 11.5px;
+  font-weight: 650;
+  transition: fill 200ms ease;
+}
+
+.ss-wrap.is-active .ss-wrap-path {
+  stroke: var(--success);
+  stroke-dasharray: none;
+  opacity: 1;
+  animation: ss-wrap-pulse 620ms ease-out;
+}
+
+.ss-wrap.is-active .ss-wrap-label {
+  fill: var(--success);
+}
+
+@keyframes ss-wrap-pulse {
+  0% {
+    stroke-width: 2;
+  }
+  35% {
+    stroke-width: 4;
+  }
+  100% {
+    stroke-width: 2;
+  }
+}
+
+/* ---------------- character tape (parentheses exercise) ---------------- */
+
+.ss-tape-label {
+  fill: var(--muted);
+  font-family: var(--ui);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.ss-tape-status {
+  font-family: var(--ui);
+  font-size: 11.5px;
+  font-weight: 750;
+}
+
+.ss-tape-status.is-ready {
+  fill: var(--muted);
+}
+
+.ss-tape-status.is-scanning {
+  fill: var(--gold);
+}
+
+.ss-tape-status.is-valid {
+  fill: var(--success);
+}
+
+.ss-tape-status.is-invalid {
+  fill: var(--alert);
+}
+
+.ss-tape-box {
+  fill: var(--panel);
+  stroke: var(--line);
+  stroke-width: 1.4;
+  transition:
+    fill 160ms ease,
+    stroke 160ms ease;
+}
+
+.ss-tape-box.is-passed {
+  fill: var(--panel-2);
+  stroke: var(--line);
+}
+
+.ss-tape-box.is-current {
+  fill: var(--gold-soft);
+  stroke: var(--gold);
+  stroke-width: 2.4;
+}
+
+.ss-tape-char {
+  fill: var(--ink);
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.ss-tape-caret {
+  fill: var(--gold);
+  pointer-events: none;
+}
+
+.ss-tape-position {
+  fill: var(--muted);
+  font-family: var(--ui);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ---------------- HUD ---------------- */
+
+.ss-hud {
+  position: absolute;
+  z-index: 6;
+  top: 10px;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  max-width: min(48%, 540px);
+  transform: translateX(-50%);
+  pointer-events: none;
+  text-align: center;
+}
+
+.ss-hud-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.ss-structure-chip,
+.ss-array-chip,
+.ss-state-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  padding: 0 9px;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(6px);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ss-structure-chip {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--gold) 45%, var(--line));
+}
+
+.ss-array-chip {
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 650;
+}
+
+.ss-state-chip {
+  color: var(--muted);
+}
+
+.ss-state-chip.is-empty {
+  color: var(--ink-2);
+  border-style: dashed;
+}
+
+.ss-state-chip.is-ok {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 38%, var(--line));
+  background: color-mix(in srgb, var(--success-soft) 65%, var(--panel));
+}
+
+.ss-state-chip.is-full {
+  color: var(--alert);
+  border-color: color-mix(in srgb, var(--alert) 40%, var(--line));
+  background: color-mix(in srgb, var(--alert-soft) 70%, var(--panel));
+}
+
+.ss-hud-hint {
+  max-width: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  padding: 2px 10px;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+/* ---------------- empty state ---------------- */
+
+.ss-empty-banner {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: min(560px, calc(100% - 32px));
+  transform: translateX(-50%);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  padding: 8px 12px;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(6px);
+}
+
+.ss-empty-text {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.ss-empty-button {
+  flex: none;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+
+/* ---------------- return chip ---------------- */
+
+.ss-return-chip {
+  position: absolute;
+  z-index: 4;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--success) 38%, var(--line));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--success-soft) 72%, var(--panel));
+  padding: 5px 9px;
+  box-shadow: var(--shadow-soft);
+  pointer-events: none;
+}
+
+.ss-return-label {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 650;
+}
+
+.ss-return-chip code {
+  color: var(--success);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* ---------------- bilan trigger and overlay ---------------- */
+
+.ss-bilan-toggle {
+  position: absolute;
+  z-index: 6;
+  top: 56px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  padding: 0 10px;
+  color: var(--ink-2);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(6px);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ss-bilan-toggle:hover {
+  border-color: var(--gold);
+  color: var(--ink);
+}
+
+.ss-bilan-toggle:focus-visible,
+.ss-bilan-close:focus-visible,
+.ss-empty-button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.ss-bilan-backdrop {
+  position: absolute;
+  z-index: 30;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: color-mix(in srgb, var(--navy) 42%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.ss-bilan-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.ss-bilan {
+  position: relative;
+  width: min(940px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  background: var(--panel);
+  padding: 18px 20px 20px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.34);
+}
+
+.ss-bilan-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ss-bilan-header h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.ss-bilan-subtitle {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 550;
+}
+
+.ss-bilan-close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel-2);
+  color: var(--ink-2);
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ss-bilan-close:hover {
+  border-color: var(--alert);
+  color: var(--alert);
+}
+
+.ss-bilan-body {
+  margin-top: 6px;
+}
+
+.ss-bilan-table,
+.ss-trace-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.ss-bilan-table th,
+.ss-bilan-table td,
+.ss-trace-table th,
+.ss-trace-table td {
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.ss-bilan-table thead th,
+.ss-trace-table thead th {
+  background: var(--panel-2);
+  color: var(--ink-2);
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ss-bilan-table tbody th {
+  color: var(--ink);
+  font-weight: 750;
+}
+
+.ss-bilan-table tbody tr:nth-child(3) td,
+.ss-bilan-table tbody tr:nth-child(3) th {
+  background: color-mix(in srgb, var(--gold-soft) 45%, var(--panel));
+}
+
+.ss-mono {
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+.ss-bilan-note {
+  margin: 10px 0 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 550;
+  line-height: 1.5;
+}
+
+.ss-bilan-traces {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.ss-trace h3 {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 750;
+}
+
+.ss-trace-table {
+  font-size: 12px;
+}
+
+/* ---------------- responsive / presentation ---------------- */
+
+.presentation .ss-hud-hint {
+  font-size: 13px;
+}
+
+.presentation .ss-structure-chip,
+.presentation .ss-array-chip,
+.presentation .ss-state-chip {
+  height: 30px;
+  font-size: 14px;
+}
+
+.presentation .ss-empty-text {
+  font-size: 15px;
+}
+
+@container (max-width: 850px) {
+  .ss-array-chip {
+    display: none;
+  }
+}
+
+@container (max-width: 760px) {
+  .ss-hud-hint {
+    display: none;
+  }
+}
+
+@container (max-width: 620px) {
+  .ss-hud {
+    max-width: calc(100% - 130px);
+    top: 52px;
+  }
+}
+
+@media (max-width: 760px) {
+  .ss-bilan-traces {
+    grid-template-columns: 1fr;
+  }
+
+  .ss-bilan {
+    padding: 14px 14px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ss-cell-flash,
+  .ss-marker.is-changed rect,
+  .ss-wrap.is-active .ss-wrap-path {
+    animation: none;
+  }
+
+  .ss-cell,
+  .ss-tape-box,
+  .ss-wrap-path,
+  .ss-wrap-label {
+    transition: none;
+  }
+}

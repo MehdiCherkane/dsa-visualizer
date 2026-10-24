@@ -37,6 +37,24 @@ describe('coquille de l’application', () => {
     expect(markup).toContain(fr.params.valeur)
   })
 
+  it('ouvre le chapitre 1 sur la route #/chapitre-1', () => {
+    const previousHash = window.location.hash
+    window.location.hash = '#/chapitre-1'
+
+    try {
+      const markup = renderToStaticMarkup(<App />)
+      expect(markup).toContain(fr.chapters.staticStructures.title)
+      expect(markup).toContain(fr.profiles.pile)
+      expect(markup).toContain(fr.profiles.file1)
+      expect(markup).toContain(fr.profiles.file2)
+      expect(markup).toContain(fr.profiles.file3)
+      expect(markup).toContain('elements[MAX]')
+      expect(markup).toContain('Pile vide : sommet = -1.')
+    } finally {
+      window.location.hash = previousHash
+    }
+  })
+
   it('ajoute la décoration de fond au menu principal', () => {
     const previousHash = window.location.hash
     window.location.hash = MENU_HASH

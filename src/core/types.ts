@@ -18,6 +18,9 @@ export type VarValue =
   | { kind: 'int'; value: number }
   | { kind: 'student'; value: StudentValue }
 
+/** Primitive stored in a fixed-size array (chapter 1). */
+export type CellValue = number | string | null
+
 export interface FrameState {
   fn: string
   vars: Record<string, VarValue>
@@ -50,6 +53,12 @@ export type Change =
   | { kind: 'free'; nodeId: number }
   | { kind: 'layout'; nodeId: number; slot: number; lane: string }
   | { kind: 'remove'; nodeId: number }
+  | {
+      kind: 'cell'
+      index: number
+      from: CellValue
+      to: CellValue
+    }
 
 export interface EvalEntry {
   expr: string
@@ -126,6 +135,11 @@ export interface ScenarioDef<S extends BaseSnapshot> {
   steps: ScenarioStep<S>[]
 }
 
+export interface CounterLabels {
+  traversed?: string
+  comparisons?: string
+}
+
 export interface ProfileDef<S extends BaseSnapshot> {
   id: string
   label: string
@@ -139,6 +153,8 @@ export interface ProfileDef<S extends BaseSnapshot> {
   defaultOperationId?: string
   /** Operation suggested when the user clicks the empty-state insertion button. */
   emptyInsertOperationId?: string
+  /** Replaces the generic console counter labels for this profile. */
+  counterLabels?: CounterLabels
 }
 
 export interface VisualizationProps<S extends BaseSnapshot> {

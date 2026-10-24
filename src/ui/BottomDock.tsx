@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import type { CSSProperties, JSX } from 'react'
-import type { BaseSnapshot, Step, StructurePlugin } from '../core/types'
+import type { BaseSnapshot, CounterLabels, Step, StructurePlugin } from '../core/types'
 import { fr } from '../i18n/fr'
 import { ConsolePanel } from './ConsolePanel'
 import { PanelFocusButton } from './PanelFocusButton'
@@ -28,6 +28,7 @@ interface BottomDockProps<S extends BaseSnapshot> {
   collapsed: boolean
   summary: string
   layout: LayoutState
+  counterLabels?: CounterLabels
   onToggle: () => void
   onReset: () => void
   onLayoutChange: (patch: LayoutPatch) => void
@@ -47,6 +48,7 @@ export function BottomDock<S extends BaseSnapshot>({
   collapsed,
   summary,
   layout,
+  counterLabels,
   onToggle,
   onReset,
   onLayoutChange,
@@ -237,6 +239,7 @@ export function BottomDock<S extends BaseSnapshot>({
                 id="dock-console"
                 step={step}
                 focused={activeFocus === 'console'}
+                counterLabels={counterLabels}
                 onToggleFocus={() => toggleFocus('console')}
               />
             ) : null}

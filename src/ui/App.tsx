@@ -727,6 +727,7 @@ export function DemoApp<S extends BaseSnapshot>({
         collapsed={dockCollapsed}
         summary={dockSummary}
         layout={layout}
+        counterLabels={profile.counterLabels}
         onToggle={() => setDockCollapsed((value) => !value)}
         onReset={resetAll}
         onLayoutChange={updateLayout}

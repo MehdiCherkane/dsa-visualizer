@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import type { BaseSnapshot, Step } from '../core/types'
+import type { BaseSnapshot, CounterLabels, Step } from '../core/types'
 import { fr } from '../i18n/fr'
 import { PanelFocusButton } from './PanelFocusButton'
 
@@ -7,6 +7,7 @@ interface ConsolePanelProps<S extends BaseSnapshot> {
   step: Step<S>
   id?: string
   focused?: boolean
+  counterLabels?: CounterLabels
   onToggleFocus?: () => void
 }
 
@@ -14,9 +15,12 @@ export function ConsolePanel<S extends BaseSnapshot>({
   step,
   id,
   focused = false,
+  counterLabels,
   onToggleFocus,
 }: ConsolePanelProps<S>): JSX.Element {
   const empty = step.console.output.length === 0
+  const traversedLabel = counterLabels?.traversed ?? fr.console.traversed
+  const comparisonsLabel = counterLabels?.comparisons ?? fr.console.comparisons
   return (
     <section className="panel console-panel" id={id} aria-live="polite">
       <div className="panel-header console-header">
@@ -24,10 +28,10 @@ export function ConsolePanel<S extends BaseSnapshot>({
         <div className="panel-header-actions">
           <div className="console-meta">
             <span className="counter">
-              {fr.console.traversed} : {step.counters.traversed}
+              {traversedLabel} : {step.counters.traversed}
             </span>
             <span className="counter">
-              {fr.console.comparisons} : {step.counters.comparisons}
+              {comparisonsLabel} : {step.counters.comparisons}
             </span>
             {step.console.returnValue !== undefined ? (
               <span className="return-badge">
