@@ -91,9 +91,16 @@ export function DemoApp<S extends BaseSnapshot>({
   const initialProfile = plugin.profiles[0]
   if (!initialProfile) throw new Error('The plugin must declare at least one profile')
 
+  const initialScenario = initialProfile.defaultScenarioId
+    ? initialProfile.scenarios.find(
+        (scenario) => scenario.id === initialProfile.defaultScenarioId,
+      )
+    : undefined
   const [profileId, setProfileId] = useState(initialProfile.id)
   const profile = plugin.profiles.find((candidate) => candidate.id === profileId) ?? initialProfile
-  const [committedState, setCommittedState] = useState<S>(() => initialProfile.initialState())
+  const [committedState, setCommittedState] = useState<S>(
+    () => initialScenario?.state ?? initialProfile.initialState(),
+  )
   const initialOperation = defaultOperation(initialProfile)
   const [selectedId, setSelectedId] = useState(initialOperation?.id ?? '')
   const [paramValues, setParamValues] = useState<Record<string, string>>(() =>
@@ -105,7 +112,16 @@ export function DemoApp<S extends BaseSnapshot>({
   )
   const [layout, setLayout] = useState<LayoutState>(readLayout)
   const [activeOperation, setActiveOperation] = useState<ActiveOperation<S> | null>(null)
-  const [scenarioRun, setScenarioRun] = useState<ScenarioRun | null>(null)
+  const [scenarioRun, setScenarioRun] = useState<ScenarioRun | null>(() =>
+    initialScenario
+      ? {
+          scenarioId: initialScenario.id,
+          title: initialScenario.title,
+          total: initialScenario.steps.length,
+          cursor: 0,
+        }
+      : null,
+  )
   const [presentation, setPresentation] = useState(false)
   const [simulationFullscreen, setSimulationFullscreen] = useState(false)
   const [cameraResetKey, setCameraResetKey] = useState(0)

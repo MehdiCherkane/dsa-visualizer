@@ -133,6 +133,8 @@ export interface ProfileDef<S extends BaseSnapshot> {
   typesCode: CodeSource
   /** Operation selected when the profile is opened. Defaults to the first operation. */
   defaultOperationId?: string
+  /** Scenario loaded when the profile is opened. Defaults to no scenario. */
+  defaultScenarioId?: string
   /** Operation suggested when the user clicks the empty-state insertion button. */
   emptyInsertOperationId?: string
 }

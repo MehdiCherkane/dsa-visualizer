@@ -75,6 +75,21 @@ describe('navigation par hash', () => {
     expect(markup).not.toContain(fr.menu.subtitle)
   })
 
+  it('ouvre le chapitre 5 sur le scénario Liste vide', () => {
+    renderApp()
+    const card = query<HTMLAnchorElement>(`.chapter-card[href="${chapterHash(5)}"]`)
+    expect(card).not.toBeNull()
+
+    act(() => {
+      card?.click()
+    })
+    goTo(window.location.hash)
+
+    expect(query('.ldc-svg')).not.toBeNull()
+    expect(query('.scenario-strip-title')?.textContent).toContain(fr.lddc.scenarios.vide.title)
+    expect(query('.scenario-strip-empty')).not.toBeNull()
+  })
+
   it('ouvre le chapitre depuis le menu, puis revient au menu avec Échap', () => {
     renderApp()
     expect(query('.menu-app')).not.toBeNull()
