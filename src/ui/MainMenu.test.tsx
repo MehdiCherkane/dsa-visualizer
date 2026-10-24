@@ -19,11 +19,11 @@ function renderMenu(): void {
   })
 }
 
-function card(): HTMLAnchorElement {
-  const element =
-    container.querySelector<HTMLAnchorElement>('.chapter-card[href="#/chapitre-4"]') ??
-    container.querySelector<HTMLAnchorElement>('.chapter-card:not(.is-soon)')
-  if (!element) throw new Error('Aucune carte de chapitre rendue')
+function cardForChapter(chapter: number): HTMLAnchorElement {
+  const element = container.querySelector<HTMLAnchorElement>(
+    `.chapter-card[href="${chapterHash(chapter)}"]`,
+  )
+  if (!element) throw new Error(`Aucune carte rendue pour le chapitre ${chapter}`)
   return element
 }
 
@@ -63,10 +63,25 @@ describe('menu principal', () => {
     }
   })
 
+  it('classe tous les chapitres dans l’ordre numérique', () => {
+    const chapters = [...container.querySelectorAll('.chapter-card')].map((element) => {
+      const label = element.querySelector('.chapter-chip')?.textContent ?? ''
+      return Number(label.replace(/\D/g, ''))
+    })
+    const expected = [
+      ...plugins.map((plugin) => plugin.chapter),
+      ...fr.menu.soonItems.map((item) => item.chapter),
+    ].sort((first, second) => first - second)
+    expect(chapters).toEqual(expected)
+  })
+
   it('affiche les chapitres à venir comme des cartes désactivées', () => {
     const soon = container.querySelectorAll('.chapter-card.is-soon')
     expect(soon).toHaveLength(fr.menu.soonItems.length)
-    fr.menu.soonItems.forEach((item, index) => {
+    const expected = [...fr.menu.soonItems].sort(
+      (first, second) => first.chapter - second.chapter,
+    )
+    expected.forEach((item, index) => {
       const element = soon[index]
       expect(element, item.title).toBeTruthy()
       expect(element?.getAttribute('aria-disabled')).toBe('true')
@@ -80,21 +95,25 @@ describe('menu principal', () => {
 
   it('ouvre le chapitre 4 au clic sur la carte', () => {
     act(() => {
-      card().click()
+      cardForChapter(4).click()
     })
     expect(window.location.hash).toBe('#/chapitre-4')
   })
 
   it('ouvre le chapitre au clavier avec Entrée', () => {
     act(() => {
-      card().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+      cardForChapter(4).dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+      )
     })
     expect(window.location.hash).toBe('#/chapitre-4')
   })
 
   it('ouvre le chapitre au clavier avec Espace', () => {
     act(() => {
-      card().dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }))
+      cardForChapter(4).dispatchEvent(
+        new KeyboardEvent('keydown', { key: ' ', bubbles: true }),
+      )
     })
     expect(window.location.hash).toBe('#/chapitre-4')
   })
