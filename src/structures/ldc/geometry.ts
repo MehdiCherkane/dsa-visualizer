@@ -684,7 +684,7 @@ function rowRowGapRoute(
   const entry = borderPoint(gap, targetCenter, circleNodeRect(targetPoint))
   return {
     kind: 'curve',
-    path: `M ${tail.x} ${tail.y} L ${exit.x} ${exit.y} Q ${gap.x} ${gap.y} ${entry.x} ${entry.y}`,
+    path: `M ${tail.x} ${tail.y} C ${exit.x} ${exit.y}, ${gap.x} ${gap.y}, ${entry.x} ${entry.y}`,
     tail,
     tip: entry,
     bounds: boundsOfPoints([tail, exit, gap, entry], 2),

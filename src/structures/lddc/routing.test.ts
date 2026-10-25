@@ -392,6 +392,53 @@ describe('routage des flèches du chapitre 5', () => {
     }
   })
 
+  it('trace les liens suivant du cercle à trois nœuds sans coude', () => {
+    const snapshot = intScenarios.find((scenario) => scenario.id === 'cours')!
+      .state
+    const nodes = snapshot.nodes.filter((node) => !node.freed)
+    const layout = layoutNodes(nodes, 'circle')
+    const issues: string[] = []
+    for (const node of nodes) {
+      const pointer = node.suivant
+      if (pointer.kind !== 'node') continue
+      const target = nodes.find((candidate) => candidate.id === pointer.id)
+      if (!target) continue
+      const route = routeArrow(node, 'suivant', target, layout, 'circle', nodes)
+      if (!route) {
+        issues.push(`${node.id}: aucun tracé`)
+        continue
+      }
+      // The dot-to-border approach and the ring arc must be a single cubic:
+      // a straight line followed by a quadratic leaves a visible elbow where
+      // the two tangents disagree.
+      const commands = route.path.match(/[MLQC]/gi) ?? []
+      if (commands.some((command) => command !== 'M' && command !== 'C')) {
+        issues.push(`${node.id}: segments droits ou quadratiques (${route.path})`)
+      }
+      const samples = samplePath(route.path, 160)
+      let sharpest = 0
+      for (let index = 1; index < samples.length - 1; index += 1) {
+        const before = samples[index - 1]!
+        const current = samples[index]!
+        const after = samples[index + 1]!
+        const incoming = Math.atan2(
+          current.y - before.y,
+          current.x - before.x,
+        )
+        const outgoing = Math.atan2(after.y - current.y, after.x - current.x)
+        let turn = Math.abs(outgoing - incoming)
+        if (turn > Math.PI) turn = Math.PI * 2 - turn
+        sharpest = Math.max(sharpest, turn)
+      }
+      if (sharpest > (12 * Math.PI) / 180) {
+        issues.push(
+          `${node.id}: coude de ${((sharpest * 180) / Math.PI).toFixed(1)}°`,
+        )
+      }
+    }
+    expect(issues, issues.join('\n')).toEqual([])
+  })
+
   it('utilise le routage de repos pour les liens precedent de deux à huit nœuds', () => {
     const finals = growingFinalSnapshots()
     const issues: string[] = []
