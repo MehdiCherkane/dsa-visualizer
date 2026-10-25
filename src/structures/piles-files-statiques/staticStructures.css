@@ -1596,10 +1596,32 @@
   outline: none;
 }
 
-.ss-ring-slot-group:focus-visible .ss-ring-slot {
+.ss-ring-highlight {
+  fill: none;
   stroke: var(--ink);
-  stroke-width: 3.4;
-  stroke-dasharray: none;
+  stroke-width: 3.6;
+  stroke-linejoin: round;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.workspace:has(.ss-ring-slot-group[data-index='0']:is(:hover, :focus-visible)) .ss-ring-highlight[data-index='0'],
+.workspace:has(.ss-memory-column[data-index='0']:hover) .ss-ring-highlight[data-index='0'],
+.workspace:has(.ss-ring-slot-group[data-index='1']:is(:hover, :focus-visible)) .ss-ring-highlight[data-index='1'],
+.workspace:has(.ss-memory-column[data-index='1']:hover) .ss-ring-highlight[data-index='1'],
+.workspace:has(.ss-ring-slot-group[data-index='2']:is(:hover, :focus-visible)) .ss-ring-highlight[data-index='2'],
+.workspace:has(.ss-memory-column[data-index='2']:hover) .ss-ring-highlight[data-index='2'],
+.workspace:has(.ss-ring-slot-group[data-index='3']:is(:hover, :focus-visible)) .ss-ring-highlight[data-index='3'],
+.workspace:has(.ss-memory-column[data-index='3']:hover) .ss-ring-highlight[data-index='3'],
+.workspace:has(.ss-ring-slot-group[data-index='4']:is(:hover, :focus-visible)) .ss-ring-highlight[data-index='4'],
+.workspace:has(.ss-memory-column[data-index='4']:hover) .ss-ring-highlight[data-index='4'],
+.workspace:has(.ss-ring-slot-group[data-index='5']:is(:hover, :focus-visible)) .ss-ring-highlight[data-index='5'],
+.workspace:has(.ss-memory-column[data-index='5']:hover) .ss-ring-highlight[data-index='5'],
+.workspace:has(.ss-ring-slot-group[data-index='6']:is(:hover, :focus-visible)) .ss-ring-highlight[data-index='6'],
+.workspace:has(.ss-memory-column[data-index='6']:hover) .ss-ring-highlight[data-index='6'],
+.workspace:has(.ss-ring-slot-group[data-index='7']:is(:hover, :focus-visible)) .ss-ring-highlight[data-index='7'],
+.workspace:has(.ss-memory-column[data-index='7']:hover) .ss-ring-highlight[data-index='7'] {
+  opacity: 1;
 }
 
 .workspace:has(.ss-ring-slot-group[data-index='0']:is(:hover, :focus-visible)) .ss-memory-column[data-index='0'] .ss-memory-cell,
@@ -1611,19 +1633,6 @@
 .workspace:has(.ss-ring-slot-group[data-index='6']:is(:hover, :focus-visible)) .ss-memory-column[data-index='6'] .ss-memory-cell,
 .workspace:has(.ss-ring-slot-group[data-index='7']:is(:hover, :focus-visible)) .ss-memory-column[data-index='7'] .ss-memory-cell {
   box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--ink) 42%, transparent);
-}
-
-.workspace:has(.ss-memory-column[data-index='0']:hover) .ss-ring-slot-group[data-index='0'] .ss-ring-slot,
-.workspace:has(.ss-memory-column[data-index='1']:hover) .ss-ring-slot-group[data-index='1'] .ss-ring-slot,
-.workspace:has(.ss-memory-column[data-index='2']:hover) .ss-ring-slot-group[data-index='2'] .ss-ring-slot,
-.workspace:has(.ss-memory-column[data-index='3']:hover) .ss-ring-slot-group[data-index='3'] .ss-ring-slot,
-.workspace:has(.ss-memory-column[data-index='4']:hover) .ss-ring-slot-group[data-index='4'] .ss-ring-slot,
-.workspace:has(.ss-memory-column[data-index='5']:hover) .ss-ring-slot-group[data-index='5'] .ss-ring-slot,
-.workspace:has(.ss-memory-column[data-index='6']:hover) .ss-ring-slot-group[data-index='6'] .ss-ring-slot,
-.workspace:has(.ss-memory-column[data-index='7']:hover) .ss-ring-slot-group[data-index='7'] .ss-ring-slot {
-  stroke: var(--ink);
-  stroke-width: 3.2;
-  stroke-dasharray: none;
 }
 
 [data-motion='on'] .ss-ring-slot-group.is-changed .ss-ring-value {

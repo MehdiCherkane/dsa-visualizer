@@ -7,6 +7,7 @@ import { createSnapshot, emptySnapshot } from './memory'
 import type { ArraySnapshot } from './memory'
 import { fileCirculaireOperations } from './operations'
 import { fileCirculaireScenarios, fileDecalageScenarios, fileOrdinaireScenarios, pileScenarios } from './scenarios'
+import { ringGeometry } from './ringGeometry'
 import { StaticStructuresSupport } from './SupportPanels'
 import StaticStructuresVisualization, { BilanOverlay } from './Visualization'
 
@@ -144,6 +145,19 @@ describe('rendu SVG des piles et files statiques', () => {
     expect(markup).toContain('ss-ring-wrap is-upcoming')
     expect(markup).toContain('ss-ring-value')
     expect(markup).not.toContain('ss-band')
+  })
+
+  it('réutilise exactement le secteur de chaque case pour le survol', () => {
+    const snapshot = createSnapshot('file-circulaire', [10, 20, 30, 40, 50])
+    const ring = ringGeometry(snapshot)
+    expect(ring).not.toBeNull()
+    if (!ring) return
+    const markup = render(idleStep(snapshot))
+    for (const slot of ring.slots) {
+      expect(markup).toContain(
+        `class="ss-ring-highlight" data-index="${slot.index}" d="${slot.sectorPath}"`,
+      )
+    }
   })
 
   it('empile l’icône de 22 px au-dessus du compteur et du statut', () => {

@@ -253,6 +253,17 @@ export function RingView({
         ))}
       </g>
 
+      <g className="ss-ring-highlights" aria-hidden="true">
+        {geometry.slots.map((slot) => (
+          <path
+            key={`ring-highlight-${slot.index}`}
+            className="ss-ring-highlight"
+            data-index={slot.index}
+            d={slot.sectorPath}
+          />
+        ))}
+      </g>
+
       <g className="ss-ring-centre" aria-hidden="true">
         <circle className="ss-ring-hole" r={RING_HOLE_RADIUS} />
         <svg
