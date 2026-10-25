@@ -1,0 +1,58 @@
+/*
+ * Site background: Moroccan zellige friezes along both sides of the page. The
+ * pattern is a tiled image mask painted with the gold accent, then faded towards
+ * the middle so the centre stays quiet for the content and the structures still
+ * life.
+ */
+
+.site-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.site-backdrop-zellige {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    #000 0,
+    #000 5%,
+    rgba(0, 0, 0, 0.55) 10%,
+    transparent 21%,
+    transparent 79%,
+    rgba(0, 0, 0, 0.55) 90%,
+    #000 95%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    #000 0,
+    #000 5%,
+    rgba(0, 0, 0, 0.55) 10%,
+    transparent 21%,
+    transparent 79%,
+    rgba(0, 0, 0, 0.55) 90%,
+    #000 95%,
+    #000 100%
+  );
+}
+
+.site-backdrop-zellige-tile {
+  position: absolute;
+  inset: 0;
+  background-color: var(--gold);
+  opacity: 0.2;
+  -webkit-mask-image: var(--zl-pattern);
+  mask-image: var(--zl-pattern);
+  -webkit-mask-size: 240px 240px;
+  mask-size: 240px 240px;
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
+[data-theme='dark'] .site-backdrop-zellige-tile {
+  opacity: 0.24;
+}

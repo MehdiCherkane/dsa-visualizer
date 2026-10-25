@@ -23,6 +23,18 @@ interface MainMenuProps {
 
 export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Element {
   const open = (chapter: number): void => navigate(chapterHash(chapter))
+  const entries = [
+    ...plugins.map((plugin) => ({
+      kind: 'plugin' as const,
+      chapter: plugin.chapter,
+      plugin,
+    })),
+    ...fr.menu.soonItems.map((item) => ({
+      kind: 'soon' as const,
+      chapter: item.chapter,
+      item,
+    })),
+  ].sort((first, second) => first.chapter - second.chapter)
 
   return (
     <div className="app menu-app">
@@ -46,11 +58,13 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
 
       <main className="menu-main" aria-labelledby="menu-title">
         <section className="menu-hero">
-          <p className="menu-eyebrow">{fr.menu.eyebrow}</p>
-          <h1 id="menu-title" className="menu-title">
-            {fr.menu.title}
-          </h1>
-          <p className="menu-subtitle">{fr.menu.subtitle}</p>
+          <div className="menu-hero-copy">
+            <p className="menu-eyebrow">{fr.menu.eyebrow}</p>
+            <h1 id="menu-title" className="menu-title">
+              {fr.menu.title}
+            </h1>
+            <p className="menu-subtitle">{fr.menu.subtitle}</p>
+          </div>
         </section>
 
         <section className="menu-section" aria-labelledby="menu-chapters">
@@ -58,62 +72,57 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
             {fr.menu.chapters}
           </h2>
           <ul className="chapter-grid">
-            {plugins.map((plugin) => (
-              <li key={plugin.id}>
-                <a
-                  className="chapter-card"
-                  href={chapterHash(plugin.chapter)}
-                  aria-label={fr.menu.openAria(plugin.title)}
-                  onClick={(event) => {
-                    event.preventDefault()
-                    open(plugin.chapter)
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return
-                    event.preventDefault()
-                    open(plugin.chapter)
-                  }}
-                >
-                  <span className="chapter-card-head">
-                    <span className="chapter-chip">{fr.menu.chapterLabel(plugin.chapter)}</span>
-                    <span className="chapter-card-open" aria-hidden="true">
-                      {fr.menu.open}
+            {entries.map((entry) =>
+              entry.kind === 'plugin' ? (
+                <li key={entry.plugin.id}>
+                  <a
+                    className="chapter-card"
+                    href={chapterHash(entry.plugin.chapter)}
+                    aria-label={fr.menu.openAria(entry.plugin.title)}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      open(entry.plugin.chapter)
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return
+                      event.preventDefault()
+                      open(entry.plugin.chapter)
+                    }}
+                  >
+                    <span className="chapter-card-head">
+                      <span className="chapter-chip">
+                        {fr.menu.chapterLabel(entry.plugin.chapter)}
+                      </span>
+                      <span className="chapter-card-open" aria-hidden="true">
+                        {fr.menu.open}
+                      </span>
                     </span>
-                  </span>
-                  <span className="chapter-card-title">{plugin.title}</span>
-                  <span className="chapter-card-description">{plugin.description}</span>
-                  <span className="chapter-card-hint">{fr.menu.cardHint}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {fr.menu.soonItems.length > 0 ? (
-          <section className="menu-section" aria-labelledby="menu-soon">
-            <h2 id="menu-soon" className="menu-section-title">
-              {fr.menu.soonTitle}
-            </h2>
-            <ul className="chapter-grid is-soon-grid">
-              {fr.menu.soonItems.map((item) => (
-                <li key={item.chapter}>
+                    <span className="chapter-card-title">{entry.plugin.title}</span>
+                    <span className="chapter-card-description">{entry.plugin.description}</span>
+                    <span className="chapter-card-hint">{fr.menu.cardHint}</span>
+                  </a>
+                </li>
+              ) : (
+                <li key={`soon-${entry.item.chapter}`}>
                   <div
                     className="chapter-card is-soon"
                     aria-disabled="true"
-                    aria-label={fr.menu.soonAria(item.title)}
+                    aria-label={fr.menu.soonAria(entry.item.title)}
                   >
                     <span className="chapter-card-head">
-                      <span className="chapter-chip">{fr.menu.chapterLabel(item.chapter)}</span>
+                      <span className="chapter-chip">
+                        {fr.menu.chapterLabel(entry.item.chapter)}
+                      </span>
                       <span className="chapter-card-soon">{fr.menu.soon}</span>
                     </span>
-                    <span className="chapter-card-title">{item.title}</span>
-                    <span className="chapter-card-description">{item.description}</span>
+                    <span className="chapter-card-title">{entry.item.title}</span>
+                    <span className="chapter-card-description">{entry.item.description}</span>
                   </div>
                 </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+              ),
+            )}
+          </ul>
+        </section>
       </main>
 
       <footer className="menu-footer">

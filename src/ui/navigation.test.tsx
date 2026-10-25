@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App'
 import { fr } from '../i18n/fr'
-import { MENU_HASH } from './useHashRoute'
+import { chapterHash, MENU_HASH } from './useHashRoute'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -79,7 +79,7 @@ describe('navigation par hash', () => {
     renderApp()
     expect(query('.menu-app')).not.toBeNull()
 
-    const card = query<HTMLAnchorElement>('.chapter-card:not(.is-soon)')
+    const card = query<HTMLAnchorElement>(`.chapter-card[href="${chapterHash(4)}"]`)
     expect(card).not.toBeNull()
     act(() => {
       card?.click()

@@ -51,6 +51,10 @@ export const ROW_BAND_TOP = 246
 export const ROW_BAND_BOTTOM = ROW_Y + NODE_H + 46
 export const HEAP_BAND_TOP = 8
 export const HEAP_BAND_BOTTOM = HEAP_Y + NODE_H + 46
+export const CIRCLE_HEAP_GAP = 56
+export const CIRCLE_HEAP_STACK_GAP = 24
+export const CIRCLE_HEAP_HEADER = 44
+export const CIRCLE_HEAP_FOOTER = 20
 export const BAND_PAD = 28
 export const EMPTY_BAND_TOP = 200
 export const EMPTY_BAND_HEIGHT = 146
@@ -61,12 +65,77 @@ export const DEBUT_CELL_GAP = 60
 export const DEBUT_DOT_X = DEBUT_CELL_W / 2
 export const DEBUT_DOT_Y = DEBUT_CELL_H
 
+export type LayoutMode = 'row' | 'circle'
+
+export const CIRCLE_CX = 640
+export const CIRCLE_CY = 560
+/** A three-node ring needs more room than the compact formula below gives it. */
+export const CIRCLE_MIN_RADIUS = 200
+
+export interface CircleGeometry {
+  cx: number
+  cy: number
+  radius: number
+  count: number
+}
+
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
 
-export function layoutNodes(nodes: LdcNode[]): Map<number, Point> {
+export function circleGeometry(nodes: LdcNode[]): CircleGeometry | null {
+  const count = nodes.filter((node) => node.lane === 'row').length
+  if (count === 0) return null
+  const radius =
+    count === 1
+      ? 0
+      : Math.max(
+          count >= 3 ? CIRCLE_MIN_RADIUS : 160,
+          (NODE_W / 2 + 26) / Math.sin(Math.PI / count),
+        )
+  return { cx: CIRCLE_CX, cy: CIRCLE_CY, radius, count }
+}
+
+export function layoutNodes(
+  nodes: LdcNode[],
+  mode: LayoutMode = 'row',
+): Map<number, Point> {
   const layout = new Map<number, Point>()
+
+  if (mode === 'circle') {
+    const row = nodes
+      .filter((node) => node.lane === 'row')
+      .slice()
+      .sort((a, b) => a.slot - b.slot)
+    const ring = circleGeometry(nodes)
+    row.forEach((node, index) => {
+      const angle =
+        row.length === 1 ? 0 : -Math.PI / 2 + (index * Math.PI * 2) / row.length
+      const radius = ring?.radius ?? 0
+      const cx = CIRCLE_CX + Math.cos(angle) * radius
+      const cy = CIRCLE_CY + Math.sin(angle) * radius
+      layout.set(node.id, { x: cx - NODE_W / 2, y: cy - NODE_H / 2 })
+    })
+    const heap = nodes
+      .filter((node) => node.lane === 'heap')
+      .slice()
+      .sort((first, second) => first.id - second.id)
+    if (heap.length > 0) {
+      const ringLeft = CIRCLE_CX - ((ring?.radius ?? 0) + NODE_W / 2 + 26)
+      const stackHeight =
+        heap.length * NODE_H + (heap.length - 1) * CIRCLE_HEAP_STACK_GAP
+      const x = ringLeft - CIRCLE_HEAP_GAP - NODE_W
+      const top = CIRCLE_CY - stackHeight / 2
+      heap.forEach((node, index) => {
+        layout.set(node.id, {
+          x,
+          y: top + index * (NODE_H + CIRCLE_HEAP_STACK_GAP),
+        })
+      })
+    }
+    return layout
+  }
+
   for (const node of nodes) {
     layout.set(node.id, {
       x: PAD_L + node.slot * SLIDE,
@@ -76,13 +145,53 @@ export function layoutNodes(nodes: LdcNode[]): Map<number, Point> {
   return layout
 }
 
+/** Bounds of the left-side heap band used by the chapter 5 circular layout. */
+export function circleHeapBand(nodes: LdcNode[]): Rect | null {
+  const heap = nodes.filter((node) => node.lane === 'heap')
+  if (heap.length === 0) return null
+  const layout = layoutNodes(nodes, 'circle')
+  const nodeRects = heap.flatMap((node) => {
+    const point = layout.get(node.id)
+    return point ? [nodeBounds(point)] : []
+  })
+  if (nodeRects.length === 0) return null
+  const content = unionBounds(nodeRects)
+  return {
+    x: content.x - BAND_PAD,
+    y: content.y - CIRCLE_HEAP_HEADER,
+    width: content.width + BAND_PAD * 2,
+    height: content.height + CIRCLE_HEAP_HEADER + CIRCLE_HEAP_FOOTER,
+  }
+}
+
 export function laneY(point: Point, field: PointerField): number {
   return point.y + NODE_H * (field === 'suivant' ? SUIVANT_LANE : PRECEDENT_LANE)
 }
 
-export function pointerAnchor(_node: LdcNode, point: Point, field: PointerField): Point {
+export function pointerSide(
+  field: PointerField,
+  flipped = false,
+): 'left' | 'right' {
+  if (field === 'suivant') return flipped ? 'left' : 'right'
+  return flipped ? 'right' : 'left'
+}
+
+export function isNodeFlipped(
+  point: Point,
+  ring: CircleGeometry | null,
+): boolean {
+  return ring !== null && point.y + NODE_H / 2 > ring.cy + 0.5
+}
+
+export function pointerAnchor(
+  _node: LdcNode,
+  point: Point,
+  field: PointerField,
+  flipped = false,
+): Point {
+  const side = pointerSide(field, flipped)
   return {
-    x: field === 'suivant' ? point.x + NODE_W - CELL_W / 2 : point.x + CELL_W / 2,
+    x: side === 'right' ? point.x + NODE_W - CELL_W / 2 : point.x + CELL_W / 2,
     y: laneY(point, field),
   }
 }
@@ -93,15 +202,20 @@ export interface DebutCellGeometry {
   label: Point
 }
 
-export function debutCellGeometry(nodes: LdcNode[]): DebutCellGeometry {
+export function debutCellGeometry(
+  nodes: LdcNode[],
+  mode: LayoutMode = 'row',
+): DebutCellGeometry {
   const row = nodes
     .filter((node) => !node.freed && node.lane === 'row')
     .slice()
     .sort((a, b) => a.slot - b.slot)
   const first = row[0]
-  const rowX = first ? PAD_L + first.slot * SLIDE : PAD_L
+  const firstPoint =
+    mode === 'circle' && first ? layoutNodes(nodes, mode).get(first.id) : undefined
+  const rowX = firstPoint ? firstPoint.x : first ? PAD_L + first.slot * SLIDE : PAD_L
   const hasHeap = nodes.some((node) => !node.freed && node.lane === 'heap')
-  const rowY = first || hasHeap ? ROW_Y : EMPTY_ROW_Y
+  const rowY = firstPoint ? firstPoint.y : first || hasHeap ? ROW_Y : EMPTY_ROW_Y
   const centerX = rowX + NODE_W / 2
   const cell: Rect = {
     x: centerX - DEBUT_CELL_W / 2,
@@ -122,8 +236,8 @@ export function debutCellGeometry(nodes: LdcNode[]): DebutCellGeometry {
   }
 }
 
-export function debutCellBounds(nodes: LdcNode[]): Rect {
-  const geometry = debutCellGeometry(nodes)
+export function debutCellBounds(nodes: LdcNode[], mode: LayoutMode = 'row'): Rect {
+  const geometry = debutCellGeometry(nodes, mode)
   return unionBounds([
     geometry.cell,
     {
@@ -258,15 +372,96 @@ export interface ArrowRoute {
   stub?: NullStubGeometry
 }
 
+/**
+ * Routes a circular link locally around the ring. Every arrow starts at its
+ * colored pointer dot, rounds the target on the side facing the source and
+ * lands horizontally on the opposite border of that target.
+ */
+function circularRoute(
+  field: PointerField,
+  sourcePoint: Point,
+  targetPoint: Point,
+  ring: CircleGeometry,
+): ArrowRoute {
+  const outward = field === 'suivant'
+  const sourceFlipped = isNodeFlipped(sourcePoint, ring)
+  const targetFlipped = isNodeFlipped(targetPoint, ring)
+  const startSide = pointerSide(field, sourceFlipped)
+  const start = {
+    x:
+      startSide === 'right'
+        ? sourcePoint.x + NODE_W - CELL_W / 2
+        : sourcePoint.x + CELL_W / 2,
+    y: sourcePoint.y + NODE_H * (outward ? SUIVANT_LANE : PRECEDENT_LANE),
+  }
+
+  // The arrow enters the target on the cell side opposite to the source
+  // pointer: a forward link lands on the PREC side, a backward link on SUIV.
+  const endAtRight = outward ? targetFlipped : !targetFlipped
+  const end = {
+    x: endAtRight ? targetPoint.x + NODE_W : targetPoint.x,
+    y:
+      targetPoint.y +
+      NODE_H * (outward ? PRECEDENT_LANE : SUIVANT_LANE),
+  }
+
+  const sourceSign = startSide === 'right' ? 1 : -1
+  const targetSign = endAtRight ? 1 : -1
+  const sourceCenterY = sourcePoint.y + NODE_H / 2
+  const targetCenterY = targetPoint.y + NODE_H / 2
+  const wrapAbove =
+    Math.abs(sourceCenterY - targetCenterY) < 1
+      ? !outward
+      : sourceCenterY < targetCenterY
+
+  // Approach the target from just outside its opposite border, then round the
+  // last corner so the tip lands horizontally on the border.
+  const margin = 34
+  const outside = { x: end.x + targetSign * margin, y: end.y }
+  const corner = {
+    x: outside.x,
+    y: end.y + (wrapAbove ? -margin : margin),
+  }
+  const delta = { x: corner.x - start.x, y: corner.y - start.y }
+  const c1 = {
+    x: start.x + delta.x * 0.35 + sourceSign * 26,
+    y: start.y + delta.y * 0.35,
+  }
+  const c2 = {
+    x: corner.x,
+    y: corner.y + (wrapAbove ? -36 : 36),
+  }
+
+  return {
+    kind: 'curve',
+    path: [
+      `M ${start.x} ${start.y}`,
+      `C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${corner.x} ${corner.y}`,
+      `Q ${outside.x} ${outside.y}, ${end.x} ${end.y}`,
+    ].join(' '),
+    tail: start,
+    tip: end,
+    bounds: boundsOfPoints([start, c1, c2, corner, outside, end], 2),
+  }
+}
+
 export function routeArrow(
   source: LdcNode,
   field: PointerField,
   target: LdcNode | null,
   layout: Map<number, Point>,
+  mode: LayoutMode = 'row',
+  nodes: LdcNode[] = [],
 ): ArrowRoute | null {
   const sourcePoint = layout.get(source.id)
   if (!sourcePoint) return null
-  const tail = pointerAnchor(source, sourcePoint, field)
+  const ring = mode === 'circle' ? circleGeometry(nodes) : null
+  const tail = pointerAnchor(
+    source,
+    sourcePoint,
+    field,
+    isNodeFlipped(sourcePoint, ring),
+  )
 
   if (!target) {
     const stub = nullStubGeometry(source, field, sourcePoint)
@@ -282,6 +477,41 @@ export function routeArrow(
 
   const targetPoint = layout.get(target.id)
   if (!targetPoint) return null
+
+  // A one-node circular list points to itself. Chapter 4 never produces this
+  // case, but chapter 5 relies on it: draw a visible loop above the node for
+  // `suivant` and below it for `precedent`.
+  if (source.id === target.id) {
+    const above = field === 'suivant'
+    const exit = {
+      x: sourcePoint.x + (above ? NODE_W + 40 : -40),
+      y: tail.y,
+    }
+    const tip = {
+      x: sourcePoint.x + NODE_W * (above ? 0.86 : 0.14),
+      y: above ? sourcePoint.y : sourcePoint.y + NODE_H,
+    }
+    const bendY = above ? sourcePoint.y - 64 : sourcePoint.y + NODE_H + 64
+    const c1 = { x: exit.x + (above ? 24 : -24), y: bendY }
+    const c2 = { x: tip.x, y: bendY }
+    return {
+      kind: 'curve',
+      path: `M ${tail.x} ${tail.y} L ${exit.x} ${exit.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${tip.x} ${tip.y}`,
+      tail,
+      tip,
+      bounds: boundsOfPoints([tail, exit, c1, c2, tip], 2),
+    }
+  }
+
+  if (
+    mode === 'circle' &&
+    source.lane === 'row' &&
+    target.lane === 'row'
+  ) {
+    if (ring && ring.radius > 0) {
+      return circularRoute(field, sourcePoint, targetPoint, ring)
+    }
+  }
 
   const sameLane = source.lane === target.lane
   const slotDelta = target.slot - source.slot
@@ -415,9 +645,10 @@ export function routeArrow(
 export function debutRoute(
   nodes: LdcNode[],
   value: PointerValue,
+  mode: LayoutMode = 'row',
 ): ArrowRoute | null {
   if (value.kind === 'uninit') return null
-  const geometry = debutCellGeometry(nodes)
+  const geometry = debutCellGeometry(nodes, mode)
   if (value.kind === 'null') {
     const stub = makeVerticalNullStub(geometry.dot)
     return {
@@ -432,9 +663,9 @@ export function debutRoute(
 
   const target = nodes.find((candidate) => candidate.id === value.id)
   if (!target) return null
-  const targetPoint = layoutNodes(nodes).get(target.id)
+  const targetPoint = layoutNodes(nodes, mode).get(target.id)
   if (!targetPoint) return null
-  const tip = { x: geometry.dot.x, y: targetPoint.y }
+  const tip = { x: targetPoint.x + NODE_W / 2, y: targetPoint.y }
   return {
     kind: 'straight',
     path: `M ${geometry.dot.x} ${geometry.dot.y} L ${tip.x} ${tip.y}`,
@@ -507,9 +738,13 @@ function avoidTagCorridors(
   })
 }
 
-export function layoutPins(pins: PinInput[], nodes: LdcNode[]): PinPlacement[] {
+export function layoutPins(
+  pins: PinInput[],
+  nodes: LdcNode[],
+  mode: LayoutMode = 'row',
+): PinPlacement[] {
   if (pins.length === 0) return []
-  const layout = layoutNodes(nodes)
+  const layout = layoutNodes(nodes, mode)
   const anchor = nullAnchor(nodes, layout)
   const groups = new Map<string, PinInput[]>()
   for (const pin of pins) {
@@ -658,10 +893,21 @@ export function snapshotBounds(
   nodes: LdcNode[],
   pins: PinInput[] = [],
   debut: PointerValue = { kind: 'null' },
+  mode: LayoutMode = 'row',
 ): Rect {
-  const layout = layoutNodes(nodes)
+  const layout = layoutNodes(nodes, mode)
   const rects: Rect[] = []
-  const debutGeometry = debutCellGeometry(nodes)
+  const ring = mode === 'circle' ? circleGeometry(nodes) : null
+  if (ring) {
+    const radius = ring.radius + NODE_W / 2 + 26
+    rects.push({
+      x: ring.cx - radius,
+      y: ring.cy - radius,
+      width: radius * 2,
+      height: radius * 2,
+    })
+  }
+  const debutGeometry = debutCellGeometry(nodes, mode)
   rects.push(debutGeometry.cell)
   rects.push({
     x: debutGeometry.label.x - 70,
@@ -669,8 +915,11 @@ export function snapshotBounds(
     width: 140,
     height: 20,
   })
-  const debutArrow = debutRoute(nodes, debut)
+  const debutArrow = debutRoute(nodes, debut, mode)
   if (debutArrow) rects.push(debutArrow.bounds)
+
+  const heapBand = mode === 'circle' ? circleHeapBand(nodes) : null
+  if (heapBand) rects.push(heapBand)
 
   for (const node of nodes) {
     const point = layout.get(node.id)
@@ -690,12 +939,12 @@ export function snapshotBounds(
       }
       const target = nodes.find((candidate) => candidate.id === pointer.id) ?? null
       if (!target) continue
-      const route = routeArrow(node, field, target, layout)
+      const route = routeArrow(node, field, target, layout, mode, nodes)
       if (route) rects.push(route.bounds)
     }
   }
 
-  for (const placement of layoutPins(pins, nodes)) {
+  for (const placement of layoutPins(pins, nodes, mode)) {
     rects.push(placement.tag)
     if (placement.to) {
       rects.push(boundsOfPoints([placement.from, placement.to], 1))

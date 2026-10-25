@@ -34,18 +34,12 @@ export const fr = {
     chapterLabel: (chapter: number) => `Chapitre ${chapter}`,
     cardHint: 'Démonstration pas à pas, utilisable hors ligne',
     soon: 'Bientôt disponible',
-    soonTitle: 'Prochains chapitres',
     soonAria: (title: string) => `« ${title} » : bientôt disponible`,
     soonItems: [
       {
         chapter: 1,
         title: 'Piles et files statiques',
         description: 'Piles et files implantées dans des tableaux de taille fixe.',
-      },
-      {
-        chapter: 5,
-        title: 'Listes doublement chaînées circulaires',
-        description: 'Listes à double lien dont le dernier nœud reboucle sur le premier.',
       },
     ],
     footer: 'Tout fonctionne hors ligne : un seul fichier, aucune connexion.',
@@ -65,6 +59,15 @@ export const fr = {
     ldc: {
       description: 'Profils Entiers et Étudiants, 8 scénarios guidés.',
     },
+    trees: {
+      title: 'Arbres binaires',
+      description: 'Construction, parcours récursifs préfixe / infixe / postfixe et destruction en postordre.',
+    },
+    lddc: {
+      title: 'Listes doublement chaînées circulaires',
+      description:
+        'Le dernier nœud reboucle sur le premier : parcours en boucle, insertions en O(1) via debut->precedent.',
+    },
   },
   common: {
     node: 'nœud',
@@ -78,6 +81,122 @@ export const fr = {
     true: 'vraie',
     false: 'fausse',
     bytes: 'octets',
+  },
+  trees: {
+    fields: { gauche: 'gauche', droit: 'droit' },
+    viz: {
+      empty: 'Arbre vide : racine vaut NULL.',
+      root: 'racine',
+      left: 'gauche',
+      right: 'droit',
+      null: 'NULL',
+      uninitialized: 'non initialisé',
+      freed: 'libéré',
+      danglingRoot: 'racine pointe vers une zone libérée',
+      node: 'nœud',
+      address: 'adresse',
+      fit: 'Ajuster',
+      zoomIn: 'Zoom avant',
+      zoomOut: 'Zoom arrière',
+      zoomReset: 'Ajuster à l’arbre',
+      active: 'Appel actif',
+      activeNull: 'Appel actif : n = NULL',
+      visited: 'Visité',
+      legend: 'Légende',
+      concepts: 'Repères du cours',
+      branch: 'Branche',
+      subtree: 'Sous-arbre',
+      leaf: 'Feuille',
+      leaves: 'Feuilles',
+      size: 'Taille',
+      degree: 'Degré',
+      depth: 'Profondeur',
+      height: 'Hauteur',
+      rootDefinition: 'nœud de départ, sans parent.',
+      branchDefinition: 'lien parent-enfant ; un sous-arbre regroupe un nœud et ses descendants.',
+      leafDefinition: 'nœud sans enfant (degré 0).',
+      sizeDefinition: 'nombre de nœuds de l’arbre.',
+      degreeDefinition: 'nombre d’enfants : 0, 1 ou 2 pour un arbre binaire.',
+      depthDefinition: 'nombre de liens depuis la racine (racine : 0).',
+      heightDefinition: 'plus long chemin vers une feuille ; arbre vide : −1, feuille : 0.',
+    },
+    operations: {
+      construireArbre: {
+        label: 'Construire l’arbre du cours',
+        complexity: 'O(1)',
+        note: 'Construction guidée de cet exemple fixe à six nœuds, avec raccordement explicite des enfants.',
+      },
+      parcoursPrefixe: {
+        label: 'Parcours préfixe',
+        complexity: 'O(n)',
+        note: 'Visiter le nœud, parcourir le sous-arbre gauche, puis le sous-arbre droit.',
+      },
+      parcoursInfixe: {
+        label: 'Parcours infixe',
+        complexity: 'O(n)',
+        note: 'Parcourir gauche, visiter le nœud, puis parcourir droit.',
+      },
+      parcoursPostfixe: {
+        label: 'Parcours postfixe',
+        complexity: 'O(n)',
+        note: 'Parcourir gauche et droit avant de visiter le nœud.',
+      },
+      detruireArbre: {
+        label: 'Détruire l’arbre',
+        complexity: 'O(n)',
+        note: 'Libérer en postordre. Le paramètre n est passé par valeur : racine reste pendant.',
+      },
+    },
+    scenarios: {
+      cours: {
+        title: 'Arbre du cours',
+        description: 'Construire l’arbre puis comparer préfixe (50 30 20 40 70 80), infixe (20 30 40 50 70 80) et postfixe (20 40 30 80 70 50).',
+      },
+      exercice: {
+        title: 'Exercice du cours',
+        description: 'Préfixe : 15 8 4 10 22 30 ; infixe : 4 8 10 15 22 30 ; postfixe : 4 10 8 30 22 15. Aperçu du chapitre 7 : l’infixe croissant illustre la propriété d’un ABR.',
+      },
+      vide: {
+        title: 'Arbre vide',
+        description: 'Voir le cas de base n == NULL pour chaque parcours récursif.',
+      },
+      destruction: {
+        title: 'Destruction postordre',
+        description: 'Libérer chaque descendant avant son parent, puis observer racine qui reste pendant.',
+      },
+    },
+    captions: {
+      constructionEntry: 'On commence la construction manuelle de l’arbre présenté dans le cours.',
+      constructionDone: 'Construction terminée : racine référence les six nœuds du cours.',
+      alreadyBuilt: 'racine référence déjà un arbre : aucune allocation supplémentaire.',
+      rootDangling: 'racine est pendant après une destruction ; réinitialisez l’arbre avant de le reconstruire.',
+      rootFreed: 'racine est pendant : le parcours s’arrête avant tout accès à la mémoire libérée.',
+      createEntry: (value: number) => `Appel de creerNoeud(${value}) pour réserver un nœud.`,
+      malloc: (value: number) => `malloc réserve la mémoire du nœud qui contiendra ${value}.`,
+      allocated: (id: number, address: string) => `Le nœud ${id} est alloué à l’adresse ${address} ; ses champs ne sont pas encore initialisés.`,
+      assignValue: (id: number, value: number) => `Le champ valeur du nœud ${id} reçoit ${value}.`,
+      initChild: (id: number, field: string) => `Le champ ${field} du nœud ${id} reçoit NULL.`,
+      returnCreated: (id: number) => `creerNoeud retourne l’adresse du nœud ${id}.`,
+      setRoot: (value: number) => `racine reçoit le nœud contenant ${value}.`,
+      linkChild: (parent: number, field: string, child: number) => `Le champ ${field} du nœud ${parent} est raccordé au nœud ${child}.`,
+      call: (fn: string, target: string) => `Appel de ${fn} avec ${target} : un contexte récursif est empilé.`,
+      destroyCall: (target: string) => `Appel de detruireArbre avec ${target}.`,
+      testNull: (pointer: { kind: string }) => `On teste n == NULL ; n vaut ${pointer.kind === 'node' ? 'un nœud' : 'NULL'}.`,
+      nullReturn: 'Cas de base : n vaut NULL, la fonction retourne sans descendre plus loin.',
+      invalidNode: 'Le pointeur ne désigne pas un nœud vivant ; l’opération s’arrête pour éviter un accès invalide.',
+      continueNode: (value: number) => `n n’est pas NULL : le traitement récursif continue au nœud ${value}.`,
+      visit: (value: number) => `On visite ${value} et printf l’ajoute à la sortie.`,
+      recursiveCall: (field: string, value: number) => `Appel récursif sur ${field} du nœud ${value}.`,
+      returnFrom: (value: number) => `Les deux sous-arbres de ${value} sont traités ; l’appel retourne.`,
+      traversalDone: (order: string) => `Parcours ${order} terminé : les valeurs affichées suivent l’ordre de visite demandé.`,
+      continueDestroy: (value: { kind: string; value?: number }) => `n désigne ${value.kind === 'int' ? value.value : 'un nœud'} : on détruit d’abord ses sous-arbres.`,
+      destroyChild: (field: string, value: { kind: string; value?: number }) => `On appelle detruireArbre sur le lien ${field} du nœud ${value.kind === 'int' ? value.value : '?'}.`,
+      free: (value: { kind: string; value?: number }) => `Les sous-arbres sont libérés ; free libère maintenant le nœud ${value.kind === 'int' ? value.value : '?'}.`,
+      destroyReturn: (value: { kind: string; value?: number }) => `Le nœud ${value.kind === 'int' ? value.value : '?'} est libéré ; cet appel récursif retourne.`,
+      destroyDone: (root: { kind: string }) => root.kind === 'node'
+        ? 'Destruction terminée. Tous les nœuds sont libérés, mais racine garde l’ancienne adresse : ce pointeur global est pendant.'
+        : 'Destruction terminée : l’arbre était vide, aucun nœud n’a été libéré.',
+    },
   },
   header: {
     presentationOn: 'Quitter la présentation',
@@ -142,6 +261,26 @@ export const fr = {
     copy: 'Copier',
     copied: 'Copié ✓',
   },
+  callStack: {
+    title: 'Pile d’appels',
+    region: 'Pile d’appels du parcours récursif',
+    showNull: 'Afficher les appels NULL',
+    summary: (count: number, maximum: number) =>
+      `Pile : ${plural(count, 'appel', 'appels')} · max ${maximum}`,
+    empty: 'Pile vide : parcours terminé',
+    main: 'main',
+    top: 'sommet',
+    active: 'actif',
+    waitLeft: 'attend l’appel gauche',
+    waitRight: 'attend l’appel droit',
+    line: (line: number) => `ligne ${line + 1}`,
+    nullArgument: 'n = NULL',
+    phase: {
+      gauche: 'gauche',
+      visite: 'visite',
+      droit: 'droit',
+    },
+  },
   captionPanel: {
     title: 'Explication',
     badgeParticular: 'Cas particulier',
@@ -166,7 +305,7 @@ export const fr = {
     execute: 'Exécuter',
     finish: 'Terminer',
     cancel: 'Annuler',
-    maxNodes: 'Maximum de 8 nœuds atteint pour la démo : les insertions sont désactivées.',
+    maxNodes: (maximum: number) => `Maximum de ${maximum} nœuds atteint : les allocations sont désactivées.`,
     notFound: 'Opération introuvable.',
     inProgress: 'Opération en cours',
     targetHint: 'Cliquez sur un nœud du schéma pour remplir ce champ',
@@ -530,6 +669,144 @@ export const fr = {
         title: 'Arrivées et service',
         description:
           'Enregistrer les étudiants 201, 202, 203, puis servir deux étudiants et afficher la file restante.',
+      },
+    },
+  },
+  lddc: {
+    ops: {
+      afficherListe: {
+        label: 'Afficher la liste',
+        complexity: 'O(n)',
+        note: 'Parcours do…while : on s’arrête quand courant revient sur debut.',
+      },
+      afficherListeEnvers: {
+        label: 'Afficher à l’envers',
+        complexity: 'O(n)',
+        note: 'debut->precedent donne le dernier nœud, puis le parcours remonte par precedent.',
+      },
+      insererEnTete: {
+        label: 'Insérer en tête',
+        complexity: 'O(1)',
+        note: 'debut->precedent est le dernier nœud : le raccord se fait sans parcours.',
+      },
+      insererEnFin: {
+        label: 'Insérer en fin',
+        complexity: 'O(1)',
+        note: 'Le dernier nœud est accessible via debut->precedent : ajout en temps constant.',
+      },
+      supprimerEnTete: {
+        label: 'Supprimer en tête',
+        complexity: 'O(1)',
+        note: 'debut avance, puis le dernier et le nouveau premier se raccordent.',
+      },
+      supprimerValeur: {
+        label: 'Supprimer une valeur',
+        complexity: 'O(n)',
+        note: 'Parcours do…while puis détachement O(1) avec precedent et suivant.',
+      },
+      rechercher: {
+        label: 'Rechercher une valeur',
+        complexity: 'O(n)',
+        note: 'Le parcours circulaire s’arrête quand courant revient sur debut.',
+      },
+      passerAuSuivant: {
+        label: 'Passer au suivant',
+        complexity: 'O(1)',
+        note: 'debut avance d’un cran : le tour continue, la liste garde la même taille.',
+      },
+      detruireListe: {
+        label: 'Détruire la liste',
+        complexity: 'O(n)',
+        note: 'Suppressions en tête successives jusqu’à debut == NULL.',
+      },
+      inscrireEtudiant: {
+        label: 'Inscrire un étudiant',
+        complexity: 'O(1)',
+        note: 'Ajout en fin via debut->precedent : aucun parcours du registre.',
+      },
+      radierEtudiant: {
+        label: 'Radier un étudiant',
+        complexity: 'O(n)',
+        note: 'Recherche circulaire par numéro, puis détachement O(1).',
+      },
+    },
+    captions: {
+      reasonSingleNode: '`debut->suivant == debut` : un seul nœud, qui pointe vers lui-même.',
+      reasonMultipleNodes: '`debut->suivant != debut` : la liste contient plusieurs nœuds.',
+      lastFromPrecedent:
+        '`debut->precedent` est le dernier nœud : il est trouvé en O(1), sans parcours.',
+      selfLinks:
+        'La liste était vide : `suivant` et `precedent` du nouveau nœud pointent vers lui-même.',
+      circularStop: '`courant` est revenu sur `debut` : le parcours circulaire s’arrête.',
+      circularContinue: '`courant` n’est pas revenu sur `debut` : le parcours continue.',
+      notFoundLoop: 'Le parcours est revenu sur `debut` sans trouver la valeur : retour `0`.',
+      rotateHead:
+        '`debut` avance sur `debut->suivant` : le tour continue, la liste garde la même taille.',
+      removeSingleNode: 'Le nœud est seul et pointe vers lui-même : `free` puis `debut = NULL`.',
+      reasonHeadCircular:
+        '`courant` pointe sur `debut` : il faut déplacer `debut` avant de libérer.',
+      reasonNotHeadCircular: '`courant` ne pointe pas sur `debut` : `debut` reste inchangé.',
+    },
+    scenarios: {
+      cours: {
+        title: 'Le cours : le cercle 9 → 2 → 5',
+        description:
+          'Charge la LDC circulaire du cours : le dernier nœud (5) pointe vers debut (9).',
+      },
+      tour: {
+        title: 'Tour de passage des exposés',
+        description:
+          'Inscrire 101, 102 puis 103 en fin (O(1)), puis passer deux fois au suivant : 103 puis 101 prennent la tête du tour.',
+      },
+      tete: {
+        title: 'Insertion en tête O(1)',
+        description:
+          'Insérer 7 en tête via debut->precedent : le dernier nœud est trouvé sans parcours.',
+      },
+      queue: {
+        title: 'Insertion en fin O(1)',
+        description:
+          'Insérer 7 en fin grâce à debut->precedent, puis vérifier que le nouveau dernier pointe vers debut.',
+      },
+      suppression: {
+        title: 'Supprimer une valeur',
+        description:
+          'Supprimer 2 (au milieu) puis 9 (en tête) : le dernier reste toujours raccordé à debut.',
+      },
+      unique: {
+        title: 'Le nœud unique',
+        description:
+          'Supprimer 9 du cercle à un seul nœud, puis insérer 4 : le nouveau nœud pointe vers lui-même.',
+      },
+      envers: {
+        title: 'Parcours inverse',
+        description:
+          'debut->precedent donne le dernier nœud, puis le parcours remonte par precedent jusqu’au dernier.',
+      },
+      recherche: {
+        title: 'Recherche circulaire',
+        description:
+          'Rechercher 2 puis 99 : le parcours s’arrête quand courant revient sur debut.',
+      },
+      detruire: {
+        title: 'Détruire la liste',
+        description:
+          'Détruire 9 → 2 → 5 nœud par nœud et vérifier que debut devient NULL.',
+      },
+      registre: {
+        title: 'Registre circulaire',
+        description:
+          'Inscrire E1, E2, E3 en fin de cercle, puis radier le numéro 102.',
+      },
+      tourEtudiants: {
+        title: 'Tour de passage (étudiants)',
+        description:
+          'Inscrire trois étudiants puis faire avancer debut deux fois : le tour de passage continue.',
+      },
+      detruireEtudiants: {
+        title: 'Détruire le registre',
+        description:
+          'Détruire le registre circulaire nœud par nœud et vérifier que debut devient NULL.',
       },
     },
   },
