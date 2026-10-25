@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { OperationDef, ScenarioDef, Step } from '../../core/types'
 import type { ArrowRoute, Point, Rect } from '../ldc/geometry'
 import {
+  circleGeometry,
   circleNodeRect,
   layoutNodes,
   routeArrow,
@@ -397,6 +398,7 @@ describe('routage des flèches du chapitre 5', () => {
       .state
     const nodes = snapshot.nodes.filter((node) => !node.freed)
     const layout = layoutNodes(nodes, 'circle')
+    const ring = circleGeometry(nodes)!
     const issues: string[] = []
     for (const node of nodes) {
       const pointer = node.suivant
@@ -417,10 +419,15 @@ describe('routage des flèches du chapitre 5', () => {
       }
       const samples = samplePath(route.path, 160)
       let sharpest = 0
+      let farthest = 0
       for (let index = 1; index < samples.length - 1; index += 1) {
         const before = samples[index - 1]!
         const current = samples[index]!
         const after = samples[index + 1]!
+        farthest = Math.max(
+          farthest,
+          Math.hypot(current.x - ring.cx, current.y - ring.cy),
+        )
         const incoming = Math.atan2(
           current.y - before.y,
           current.x - before.x,
@@ -433,6 +440,13 @@ describe('routage des flèches du chapitre 5', () => {
       if (sharpest > (12 * Math.PI) / 180) {
         issues.push(
           `${node.id}: coude de ${((sharpest * 180) / Math.PI).toFixed(1)}°`,
+        )
+      }
+      // The link must bow around the ring, not cut straight from one node to
+      // the next: the curve reaches well beyond the node centres.
+      if (farthest < ring.radius + 70) {
+        issues.push(
+          `${node.id}: courbe trop plate (${farthest.toFixed(1)} < ${ring.radius + 70})`,
         )
       }
     }

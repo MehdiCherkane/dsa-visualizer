@@ -625,6 +625,15 @@ function normalizeAngle(angle: number): number {
   return ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
 }
 
+const ROW_ROW_SOURCE_WRAP = 0.55
+const ROW_ROW_TARGET_WRAP = 0.25
+
+/**
+ * Row-to-row ring link. The first control point is pulled toward the gap and
+ * the second one pushed past it, so the link bows around the ring instead of
+ * cutting across it. Both endpoint tangents stay continuous, which keeps the
+ * curve soft and avoids an elbow at the node border.
+ */
 function rowRowGapRoute(
   field: PointerField,
   tail: Point,
@@ -682,24 +691,35 @@ function rowRowGapRoute(
 
   const exit = borderPoint(sourceCenter, gap, circleNodeRect(sourcePoint))
   const entry = borderPoint(gap, targetCenter, circleNodeRect(targetPoint))
+  // Pull the first control point toward the gap and push the second one past
+  // it: the link bows around the ring instead of cutting across it, while the
+  // endpoints stay tangent for a soft, continuous curve.
+  const startControl = {
+    x: exit.x + (gap.x - exit.x) * ROW_ROW_SOURCE_WRAP,
+    y: exit.y + (gap.y - exit.y) * ROW_ROW_SOURCE_WRAP,
+  }
+  const endControl = {
+    x: gap.x + (gap.x - entry.x) * ROW_ROW_TARGET_WRAP,
+    y: gap.y + (gap.y - entry.y) * ROW_ROW_TARGET_WRAP,
+  }
   return {
     kind: 'curve',
-    path: `M ${tail.x} ${tail.y} C ${exit.x} ${exit.y}, ${gap.x} ${gap.y}, ${entry.x} ${entry.y}`,
+    path: `M ${tail.x} ${tail.y} C ${startControl.x} ${startControl.y}, ${endControl.x} ${endControl.y}, ${entry.x} ${entry.y}`,
     tail,
     tip: entry,
-    bounds: boundsOfPoints([tail, exit, gap, entry], 2),
-    points: [tail, exit, gap, entry],
+    bounds: boundsOfPoints([tail, startControl, endControl, entry], 2),
+    points: [tail, startControl, endControl, entry],
   }
 }
 
 const FINAL_PRECEDENT_ANCHOR_GAP = 18
 const TWO_NODE_PRECEDENT_GAP = 28
-const TWO_NODE_PRECEDENT_BOW = 44
-const TWO_NODE_PRECEDENT_TARGET_BOW = 30
-const TWO_NODE_PRECEDENT_SOFTNESS = 90
+const TWO_NODE_PRECEDENT_BOW = 50
+const TWO_NODE_PRECEDENT_TARGET_BOW = 36
+const TWO_NODE_PRECEDENT_SOFTNESS = 104
 const FINAL_PRECEDENT_ANCHOR_MARGIN = 8
-const FINAL_PRECEDENT_CONTROL_MIN = 26
-const FINAL_PRECEDENT_CONTROL_MAX = 46
+const FINAL_PRECEDENT_CONTROL_MIN = 32
+const FINAL_PRECEDENT_CONTROL_MAX = 58
 
 /**
  * Direction from a node centre into the ring. Used as the tangent of the
@@ -918,7 +938,7 @@ function finalPrecedentRoute(
     targetAnchor.y - sourceAnchor.y,
   )
   const control = clamp(
-    chord * 0.24,
+    chord * 0.3,
     FINAL_PRECEDENT_CONTROL_MIN,
     FINAL_PRECEDENT_CONTROL_MAX,
   )
