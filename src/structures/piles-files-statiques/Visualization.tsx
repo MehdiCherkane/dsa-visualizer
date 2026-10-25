@@ -36,10 +36,11 @@ import {
   tapeGeometry,
   unionBounds,
   worldPoint,
-  wrapGeometry,
   zoomAtCursor,
 } from './geometry'
 import type { Camera, MarkerGeometry, MarkerTone, Point, Size } from './geometry'
+import { RingView } from './RingView'
+import { ringGeometry } from './ringGeometry'
 import {
   cellText,
   countOccupied,
@@ -514,6 +515,7 @@ export default function StaticStructuresVisualization({
   const closeBilan = useCallback(() => setBilanOpen(false), [])
 
   const live = useMemo(() => liveIndexSet(snapshot), [snapshot])
+  const isRing = snapshot.profile === 'file-circulaire'
   const ranks = useMemo(() => {
     const result = new Map<number, number>()
     if (snapshot.profile !== 'pile') {
@@ -521,23 +523,33 @@ export default function StaticStructuresVisualization({
     }
     return result
   }, [snapshot])
-  const markers = useMemo(
-    () => (snapshot.profile === 'pile' ? [stackMarker(snapshot)] : queueMarkers(snapshot)),
+  const markers = useMemo(() => {
+    if (snapshot.profile === 'file-circulaire') return []
+    return snapshot.profile === 'pile' ? [stackMarker(snapshot)] : queueMarkers(snapshot)
+  }, [snapshot])
+  const fifo = useMemo(
+    () =>
+      snapshot.profile === 'pile' || snapshot.profile === 'file-circulaire'
+        ? null
+        : fifoGeometry(snapshot),
     [snapshot],
   )
-  const fifo = useMemo(() => fifoGeometry(snapshot), [snapshot])
-  const wrap = useMemo(
-    () => (snapshot.profile === 'file-circulaire' ? wrapGeometry() : null),
-    [snapshot.profile],
+  const ring = useMemo(
+    () => (isRing ? ringGeometry(snapshot, { idle: true }) : null),
+    [isRing, snapshot],
   )
   const tape = useMemo(
     () => (snapshot.tape ? tapeGeometry(snapshot.tape) : null),
     [snapshot.tape],
   )
-  const content = useMemo(() => contentBounds(snapshot), [snapshot])
+  const content = useMemo(() => contentBounds(snapshot, { idle: true }), [snapshot])
   const operationBounds = useMemo(() => {
     if (!operationSteps || operationSteps.length === 0) return null
-    return unionBounds(operationSteps.map((operationStep) => contentBounds(operationStep.snapshot)))
+    return unionBounds(
+      operationSteps.map((operationStep) =>
+        contentBounds(operationStep.snapshot, { idle: true }),
+      ),
+    )
   }, [operationSteps])
   const fitBounds = operationBounds ?? content
 
@@ -828,14 +840,6 @@ export default function StaticStructuresVisualization({
       change.kind === 'variable' && change.scope === 'global' ? [change.name] : [],
     ),
   )
-  const wrapActive =
-    snapshot.profile === 'file-circulaire' &&
-    step.changes.some((change) => {
-      if (change.kind !== 'variable' || change.scope !== 'global') return false
-      if (change.name !== 'av' && change.name !== 'ar') return false
-      if (change.from.kind !== 'int' || change.to.kind !== 'int') return false
-      return change.to.value < change.from.value
-    })
 
   const duration = reducedMotion ? 0.001 : Math.max(0.1, 0.34 / speed)
 
@@ -877,6 +881,18 @@ export default function StaticStructuresVisualization({
           >
             <line x1="0" y1="0" x2="0" y2="8" stroke="var(--hatch-uninit)" strokeWidth="1.6" />
           </pattern>
+          <linearGradient id="ss-ring-split-stroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="var(--gold)" />
+            <stop offset="0.5" stopColor="var(--gold)" />
+            <stop offset="0.5" stopColor="var(--success)" />
+            <stop offset="1" stopColor="var(--success)" />
+          </linearGradient>
+          <linearGradient id="ss-ring-split-fill" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="var(--gold-soft)" />
+            <stop offset="0.5" stopColor="var(--gold-soft)" />
+            <stop offset="0.5" stopColor="var(--success-soft)" />
+            <stop offset="1" stopColor="var(--success-soft)" />
+          </linearGradient>
           {(
             [
               ['ss-arrow-gold', 'var(--gold)'],
@@ -903,14 +919,18 @@ export default function StaticStructuresVisualization({
         <rect width={stageW} height={stageH} fill="url(#camera-grid)" />
 
         <g transform={`translate(${camera.x} ${camera.y}) scale(${camera.k})`}>
-          <rect
-            className="ss-band"
-            x={ARRAY_X - 18}
-            y={ARRAY_Y - 14}
-            width={ROW_W + 36}
-            height={CELL_H + 28}
-            rx="18"
-          />
+          {ring ? (
+            <RingView geometry={ring} changedIndices={changedIndices} />
+          ) : (
+            <>
+              <rect
+                className="ss-band"
+                x={ARRAY_X - 18}
+                y={ARRAY_Y - 14}
+                width={ROW_W + 36}
+                height={CELL_H + 28}
+                rx="18"
+              />
 
           {snapshot.cells.map((entry, index) =>
             entry ? null : (
@@ -1001,26 +1021,6 @@ export default function StaticStructuresVisualization({
             </g>
           ) : null}
 
-          {wrap ? (
-            <g className={`ss-wrap${wrapActive ? ' is-active' : ''}`}>
-              <path
-                d={wrap.path}
-                className="ss-wrap-path"
-                markerEnd={
-                  wrapActive ? 'url(#ss-arrow-success)' : 'url(#ss-arrow-muted)'
-                }
-              />
-              <text
-                x={wrap.label.x}
-                y={wrap.label.y}
-                textAnchor="middle"
-                className="ss-wrap-label"
-              >
-                {V.wrap}
-              </text>
-            </g>
-          ) : null}
-
           {snapshot.tape && tape ? (
             <g className="ss-tape">
               <text x={tape.label.x} y={tape.label.y} className="ss-tape-label">
@@ -1079,6 +1079,8 @@ export default function StaticStructuresVisualization({
               ) : null}
             </g>
           ) : null}
+            </>
+          )}
         </g>
       </svg>
 

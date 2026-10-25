@@ -30,6 +30,14 @@ import {
   fileOrdinaireScenarios,
   pileScenarios,
 } from './scenarios'
+import {
+  RING_CANVAS,
+  rectGap,
+  rectInside,
+  ringGeometry,
+  wrapArcPoints,
+} from './ringGeometry'
+import type { RingGeometry, RingRect } from './ringGeometry'
 
 const profileIds: ArrayProfileId[] = [
   'pile',
@@ -536,6 +544,203 @@ describe('pile statique — exercices du cours', () => {
     expect(orphanClose.console.returnValue).toBe(0)
     expect(orphanClose.snapshot.tape?.status).toBe('invalid')
     expect(readGlobalInt(orphanClose.snapshot, 'sommet')).toBe(-1)
+  })
+})
+
+describe('géométrie de l’anneau', () => {
+  interface NamedBox {
+    name: string
+    rect: RingRect
+  }
+
+  function collectBoxes(ring: RingGeometry): NamedBox[] {
+    const boxes: NamedBox[] = []
+    for (const slot of ring.slots) {
+      if (slot.valueBox) boxes.push({ name: `valeur ${slot.index}`, rect: slot.valueBox })
+      if (slot.labelBox) boxes.push({ name: `libellé ${slot.index}`, rect: slot.labelBox })
+      if (slot.badgeBox) boxes.push({ name: `ordre ${slot.index}`, rect: slot.badgeBox })
+      boxes.push({ name: `indice ${slot.index}`, rect: slot.indexRect })
+    }
+    for (const pointer of ring.pointers) {
+      boxes.push({ name: `pointeur ${pointer.key}`, rect: pointer.rect })
+    }
+    if (ring.wrap) boxes.push({ name: 'formule retour', rect: ring.wrap.chipRect })
+    return boxes
+  }
+
+  function pointInside(point: { x: number; y: number }, rect: RingRect): boolean {
+    return (
+      point.x > rect.x - 1 &&
+      point.x < rect.x + rect.width + 1 &&
+      point.y > rect.y - 1 &&
+      point.y < rect.y + rect.height + 1
+    )
+  }
+
+  function expectClearLayout(ring: RingGeometry, label: string): void {
+    const boxes = collectBoxes(ring)
+    for (const [index, first] of boxes.entries()) {
+      expect(
+        rectInside(first.rect, RING_CANVAS),
+        `${label} : ${first.name} doit rester dans le canevas`,
+      ).toBe(true)
+      for (const second of boxes.slice(index + 1)) {
+        expect(
+          rectGap(first.rect, second.rect),
+          `${label} : ${first.name} ne doit pas croiser ${second.name}`,
+        ).toBeGreaterThan(0.5)
+      }
+    }
+
+    for (const pointer of ring.pointers) {
+      for (const slot of ring.slots) {
+        expect(
+          rectGap(pointer.rect, slot.indexRect),
+          `${label} : ${pointer.key} doit rester à distance de l’indice ${slot.index}`,
+        ).toBeGreaterThan(15)
+      }
+    }
+
+    if (ring.wrap) {
+      for (const point of wrapArcPoints(ring.wrap)) {
+        for (const box of boxes) {
+          expect(
+            pointInside(point, box.rect),
+            `${label} : l’arc de retour croise ${box.name}`,
+          ).toBe(false)
+        }
+      }
+    }
+  }
+
+  it('place les secteurs, valeurs, badges, pilules et arcs sans croisement de 3 à 8 cases', () => {
+    for (let capacity = 3; capacity <= 8; capacity += 1) {
+      const values = Array.from({ length: capacity }, (_, index) => 10 + index)
+      const full = createSnapshot('file-circulaire', values, { capacity })
+      const fullRing = ringGeometry(full, { idle: true })
+      expect(fullRing, `capacité ${capacity}`).not.toBeNull()
+      if (!fullRing) continue
+      expect(fullRing.max).toBe(capacity)
+      expect(fullRing.taille).toBe(capacity)
+      expect(fullRing.full).toBe(true)
+      expect(fullRing.slots.map((slot) => slot.index)).toEqual(
+        Array.from({ length: capacity }, (_, index) => index),
+      )
+      expect(fullRing.wrap).not.toBeNull()
+      expect(fullRing.wrap?.applied).toBe(false)
+      expect(fullRing.wrap?.chipText).toBe(
+        fr.staticStructures.viz.wrapFormula(capacity - 1, capacity, 0),
+      )
+      expect(fullRing.pointers.map((pointer) => pointer.key)).toEqual(['av', 'ar'])
+      expectClearLayout(fullRing, `pleine N=${capacity}`)
+
+      const large = createSnapshot(
+        'file-circulaire',
+        Array.from({ length: capacity }, (_, index) => 100 + index * 7),
+        { capacity },
+      )
+      const stale = lastStep(runOperation('file-circulaire', 'defiler', large, {})).snapshot
+      const staleRing = ringGeometry(stale, { idle: true })
+      expect(staleRing, `périmée N=${capacity}`).not.toBeNull()
+      if (staleRing) {
+        expect(staleRing.slots[0]).toMatchObject({
+          state: 'stale',
+          text: '100',
+          label: fr.staticStructures.viz.staleShort,
+        })
+        expect(staleRing.slots[0]?.valueBox).not.toBeNull()
+        expect(staleRing.slots[0]?.labelBox).not.toBeNull()
+        expectClearLayout(staleRing, `valeur périmée N=${capacity}`)
+      }
+
+      const partial = createSnapshot(
+        'file-circulaire',
+        Array.from({ length: capacity - 1 }, (_, index) => 20 + index),
+        { capacity },
+      )
+      const partialRing = ringGeometry(partial, { idle: true })
+      expect(partialRing, `partielle N=${capacity}`).not.toBeNull()
+      if (partialRing) {
+        expect(partialRing.free).toBe(1)
+        expect(partialRing.slots[capacity - 1]).toMatchObject({
+          state: 'free',
+          label: fr.staticStructures.viz.free,
+        })
+        expectClearLayout(partialRing, `case libre N=${capacity}`)
+      }
+
+      let partialFull = full
+      partialFull = lastStep(
+        runOperation('file-circulaire', 'defiler', partialFull, {}),
+      ).snapshot
+      const enqueueSteps = runOperation('file-circulaire', 'enfiler', partialFull, {
+        valeur: 99,
+      })
+      const upcomingStep = enqueueSteps[0]
+      const upcomingSnapshot = upcomingStep?.snapshot
+      expect(upcomingSnapshot?.circular?.formula).toMatchObject({
+        kind: 'enfiler',
+        from: capacity - 1,
+        to: 0,
+        wrapped: true,
+        applied: false,
+      })
+      if (upcomingSnapshot) {
+        const upcoming = ringGeometry(upcomingSnapshot, { idle: true })
+        expect(upcoming, `à venir N=${capacity}`).not.toBeNull()
+        if (upcoming) {
+          expect(upcoming.wrap?.applied).toBe(false)
+          expectClearLayout(upcoming, `retour à venir N=${capacity}`)
+        }
+      }
+
+      const wrapped = lastStep(enqueueSteps).snapshot
+      expect(wrapped.circular).toMatchObject({
+        av: 1,
+        ar: 0,
+        taille: capacity,
+        order: [...Array.from({ length: capacity - 1 }, (_, index) => index + 1), 0],
+      })
+      const wrappedRing = ringGeometry(wrapped, { idle: true })
+      expect(wrappedRing, `retour franchi N=${capacity}`).not.toBeNull()
+      if (wrappedRing) {
+        expect(wrappedRing.wrap?.applied).toBe(true)
+        expect(wrappedRing.pointers.map((pointer) => pointer.key)).toEqual(['av', 'ar'])
+        expectClearLayout(wrappedRing, `retour franchi N=${capacity}`)
+      }
+
+      const one = createSnapshot('file-circulaire', [42], { capacity })
+      const oneRing = ringGeometry(one, { idle: true })
+      expect(oneRing, `un élément N=${capacity}`).not.toBeNull()
+      if (oneRing) {
+        expect(oneRing.one).toBe(true)
+        expect(oneRing.pointers).toHaveLength(1)
+        expect(oneRing.pointers[0]).toMatchObject({ key: 'both', tone: 'both' })
+        expect(oneRing.pointers[0]?.text).toBe('av = ar = 0')
+        expect(oneRing.slots[0]?.head).toBe(true)
+        expect(oneRing.slots[0]?.tail).toBe(true)
+        expect(oneRing.wrap).toBeNull()
+        expectClearLayout(oneRing, `un élément N=${capacity}`)
+      }
+
+      const empty = emptySnapshot('file-circulaire', capacity)
+      const emptyRing = ringGeometry(empty, { idle: true })
+      expect(emptyRing, `vide N=${capacity}`).not.toBeNull()
+      if (emptyRing) {
+        expect(emptyRing.empty).toBe(true)
+        expect(emptyRing.pointers).toHaveLength(2)
+        expect(emptyRing.pointers.every((pointer) => pointer.dashed)).toBe(true)
+        expect(emptyRing.wrap).toBeNull()
+        expectClearLayout(emptyRing, `vide N=${capacity}`)
+      }
+    }
+  })
+
+  it('ne dessine l’anneau que pour la file circulaire', () => {
+    expect(ringGeometry(emptySnapshot('pile'))).toBeNull()
+    expect(ringGeometry(emptySnapshot('file-ordinaire'))).toBeNull()
+    expect(ringGeometry(emptySnapshot('file-decalage'))).toBeNull()
+    expect(ringGeometry(emptySnapshot('file-circulaire'))).not.toBeNull()
   })
 })
 

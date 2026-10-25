@@ -138,7 +138,10 @@ describe('rendu SVG des piles et files statiques', () => {
     expect(markup).toContain(V.wrap)
     expect(markup).toContain(V.stateFullFile)
     expect(markup).toContain(V.circulaireHint)
-    expect(markup).toContain('ss-wrap')
+    expect(markup).toContain(V.wrapFormula(4, 5, 0))
+    expect(markup).toContain('ss-ring-wrap is-upcoming')
+    expect(markup).toContain('ss-ring-value')
+    expect(markup).not.toContain('ss-band')
   })
 
   it('affiche la bannière vide et le bouton d’insertion quand la structure est vide', () => {

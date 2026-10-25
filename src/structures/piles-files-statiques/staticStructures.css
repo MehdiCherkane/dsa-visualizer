@@ -247,6 +247,398 @@
   }
 }
 
+/* ---------------- circular ring (File 3) ---------------- */
+
+.ss-ring-track {
+  fill: color-mix(in srgb, var(--panel-2) 78%, transparent);
+  stroke: color-mix(in srgb, var(--line) 82%, transparent);
+  stroke-width: 1.2;
+}
+
+.ss-ring-slot {
+  stroke-linejoin: round;
+  transition:
+    fill 180ms ease,
+    stroke 180ms ease,
+    opacity 180ms ease;
+}
+
+.ss-ring-slot.is-used {
+  fill: var(--panel);
+  stroke: var(--node-border);
+  stroke-width: 2.2;
+}
+
+.ss-ring-slot.is-stale {
+  fill: var(--panel-2);
+  stroke: var(--line-strong);
+  stroke-width: 1.7;
+  stroke-dasharray: 5 4;
+}
+
+.ss-ring-slot.is-free {
+  fill: transparent;
+  stroke: var(--line);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 5;
+}
+
+.ss-ring-slot.is-head {
+  fill: color-mix(in srgb, var(--gold-soft) 55%, var(--panel));
+  stroke: var(--gold);
+  stroke-width: 2.8;
+}
+
+.ss-ring-slot.is-tail {
+  fill: color-mix(in srgb, var(--success-soft) 45%, var(--panel));
+  stroke: var(--success);
+  stroke-width: 2.6;
+}
+
+.ss-ring-slot.is-one {
+  fill: color-mix(in srgb, var(--panel) 88%, var(--gold-soft));
+  stroke: url(#ss-ring-split-stroke);
+  stroke-width: 2.9;
+}
+
+.ss-ring-slot-hatch {
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.ss-ring-value {
+  fill: var(--ink);
+  font-family: var(--mono);
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: color-mix(in srgb, var(--panel) 70%, transparent);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.ss-ring-value.is-stale {
+  fill: var(--ink-2);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  opacity: 0.9;
+}
+
+.ss-ring-strike {
+  stroke: var(--ink-2);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.ss-ring-free-label {
+  fill: var(--ink-2);
+  font-family: var(--ui);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.ss-ring-stale-label {
+  fill: var(--ink-2);
+  font-family: var(--ui);
+  font-size: 8.5px;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.ss-ring-hole {
+  fill: var(--panel);
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+
+.ss-ring-centre-icon {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ss-ring-count {
+  fill: var(--ink);
+  font-family: var(--mono);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  pointer-events: none;
+}
+
+.ss-ring-status {
+  fill: var(--ink-2);
+  font-family: var(--ui);
+  font-size: 11.5px;
+  font-weight: 750;
+  pointer-events: none;
+}
+
+.ss-ring-status.is-full {
+  fill: var(--alert);
+}
+
+.ss-ring-status.is-empty {
+  fill: var(--muted);
+  font-style: italic;
+}
+
+.ss-ring-badge circle {
+  fill: var(--panel);
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+  transition:
+    fill 160ms ease,
+    stroke 160ms ease;
+}
+
+.ss-ring-badge text {
+  fill: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.ss-ring-badge.is-head circle {
+  fill: var(--gold-soft);
+  stroke: var(--gold);
+  stroke-width: 1.8;
+}
+
+.ss-ring-badge.is-head text {
+  fill: color-mix(in srgb, var(--gold) 58%, var(--ink));
+}
+
+.ss-ring-badge.is-tail circle {
+  fill: var(--success-soft);
+  stroke: var(--success);
+  stroke-width: 1.8;
+}
+
+.ss-ring-badge.is-tail text {
+  fill: var(--success);
+}
+
+.ss-ring-badge.is-one circle {
+  fill: url(#ss-ring-split-fill);
+  stroke: url(#ss-ring-split-stroke);
+  stroke-width: 1.8;
+}
+
+.ss-ring-badge.is-one text {
+  fill: var(--ink);
+}
+
+.ss-ring-index rect {
+  fill: var(--panel);
+  stroke: var(--line);
+  stroke-width: 1.3;
+  transition:
+    fill 160ms ease,
+    stroke 160ms ease;
+}
+
+.ss-ring-index text {
+  fill: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 750;
+  pointer-events: none;
+}
+
+.ss-ring-index.is-free rect {
+  fill: transparent;
+  stroke-dasharray: 3 3;
+}
+
+.ss-ring-index.is-free text {
+  fill: var(--muted);
+}
+
+.ss-ring-index.is-stale rect {
+  fill: var(--panel-2);
+  stroke: var(--line-strong);
+  stroke-dasharray: 4 3;
+}
+
+.ss-ring-index.is-head rect {
+  fill: var(--gold-soft);
+  stroke: var(--gold);
+  stroke-width: 1.9;
+}
+
+.ss-ring-index.is-head text {
+  fill: color-mix(in srgb, var(--gold) 62%, var(--ink));
+  font-weight: 800;
+}
+
+.ss-ring-index.is-tail rect {
+  fill: var(--success-soft);
+  stroke: var(--success);
+  stroke-width: 1.9;
+}
+
+.ss-ring-index.is-tail text {
+  fill: var(--success);
+  font-weight: 800;
+}
+
+.ss-ring-index.is-both rect {
+  fill: url(#ss-ring-split-fill);
+  stroke: url(#ss-ring-split-stroke);
+  stroke-width: 1.9;
+}
+
+.ss-ring-index.is-both text {
+  fill: var(--ink);
+  font-weight: 800;
+}
+
+.ss-ring-pointer rect {
+  fill: var(--panel);
+  stroke: var(--line-strong);
+  stroke-width: 2;
+  transition:
+    fill 160ms ease,
+    stroke 160ms ease;
+}
+
+.ss-ring-pointer-text {
+  fill: var(--ink);
+  font-family: var(--mono);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+
+.ss-ring-pointer.is-gold rect {
+  fill: var(--gold-soft);
+  stroke: var(--gold);
+}
+
+.ss-ring-pointer.is-gold .ss-ring-pointer-text {
+  fill: color-mix(in srgb, var(--gold) 58%, var(--ink));
+}
+
+.ss-ring-pointer.is-success rect {
+  fill: var(--success-soft);
+  stroke: var(--success);
+}
+
+.ss-ring-pointer.is-success .ss-ring-pointer-text {
+  fill: color-mix(in srgb, var(--success) 76%, var(--ink));
+}
+
+.ss-ring-pointer.is-both rect {
+  fill: url(#ss-ring-split-fill);
+  stroke: url(#ss-ring-split-stroke);
+}
+
+.ss-ring-pointer.is-both .ss-ring-pointer-text {
+  fill: var(--ink);
+}
+
+.ss-ring-pointer.is-dashed rect {
+  fill: color-mix(in srgb, var(--panel) 82%, transparent);
+  stroke-dasharray: 4 3;
+  opacity: 0.9;
+}
+
+.ss-ring-pointer.is-dashed .ss-ring-pointer-text {
+  fill: var(--ink-2);
+}
+
+.ss-ring-connector {
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.ss-ring-connector.is-gold {
+  stroke: var(--gold);
+}
+
+.ss-ring-connector.is-success {
+  stroke: var(--success);
+}
+
+.ss-ring-connector-arrow.is-gold {
+  fill: var(--gold);
+}
+
+.ss-ring-connector-arrow.is-success {
+  fill: var(--success);
+}
+
+.ss-ring-wrap-path {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 6 5;
+}
+
+.ss-ring-wrap.is-applied .ss-ring-wrap-path {
+  stroke-dasharray: none;
+}
+
+.ss-ring-wrap-arrow {
+  fill: var(--gold);
+}
+
+.ss-ring-wrap-chip rect {
+  fill: var(--panel);
+  stroke: var(--gold);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.ss-ring-wrap.is-applied .ss-ring-wrap-chip rect {
+  stroke-dasharray: none;
+  fill: var(--gold-soft);
+}
+
+.ss-ring-wrap-chip text {
+  fill: color-mix(in srgb, var(--gold) 58%, var(--ink));
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.ss-ring-slot-group.is-changed .ss-ring-slot {
+  animation: ss-ring-slot-pop 540ms ease-out;
+}
+
+@keyframes ss-ring-slot-pop {
+  0% {
+    stroke-width: 2.2;
+  }
+  38% {
+    stroke-width: 5;
+  }
+  100% {
+    stroke-width: 2.2;
+  }
+}
+
+.presentation .ss-ring-count {
+  font-size: 32px;
+}
+
+.presentation .ss-ring-status {
+  font-size: 12.5px;
+}
+
 /* ---------------- character tape (parentheses exercise) ---------------- */
 
 .ss-tape-label {

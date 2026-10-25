@@ -1,5 +1,6 @@
 import { occupiedIndices, readGlobalInt, tryReadGlobalInt } from './memory'
 import type { ArraySnapshot, ArrayTape } from './memory'
+import { ringGeometry } from './ringGeometry'
 
 export interface Point {
   x: number
@@ -328,7 +329,15 @@ function markerBounds(markerGeometry: MarkerGeometry): Rect {
   }
 }
 
-export function contentBounds(snapshot: ArraySnapshot): Rect {
+export function contentBounds(
+  snapshot: ArraySnapshot,
+  options: { idle?: boolean } = {},
+): Rect {
+  if (snapshot.profile === 'file-circulaire') {
+    const ring = ringGeometry(snapshot, options)
+    if (ring) return ring.bounds
+  }
+
   const rects: Rect[] = [
     {
       x: ARRAY_X - 18,
@@ -350,7 +359,6 @@ export function contentBounds(snapshot: ArraySnapshot): Rect {
     for (const queueMarker of queueMarkers(snapshot)) rects.push(markerBounds(queueMarker))
   }
 
-  if (snapshot.profile === 'file-circulaire') rects.push(wrapGeometry().bounds)
   const fifo = fifoGeometry(snapshot)
   if (fifo) rects.push(fifo.bounds)
   if (snapshot.tape) rects.push(tapeGeometry(snapshot.tape).bounds)

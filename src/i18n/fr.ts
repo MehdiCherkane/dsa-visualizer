@@ -731,7 +731,14 @@ export const fr = {
       live: 'dans la structure',
       stale: 'hors structure',
       free: 'libre',
+      staleShort: 'périmée',
       rank: 'ordre FIFO',
+      arrival: (rank: number) => (rank === 1 ? '1er arrivé' : `${rank}e arrivé`),
+      ringCase: (index: number) => `Case ${index}`,
+      wrapFormula: (from: number, max: number, to: number) =>
+        `(${from} + 1) % ${max} = ${to}`,
+      freeSlots: (free: number) =>
+        `${free} case${free > 1 ? 's' : ''} libre${free > 1 ? 's' : ''}`,
       fifo: 'sens FIFO',
       stateEmptyPile: 'Pile vide',
       stateEmptyFile: 'File vide',
