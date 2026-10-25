@@ -46,6 +46,15 @@ export function Header<S extends BaseSnapshot>({
   return (
     <header className="app-header">
       <div className="brand">
+        <button
+          type="button"
+          className="brand-home"
+          onClick={onMenu}
+          title={fr.menu.homeAria}
+          aria-label={fr.menu.homeLabel}
+        >
+          <HomeIcon />
+        </button>
         <span className="brand-mark" aria-hidden="true">
           <BrandMark />
         </span>
@@ -74,18 +83,6 @@ export function Header<S extends BaseSnapshot>({
       </div>
 
       <div className="header-actions">
-        <button
-          type="button"
-          className="secondary-button menu-button"
-          onClick={onMenu}
-          title={fr.menu.backAria}
-          aria-label={fr.menu.backAria}
-        >
-          <span className="menu-button-arrow" aria-hidden="true">
-            {fr.menu.backArrow}
-          </span>
-          <span className="menu-button-label">{fr.menu.backLabel}</span>
-        </button>
         <div className="header-context">
           <div
             className="profile-switch"
@@ -140,6 +137,37 @@ export function Header<S extends BaseSnapshot>({
         <Shortcuts />
       </div>
     </header>
+  )
+}
+
+function HomeIcon(): JSX.Element {
+  return (
+    <svg viewBox="0 0 20 20" className="button-icon" aria-hidden="true">
+      <path
+        d="M3.2 9.2 10 3.4l6.8 5.8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5 8.5v8h10v-8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.2 16.5v-4.1h3.6v4.1"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   )
 }
 

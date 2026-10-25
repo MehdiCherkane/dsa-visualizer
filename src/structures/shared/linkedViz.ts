@@ -3,7 +3,7 @@ import type { BaseSnapshot, PointerValue } from '../../core/types'
 export type VizOrientation = 'horizontal' | 'vertical'
 export type VizField = 'suivant' | 'precedent'
 export type VizLane = 'row' | 'heap'
-export type GlobalPlacement = 'left' | 'bottom'
+export type GlobalPlacement = 'left' | 'top' | 'bottom' | 'row'
 
 export interface VizNode {
   id: number
@@ -43,6 +43,7 @@ export interface LinkedModel<S extends BaseSnapshot> {
   emptyText: string
   emptyInsert: string
   ariaLabel: string
+  showHeap?: boolean
   nodes: (snapshot: S) => VizNode[]
   globals: (snapshot: S) => VizGlobal[]
   pins: (snapshot: S) => VizPin[]
@@ -93,7 +94,7 @@ export const HEAP_Y = 92
 export const STACK_X = 340
 export const STACK_TOP = 160
 export const STACK_SLIDE = 138
-export const HEAP_STACK_X = 660
+export const HEAP_STACK_X = 760
 
 export const GLOBAL_W = 132
 export const GLOBAL_H = 44
@@ -167,10 +168,64 @@ export function layoutGlobals(
     .filter((node) => node.lane === 'row')
     .slice()
     .sort((a, b) => a.slot - b.slot)
-  const lastPoint = row.length > 0 ? layout.get(row[row.length - 1]!.id) : undefined
-  const bottomEligible = orientation === 'horizontal' && lastPoint !== undefined
+  const ordered = row.length > 0 ? row : nodes.slice().sort((a, b) => a.slot - b.slot)
+  const firstPoint = ordered.length > 0 ? layout.get(ordered[0]!.id) : undefined
+  const lastPoint =
+    ordered.length > 0 ? layout.get(ordered[ordered.length - 1]!.id) : undefined
+
+  if (nodes.length === 0) {
+    const bounds = emptyBounds(orientation)
+    const bandTop = orientation === 'horizontal' ? ROW_Y - 84 : STACK_TOP - 92
+    const centerX = orientation === 'horizontal' ? bounds.x + bounds.width / 2 : STACK_X + NODE_W / 2
+    const y = orientation === 'horizontal' ? bandTop - GLOBAL_H - 16 : bandTop + 18
+    const rowGlobals =
+      orientation === 'vertical'
+        ? globals.filter((global) => global.placement === 'row')
+        : []
+    const centeredGlobals = globals.filter((global) => !rowGlobals.includes(global))
+    const total =
+      Math.max(1, centeredGlobals.length) * GLOBAL_W +
+      Math.max(0, centeredGlobals.length - 1) * 16
+    let x = centerX - total / 2
+    for (const global of centeredGlobals) {
+      result.set(global.name, {
+        rect: { x, y, width: GLOBAL_W, height: GLOBAL_H },
+        placement: 'top',
+      })
+      x += GLOBAL_W + 16
+    }
+    rowGlobals.forEach((global, index) => {
+      result.set(global.name, {
+        rect: {
+          x: STACK_X + (NODE_W - GLOBAL_W) / 2,
+          y: STACK_TOP - 8 + index * (GLOBAL_H + 18),
+          width: GLOBAL_W,
+          height: GLOBAL_H,
+        },
+        placement: 'row',
+      })
+    })
+    return result
+  }
+
+  const rowGlobals =
+    orientation === 'vertical' ? globals.filter((global) => global.placement === 'row') : []
+  rowGlobals.forEach((global, index) => {
+    result.set(global.name, {
+      rect: {
+        x: STACK_X + (NODE_W - GLOBAL_W) / 2,
+        y: STACK_TOP - 8 + index * (GLOBAL_H + 18),
+        width: GLOBAL_W,
+        height: GLOBAL_H,
+      },
+      placement: 'row',
+    })
+  })
   const leftGlobals = globals.filter(
-    (global) => !(global.placement === 'bottom' && bottomEligible),
+    (global) =>
+      global.placement !== 'top' &&
+      global.placement !== 'bottom' &&
+      global.placement !== 'row',
   )
   leftGlobals.forEach((global, index) => {
     result.set(global.name, {
@@ -178,9 +233,29 @@ export function layoutGlobals(
       placement: 'left',
     })
   })
-  if (lastPoint && orientation === 'horizontal') {
-    for (const global of globals) {
-      if (global.placement !== 'bottom') continue
+
+  for (const global of globals) {
+    if (global.placement === 'top' && firstPoint) {
+      result.set(global.name, {
+        rect: {
+          x:
+            orientation === 'horizontal'
+              ? firstPoint.x - GLOBAL_W - 12
+              : firstPoint.x + (NODE_W - GLOBAL_W) / 2,
+          y:
+            orientation === 'horizontal'
+              ? ROW_Y - 84 - GLOBAL_H - 14
+              : firstPoint.y - GLOBAL_H - 28,
+          width: GLOBAL_W,
+          height: GLOBAL_H,
+        },
+        placement: 'top',
+      })
+    }
+  }
+
+  for (const global of globals) {
+    if (global.placement === 'bottom' && lastPoint) {
       result.set(global.name, {
         rect: {
           x: lastPoint.x + (NODE_W - GLOBAL_W) / 2,
@@ -191,6 +266,15 @@ export function layoutGlobals(
         placement: 'bottom',
       })
     }
+  }
+
+  for (const global of globals) {
+    if (result.has(global.name)) continue
+    const index = leftGlobals.length
+    result.set(global.name, {
+      rect: globalCellGeometry(index, Math.max(1, index + 1), orientation),
+      placement: 'left',
+    })
   }
   return result
 }
@@ -315,6 +399,33 @@ export function routeGlobal(
       marker: 'gold',
     }
   }
+  if (placement === 'top' && target && targetPoint) {
+    const start = { x: cell.x + cell.width / 2, y: cell.y + cell.height }
+    const tip = { x: targetPoint.x + NODE_W / 2, y: targetPoint.y }
+    return {
+      path: `M ${start.x} ${start.y} L ${tip.x} ${tip.y}`,
+      start,
+      tip,
+      marker: 'gold',
+    }
+  }
+  if (placement === 'top' || placement === 'bottom') {
+    const start = { x: cell.x + cell.width / 2, y: cell.y + cell.height }
+    const end = { x: start.x, y: start.y + 54 }
+    return {
+      path: `M ${start.x} ${start.y} L ${end.x} ${end.y}`,
+      start,
+      tip: end,
+      marker: 'gold',
+      nullStub: {
+        start,
+        end,
+        path: `M ${start.x} ${start.y} L ${end.x} ${end.y}`,
+        label: { x: end.x, y: end.y + 26 },
+        orientation: 'vertical',
+      },
+    }
+  }
   const start = globalAnchor(cell)
   if (!target || !targetPoint) {
     if (orientation === 'horizontal') {
@@ -409,8 +520,8 @@ export function unionBounds(rects: Rect[]): Rect {
 
 export function emptyBounds(orientation: VizOrientation): Rect {
   return orientation === 'horizontal'
-    ? { x: 90, y: 236, width: 720, height: 300 }
-    : { x: 60, y: 86, width: 720, height: 500 }
+    ? { x: 90, y: 200, width: 720, height: 340 }
+    : { x: 180, y: 40, width: 860, height: 320 }
 }
 
 export function contentBounds(

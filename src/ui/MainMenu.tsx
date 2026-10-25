@@ -2,6 +2,7 @@ import type { JSX } from 'react'
 import { config } from '../config'
 import { fr } from '../i18n/fr'
 import { BrandMark } from './BrandMark'
+import { CreditsMenu } from './CreditsMenu'
 import { ThemeToggle } from './ThemeToggle'
 import { chapterHash, navigate } from './useHashRoute'
 import './MainMenu.css'
@@ -50,6 +51,7 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
         </div>
 
         <div className="header-actions">
+          <CreditsMenu />
           <ThemeToggle theme={theme} onTheme={onTheme} />
         </div>
       </header>
