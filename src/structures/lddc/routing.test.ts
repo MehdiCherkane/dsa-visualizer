@@ -163,9 +163,9 @@ function auditSnapshot(
     for (let second = first + 1; second < entries.length; second += 1) {
       const a = entries[first]!
       const b = entries[second]!
-      // Consecutive resting `precedent` links share their radial connector at
-      // the node they meet; that is the intended continuous inner loop, not
-      // two arrows running side by side.
+      // Transient `precedent` links can meet at a node entry while the
+      // operation is being animated. The resting form is audited separately
+      // below, where even consecutive links must stay distinct.
       const connectedPrecedent =
         a.field === 'precedent' &&
         b.field === 'precedent' &&
@@ -197,6 +197,53 @@ function onBorder(point: Point, rect: Rect, epsilon = 0.5): boolean {
     Math.abs(point.y - rect.y) <= epsilon ||
     Math.abs(point.y - (rect.y + rect.height)) <= epsilon
   return insideX && insideY && (onVertical || onHorizontal)
+}
+
+function pathCommands(path: string): string[] {
+  return (path.match(/[MLQC]/gi) ?? []).map((command) => command.toUpperCase())
+}
+
+function cross(first: Point, second: Point, third: Point): number {
+  return (
+    (second.x - first.x) * (third.y - first.y) -
+    (second.y - first.y) * (third.x - first.x)
+  )
+}
+
+function segmentsCross(
+  firstStart: Point,
+  firstEnd: Point,
+  secondStart: Point,
+  secondEnd: Point,
+): boolean {
+  const firstSide = cross(firstStart, firstEnd, secondStart)
+  const secondSide = cross(firstStart, firstEnd, secondEnd)
+  const thirdSide = cross(secondStart, secondEnd, firstStart)
+  const fourthSide = cross(secondStart, secondEnd, firstEnd)
+  return (
+    ((firstSide > 1e-6 && secondSide < -1e-6) ||
+      (firstSide < -1e-6 && secondSide > 1e-6)) &&
+    ((thirdSide > 1e-6 && fourthSide < -1e-6) ||
+      (thirdSide < -1e-6 && fourthSide > 1e-6))
+  )
+}
+
+function pathsCross(first: Point[], second: Point[]): boolean {
+  for (let index = 0; index < first.length - 1; index += 1) {
+    for (let other = 0; other < second.length - 1; other += 1) {
+      if (
+        segmentsCross(
+          first[index]!,
+          first[index + 1]!,
+          second[other]!,
+          second[other + 1]!,
+        )
+      ) {
+        return true
+      }
+    }
+  }
+  return false
 }
 
 /** Final snapshots of a ring grown one node at a time, from one to eight. */
@@ -418,6 +465,90 @@ describe('routage des flèches du chapitre 5', () => {
         finalForm: true,
       }),
     ]
+    expect(issues, issues.join('\n')).toEqual([])
+  })
+
+  it('dessine chaque lien precedent final comme une seule courbe, sans croisement', () => {
+    const finals = growingFinalSnapshots()
+    const issues: string[] = []
+    for (let count = 2; count <= 8; count += 1) {
+      const snapshot = finals[count - 1]!
+      const nodes = snapshot.nodes.filter((node) => !node.freed)
+      const layout = layoutNodes(nodes, 'circle')
+      const routes: Array<{
+        label: string
+        sourceId: number
+        targetId: number
+        route: ArrowRoute
+        samples: Point[]
+      }> = []
+      for (const node of nodes) {
+        const pointer = node.precedent
+        if (pointer.kind !== 'node') continue
+        const target = nodes.find((candidate) => candidate.id === pointer.id)
+        if (!target) continue
+        const route = routeArrow(
+          node,
+          'precedent',
+          target,
+          layout,
+          'circle',
+          nodes,
+          { finalForm: true },
+        )
+        if (!route) continue
+        const commands = pathCommands(route.path)
+        if (commands.length !== 2 || commands[0] !== 'M' || commands[1] !== 'C') {
+          issues.push(
+            `${count} nœuds: ${node.id}.precedent n'est pas une seule courbe (${commands.join('')})`,
+          )
+        }
+        const samples = samplePath(route.path)
+        for (const other of nodes) {
+          const rect = circleNodeRect(layout.get(other.id)!)
+          if (samples.some((sample) => inside(sample, rect, 1))) {
+            issues.push(
+              `${count} nœuds: ${node.id}.precedent entre dans le nœud ${other.id}`,
+            )
+          }
+        }
+        routes.push({
+          label: `${node.id}.precedent->${target.id}`,
+          sourceId: node.id,
+          targetId: target.id,
+          route,
+          samples,
+        })
+      }
+
+      for (let first = 0; first < routes.length; first += 1) {
+        for (let second = first + 1; second < routes.length; second += 1) {
+          const a = routes[first]!
+          const b = routes[second]!
+          if (pathsCross(a.samples, b.samples)) {
+            issues.push(`${count} nœuds: ${a.label} croise ${b.label}`)
+          }
+        }
+      }
+
+      for (const node of nodes) {
+        const anchors = routes.flatMap((entry) => {
+          const result: Point[] = []
+          if (entry.sourceId === node.id) result.push(entry.route.tail)
+          if (entry.targetId === node.id) result.push(entry.route.tip)
+          return result
+        })
+        for (let first = 0; first < anchors.length; first += 1) {
+          for (let second = first + 1; second < anchors.length; second += 1) {
+            if (distance(anchors[first]!, anchors[second]!) < 1) {
+              issues.push(
+                `${count} nœuds: deux flèches precedent partagent une ancre sur ${node.id}`,
+              )
+            }
+          }
+        }
+      }
+    }
     expect(issues, issues.join('\n')).toEqual([])
   })
 })
