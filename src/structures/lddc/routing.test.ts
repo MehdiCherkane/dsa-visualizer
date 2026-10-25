@@ -350,6 +350,48 @@ describe('routage des flèches du chapitre 5', () => {
     expect(issues, issues.join('\n')).toEqual([])
   })
 
+  it('enveloppe les flèches precedent finales de deux nœuds avec une courbe douce', () => {
+    const snapshot = growingFinalSnapshots()[1]!
+    const nodes = snapshot.nodes.filter((node) => !node.freed)
+    const layout = layoutNodes(nodes, 'circle')
+    const routes = nodes.flatMap((node) => {
+      const pointer = node.precedent
+      if (pointer.kind !== 'node') return []
+      const target = nodes.find((candidate) => candidate.id === pointer.id)
+      if (!target) return []
+      const route = routeArrow(
+        node,
+        'precedent',
+        target,
+        layout,
+        'circle',
+        nodes,
+        { finalForm: true },
+      )
+      return route ? [route] : []
+    })
+
+    expect(routes).toHaveLength(2)
+    const details = routes.map((route) => {
+      const [tail, first, second, tip] = route.points
+      if (!tail || !first || !second || !tip) {
+        throw new Error('missing cubic control points')
+      }
+      const midpointX = (tail.x + 3 * first.x + 3 * second.x + tip.x) / 8
+      const centerline = (tail.x + tip.x) / 2
+      const entryAngle = Math.atan2(
+        Math.abs(tip.x - second.x),
+        Math.abs(tip.y - second.y),
+      )
+      return { bulge: Math.abs(midpointX - centerline), entryAngle }
+    })
+
+    for (const detail of details) {
+      expect(detail.bulge).toBeGreaterThan(24)
+      expect(detail.entryAngle).toBeLessThan(Math.PI / 6)
+    }
+  })
+
   it('utilise le routage de repos pour les liens precedent de deux à huit nœuds', () => {
     const finals = growingFinalSnapshots()
     const issues: string[] = []

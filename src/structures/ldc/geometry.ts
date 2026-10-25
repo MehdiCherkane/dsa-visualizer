@@ -694,6 +694,9 @@ function rowRowGapRoute(
 
 const FINAL_PRECEDENT_ANCHOR_GAP = 18
 const TWO_NODE_PRECEDENT_GAP = 28
+const TWO_NODE_PRECEDENT_BOW = 44
+const TWO_NODE_PRECEDENT_TARGET_BOW = 30
+const TWO_NODE_PRECEDENT_SOFTNESS = 90
 const FINAL_PRECEDENT_ANCHOR_MARGIN = 8
 const FINAL_PRECEDENT_CONTROL_MIN = 26
 const FINAL_PRECEDENT_CONTROL_MAX = 46
@@ -865,17 +868,15 @@ function twoNodePrecedentRoute(
     x: targetBase.x + side * TWO_NODE_PRECEDENT_GAP,
     y: targetBase.y,
   }
-  const control = FINAL_PRECEDENT_CONTROL_MAX
+  const vertical = sourceAbove ? 1 : -1
   const sourceControl = {
-    x: sourceAnchor.x + side * control,
-    y: sourceAnchor.y + (sourceAbove ? control : -control),
+    x: sourceAnchor.x + side * TWO_NODE_PRECEDENT_BOW,
+    y: sourceAnchor.y + vertical * TWO_NODE_PRECEDENT_SOFTNESS,
   }
-  const targetControl = finalPrecedentControl(
-    targetAnchor,
-    targetPoint,
-    ring,
-    control,
-  )
+  const targetControl = {
+    x: targetAnchor.x + side * TWO_NODE_PRECEDENT_TARGET_BOW,
+    y: targetAnchor.y - vertical * TWO_NODE_PRECEDENT_SOFTNESS,
+  }
   const points = [sourceAnchor, sourceControl, targetControl, targetAnchor]
   return {
     kind: 'curve',
