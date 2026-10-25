@@ -851,7 +851,7 @@ export default function StaticStructuresVisualization({
         className="viz-svg"
         viewBox={`0 0 ${stageW} ${stageH}`}
         preserveAspectRatio="xMidYMid meet"
-        role="img"
+        role={isRing ? 'group' : 'img'}
         aria-label={V.ariaLabel}
         tabIndex={0}
         onKeyDown={handleKeyDown}

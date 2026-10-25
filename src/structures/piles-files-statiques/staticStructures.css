@@ -1603,6 +1603,11 @@
   outline: none;
 }
 
+.ss-ring-slot-group:focus-visible .ss-ring-slot {
+  stroke: var(--ink);
+  stroke-width: 3.6;
+}
+
 .ss-ring-highlight {
   fill: none;
   stroke: var(--ink);

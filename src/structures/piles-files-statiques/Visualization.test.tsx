@@ -187,12 +187,17 @@ describe('rendu SVG des piles et files statiques', () => {
   it('expose les cases de l’anneau au clavier et coupe le mouvement sur les sauts', () => {
     const step = idleStep(createSnapshot('file-circulaire', [10, 20, 30]))
     const markup = render(step)
+    expect(markup).toContain('role="group"')
     expect(markup).toContain('role="list"')
     expect(markup).toContain(`aria-label="${V.ringSlots}"`)
     expect(markup).toContain('role="listitem"')
     expect(markup).toContain('tabindex="0"')
     expect(markup).toContain(V.ringCase(0))
     expect(markup).toContain('data-motion="on"')
+
+    const pile = render(idleStep(createSnapshot('pile', [10])))
+    expect(pile).toContain('role="img"')
+    expect(pile).not.toContain('role="group"')
 
     const instant = renderToStaticMarkup(
       <StaticStructuresVisualization

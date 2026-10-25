@@ -129,7 +129,10 @@ function WrapShape({ wrap }: { wrap: RingWrapGeometry }): JSX.Element {
     y: Math.cos(wrap.endAngle),
   }
   return (
-    <g className={`ss-ring-wrap${wrap.applied ? ' is-applied' : ' is-upcoming'}`}>
+    <g
+      className={`ss-ring-wrap${wrap.applied ? ' is-applied' : ' is-upcoming'}`}
+      aria-hidden="true"
+    >
       <path className="ss-ring-wrap-path" d={wrap.path} />
       <polygon
         className="ss-ring-wrap-arrow"
@@ -298,7 +301,7 @@ export function RingView({
         <title>{centreLabel}</title>
       </g>
 
-      <g className="ss-ring-badges">
+      <g className="ss-ring-badges" aria-hidden="true">
         {geometry.slots.map((slot) =>
           slot.badgePoint && slot.badgeBox && slot.rank !== null ? (
             <g
@@ -320,7 +323,7 @@ export function RingView({
         )}
       </g>
 
-      <g className="ss-ring-indexes">
+      <g className="ss-ring-indexes" aria-hidden="true">
         {geometry.slots.map((slot) => (
           <g
             key={`ring-index-${slot.index}`}
@@ -346,7 +349,7 @@ export function RingView({
         ))}
       </g>
 
-      <g className="ss-ring-pointers">
+      <g className="ss-ring-pointers" aria-hidden="true">
         {geometry.pointers.map((pointer) => (
           <PointerShape
             key={`ring-pointer-${pointer.key}-${pointer.text}`}
