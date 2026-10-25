@@ -171,6 +171,8 @@ export interface VisualizationProps<S extends BaseSnapshot> {
   presentation: boolean
   speed: number
   stepIndex: number
+  /** False when the change comes from a jump, a scrub or a backward step. */
+  animate?: boolean
 }
 
 /** Optional cards rendered under the code panel in the right column. */

@@ -504,8 +504,12 @@ export default function StaticStructuresVisualization({
   onEmptyInsert,
   speed,
   stepIndex,
+  animate = true,
 }: VisualizationProps<ArraySnapshot>): JSX.Element {
   const reducedMotion = Boolean(useReducedMotion())
+  const instant = !animate || reducedMotion || speed >= 4
+  const duration = instant ? 0.001 : 0.34 / speed
+  const ringMotionDuration = Math.round(340 / speed)
   const [stageRef, stage] = useElementSize()
   const stageW = Math.max(360, stage.width)
   const stageH = Math.max(240, stage.height)
@@ -632,8 +636,8 @@ export default function StaticStructuresVisualization({
 
   useEffect(() => {
     if (mode !== 'auto') return
-    animateTo(autoCamera, reducedMotion ? 0 : CAMERA_ANIMATION / 1000)
-  }, [animateTo, autoCamera, mode, reducedMotion])
+    animateTo(autoCamera, instant ? 0 : CAMERA_ANIMATION / 1000 / speed)
+  }, [animateTo, autoCamera, instant, mode, speed])
 
   useEffect(() => {
     setMode('auto')
@@ -841,8 +845,6 @@ export default function StaticStructuresVisualization({
     ),
   )
 
-  const duration = reducedMotion ? 0.001 : Math.max(0.1, 0.34 / speed)
-
   return (
     <div
       className={`viz-stage${panning ? ' panning' : ''}${empty ? ' is-empty' : ''}`}
@@ -920,7 +922,13 @@ export default function StaticStructuresVisualization({
 
         <g transform={`translate(${camera.x} ${camera.y}) scale(${camera.k})`}>
           {ring ? (
-            <RingView geometry={ring} changedIndices={changedIndices} />
+            <RingView
+              geometry={ring}
+              changedIndices={changedIndices}
+              changedGlobals={changedGlobals}
+              motion={!instant}
+              motionDuration={ringMotionDuration}
+            />
           ) : (
             <>
               <rect

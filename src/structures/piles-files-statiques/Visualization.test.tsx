@@ -146,6 +146,35 @@ describe('rendu SVG des piles et files statiques', () => {
     expect(markup).not.toContain('ss-band')
   })
 
+  it('expose les cases de l’anneau au clavier et coupe le mouvement sur les sauts', () => {
+    const step = idleStep(createSnapshot('file-circulaire', [10, 20, 30]))
+    const markup = render(step)
+    expect(markup).toContain('role="list"')
+    expect(markup).toContain(`aria-label="${V.ringSlots}"`)
+    expect(markup).toContain('role="listitem"')
+    expect(markup).toContain('tabindex="0"')
+    expect(markup).toContain(V.ringCase(0))
+    expect(markup).toContain('data-motion="on"')
+
+    const instant = renderToStaticMarkup(
+      <StaticStructuresVisualization
+        snapshot={step.snapshot}
+        step={step}
+        prevStep={null}
+        presentation={false}
+        speed={1}
+        stepIndex={0}
+        animate={false}
+      />,
+    )
+    expect(instant).toContain('data-motion="off"')
+    expect(instant).not.toContain('data-motion="on"')
+
+    for (const profile of ['pile', 'file-ordinaire', 'file-decalage'] as const) {
+      expect(render(idleStep(createSnapshot(profile, [10])))).not.toContain('ss-ring-view')
+    }
+  })
+
   it('affiche la bannière vide et le bouton d’insertion quand la structure est vide', () => {
     const pile = render(idleStep(emptySnapshot('pile')), null, () => {})
     expect(pile).toContain('ss-empty-banner')

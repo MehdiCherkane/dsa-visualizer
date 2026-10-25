@@ -337,7 +337,7 @@
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  opacity: 0.85;
+  opacity: 1;
   pointer-events: none;
 }
 
@@ -387,7 +387,7 @@
 }
 
 .ss-ring-status.is-empty {
-  fill: var(--muted);
+  fill: var(--ink-2);
   font-style: italic;
 }
 
@@ -415,7 +415,7 @@
 }
 
 .ss-ring-badge.is-head text {
-  fill: color-mix(in srgb, var(--gold) 58%, var(--ink));
+  fill: color-mix(in srgb, var(--gold) 55%, var(--ink));
 }
 
 .ss-ring-badge.is-tail circle {
@@ -425,7 +425,7 @@
 }
 
 .ss-ring-badge.is-tail text {
-  fill: var(--success);
+  fill: color-mix(in srgb, var(--success) 76%, var(--ink));
 }
 
 .ss-ring-badge.is-one circle {
@@ -461,7 +461,7 @@
 }
 
 .ss-ring-index.is-free text {
-  fill: var(--muted);
+  fill: var(--ink-2);
 }
 
 .ss-ring-index.is-stale rect {
@@ -477,7 +477,7 @@
 }
 
 .ss-ring-index.is-head text {
-  fill: color-mix(in srgb, var(--gold) 62%, var(--ink));
+  fill: color-mix(in srgb, var(--gold) 55%, var(--ink));
   font-weight: 800;
 }
 
@@ -488,7 +488,7 @@
 }
 
 .ss-ring-index.is-tail text {
-  fill: var(--success);
+  fill: color-mix(in srgb, var(--success) 76%, var(--ink));
   font-weight: 800;
 }
 
@@ -526,7 +526,7 @@
 }
 
 .ss-ring-pointer.is-gold .ss-ring-pointer-text {
-  fill: color-mix(in srgb, var(--gold) 58%, var(--ink));
+  fill: color-mix(in srgb, var(--gold) 55%, var(--ink));
 }
 
 .ss-ring-pointer.is-success rect {
@@ -608,15 +608,15 @@
 }
 
 .ss-ring-wrap-chip text {
-  fill: color-mix(in srgb, var(--gold) 58%, var(--ink));
+  fill: color-mix(in srgb, var(--gold) 55%, var(--ink));
   font-family: var(--mono);
   font-size: 12px;
   font-weight: 800;
   pointer-events: none;
 }
 
-.ss-ring-slot-group.is-changed .ss-ring-slot {
-  animation: ss-ring-slot-pop 540ms ease-out;
+[data-motion='on'] .ss-ring-slot-group.is-changed .ss-ring-slot {
+  animation: ss-ring-slot-pop var(--ss-motion-duration, 340ms) ease-out;
 }
 
 @keyframes ss-ring-slot-pop {
@@ -681,7 +681,7 @@
 }
 
 .ss-support-head span {
-  color: var(--muted);
+  color: var(--ink-2);
   font-family: var(--mono);
   font-size: 9.5px;
   font-weight: 700;
@@ -733,7 +733,7 @@
 }
 
 .ss-calc-template {
-  color: var(--muted);
+  color: var(--ink-2);
   font-family: var(--mono);
   font-size: 10.5px;
   font-weight: 650;
@@ -758,7 +758,7 @@
   border-radius: 6px;
   background: var(--gold-soft);
   padding: 0 6px;
-  color: color-mix(in srgb, var(--gold) 58%, var(--ink));
+  color: color-mix(in srgb, var(--gold) 55%, var(--ink));
   font-weight: 800;
   text-align: center;
 }
@@ -771,7 +771,7 @@
 }
 
 .ss-calc-note {
-  color: var(--muted);
+  color: var(--ink-2);
   font-family: var(--ui);
   font-size: 10.5px;
   font-weight: 650;
@@ -795,7 +795,7 @@
 .ss-calc-verdict.is-no {
   border-color: color-mix(in srgb, var(--success) 40%, var(--line));
   background: var(--success-soft);
-  color: var(--success);
+  color: color-mix(in srgb, var(--success) 76%, var(--ink));
 }
 
 .ss-memory-card {
@@ -848,7 +848,7 @@
 .ss-memory-marker.is-av {
   border-color: var(--gold);
   background: var(--gold-soft);
-  color: color-mix(in srgb, var(--gold) 58%, var(--ink));
+  color: color-mix(in srgb, var(--gold) 55%, var(--ink));
 }
 
 .ss-memory-marker.is-ar {
@@ -881,7 +881,7 @@
   border-color: var(--gold);
   border-radius: 6px 0 0 6px;
   background: var(--gold-soft);
-  color: color-mix(in srgb, var(--gold) 58%, var(--ink));
+  color: color-mix(in srgb, var(--gold) 55%, var(--ink));
 }
 
 .ss-memory-marker-half.is-ar {
@@ -979,7 +979,7 @@
 }
 
 .ss-memory-free {
-  color: var(--muted);
+  color: var(--ink-2);
   font-family: var(--ui);
   font-size: 9.5px;
   font-weight: 650;
@@ -997,7 +997,7 @@
   position: relative;
   height: 27px;
   margin: 1px 14px 0;
-  color: var(--gold);
+  color: color-mix(in srgb, var(--gold) 55%, var(--ink));
 }
 
 .ss-memory-wrap svg {
@@ -1020,7 +1020,7 @@
 }
 
 .ss-memory-wrap.is-muted {
-  color: var(--line-strong);
+  color: var(--ink-2);
 }
 
 .ss-memory-wrap-arrow {
@@ -1168,7 +1168,7 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  max-width: min(48%, 540px);
+  max-width: min(70%, 640px);
   transform: translateX(-50%);
   pointer-events: none;
   text-align: center;
@@ -1179,7 +1179,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
 }
 
 .ss-structure-chip,
@@ -1500,6 +1500,17 @@
   font-size: 13px;
 }
 
+.presentation .viz-stage:has(.ss-ring-view) .ss-array-chip,
+.presentation .viz-stage:has(.ss-ring-view) .ss-hud-hint {
+  display: none;
+}
+
+@media (max-height: 800px) {
+  .viz-stage:has(.ss-ring-view) .ss-hud-hint {
+    display: none;
+  }
+}
+
 .presentation .ss-structure-chip,
 .presentation .ss-array-chip,
 .presentation .ss-state-chip {
@@ -1530,6 +1541,12 @@
   }
 }
 
+@container (max-width: 560px) {
+  .viz-stage:has(.ss-ring-view) .ss-hud {
+    display: none;
+  }
+}
+
 @media (max-width: 760px) {
   .ss-bilan-traces {
     grid-template-columns: 1fr;
@@ -1540,10 +1557,128 @@
   }
 }
 
+/* ---------------- ring focus, linking and motion (File 3) ---------------- */
+
+.ss-ring-slot-group {
+  outline: none;
+}
+
+.ss-ring-slot-group:focus-visible .ss-ring-slot {
+  stroke: var(--ink);
+  stroke-width: 3.4;
+  stroke-dasharray: none;
+}
+
+.workspace:has(.ss-ring-slot-group[data-index='0']:is(:hover, :focus-visible)) .ss-memory-column[data-index='0'] .ss-memory-cell,
+.workspace:has(.ss-ring-slot-group[data-index='1']:is(:hover, :focus-visible)) .ss-memory-column[data-index='1'] .ss-memory-cell,
+.workspace:has(.ss-ring-slot-group[data-index='2']:is(:hover, :focus-visible)) .ss-memory-column[data-index='2'] .ss-memory-cell,
+.workspace:has(.ss-ring-slot-group[data-index='3']:is(:hover, :focus-visible)) .ss-memory-column[data-index='3'] .ss-memory-cell,
+.workspace:has(.ss-ring-slot-group[data-index='4']:is(:hover, :focus-visible)) .ss-memory-column[data-index='4'] .ss-memory-cell,
+.workspace:has(.ss-ring-slot-group[data-index='5']:is(:hover, :focus-visible)) .ss-memory-column[data-index='5'] .ss-memory-cell,
+.workspace:has(.ss-ring-slot-group[data-index='6']:is(:hover, :focus-visible)) .ss-memory-column[data-index='6'] .ss-memory-cell,
+.workspace:has(.ss-ring-slot-group[data-index='7']:is(:hover, :focus-visible)) .ss-memory-column[data-index='7'] .ss-memory-cell {
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--ink) 42%, transparent);
+}
+
+.workspace:has(.ss-memory-column[data-index='0']:hover) .ss-ring-slot-group[data-index='0'] .ss-ring-slot,
+.workspace:has(.ss-memory-column[data-index='1']:hover) .ss-ring-slot-group[data-index='1'] .ss-ring-slot,
+.workspace:has(.ss-memory-column[data-index='2']:hover) .ss-ring-slot-group[data-index='2'] .ss-ring-slot,
+.workspace:has(.ss-memory-column[data-index='3']:hover) .ss-ring-slot-group[data-index='3'] .ss-ring-slot,
+.workspace:has(.ss-memory-column[data-index='4']:hover) .ss-ring-slot-group[data-index='4'] .ss-ring-slot,
+.workspace:has(.ss-memory-column[data-index='5']:hover) .ss-ring-slot-group[data-index='5'] .ss-ring-slot,
+.workspace:has(.ss-memory-column[data-index='6']:hover) .ss-ring-slot-group[data-index='6'] .ss-ring-slot,
+.workspace:has(.ss-memory-column[data-index='7']:hover) .ss-ring-slot-group[data-index='7'] .ss-ring-slot {
+  stroke: var(--ink);
+  stroke-width: 3.2;
+  stroke-dasharray: none;
+}
+
+[data-motion='on'] .ss-ring-slot-group.is-changed .ss-ring-value {
+  animation: ss-ring-value-in var(--ss-motion-duration, 340ms) ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+[data-motion='on'] .ss-ring-pointer.is-changed {
+  animation: ss-ring-pointer-in var(--ss-motion-duration, 340ms) ease-out;
+}
+
+[data-motion='on'] .ss-ring-slot-hatch {
+  animation: ss-ring-hatch-in var(--ss-motion-duration, 340ms) ease-out;
+}
+
+[data-motion='on'] .ss-ring-strike {
+  animation: ss-ring-strike-in var(--ss-motion-duration, 340ms) ease-out;
+  transform-box: fill-box;
+  transform-origin: left center;
+}
+
+@keyframes ss-ring-value-in {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes ss-ring-pointer-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ss-ring-hatch-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.42;
+  }
+}
+
+@keyframes ss-ring-strike-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 0.85;
+    transform: scaleX(1);
+  }
+}
+
+[data-motion='off'] .ss-ring-value,
+[data-motion='off'] .ss-ring-pointer.is-changed,
+[data-motion='off'] .ss-ring-slot-hatch,
+[data-motion='off'] .ss-ring-strike {
+  animation: none;
+}
+
+[data-motion='off'] .ss-ring-slot,
+[data-motion='off'] .ss-ring-pointer rect,
+[data-motion='off'] .ss-ring-badge circle,
+[data-motion='off'] .ss-ring-index rect,
+.workspace:has(.ss-ring-view[data-motion='off']) .ss-memory-cell {
+  transition: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ss-cell-flash,
   .ss-marker.is-changed rect,
-  .ss-wrap.is-active .ss-wrap-path {
+  .ss-wrap.is-active .ss-wrap-path,
+  .ss-ring-slot-group.is-changed .ss-ring-slot,
+  .ss-ring-slot-group.is-changed .ss-ring-value,
+  .ss-ring-pointer.is-changed,
+  .ss-ring-slot-hatch,
+  .ss-ring-strike {
     animation: none;
   }
 

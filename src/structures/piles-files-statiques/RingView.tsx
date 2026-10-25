@@ -1,4 +1,4 @@
-import type { JSX } from 'react'
+import type { CSSProperties, JSX } from 'react'
 import { fr } from '../../i18n/fr'
 import {
   RING_HOLE_RADIUS,
@@ -72,10 +72,16 @@ function arrowPoints(
   ].join(' ')
 }
 
-function PointerShape({ pointer }: { pointer: RingPointerGeometry }): JSX.Element {
+function PointerShape({
+  pointer,
+  changed,
+}: {
+  pointer: RingPointerGeometry
+  changed: boolean
+}): JSX.Element {
   return (
     <g
-      className={`ss-ring-pointer is-${pointer.tone}${pointer.dashed ? ' is-dashed' : ''}`}
+      className={`ss-ring-pointer is-${pointer.tone}${pointer.dashed ? ' is-dashed' : ''}${changed ? ' is-changed' : ''}`}
     >
       {pointer.connectors.map((connector, index) => {
         const heading = direction(connector.from, connector.to)
@@ -154,9 +160,15 @@ function WrapShape({ wrap }: { wrap: RingWrapGeometry }): JSX.Element {
 export function RingView({
   geometry,
   changedIndices,
+  changedGlobals,
+  motion,
+  motionDuration,
 }: {
   geometry: RingGeometry
   changedIndices: Set<number>
+  changedGlobals: Set<string>
+  motion: boolean
+  motionDuration: number
 }): JSX.Element {
   const status = geometry.empty
     ? V.stateEmptyFile
@@ -164,18 +176,27 @@ export function RingView({
       ? V.stateFullFile
       : V.freeSlots(geometry.free)
   const centreLabel = `${geometry.taille}/${geometry.max} · ${status}`
+  const style = { '--ss-motion-duration': `${motionDuration}ms` } as CSSProperties
 
   return (
-    <g className="ss-ring-view" data-size={geometry.max}>
+    <g
+      className="ss-ring-view"
+      data-size={geometry.max}
+      data-motion={motion ? 'on' : 'off'}
+      style={style}
+    >
       <circle className="ss-ring-track" r={RING_TRACK_RADIUS} />
 
-      <g className="ss-ring-slots">
+      <g className="ss-ring-slots" role="list" aria-label={V.ringSlots}>
         {geometry.slots.map((slot) => (
           <g
             key={`ring-slot-${slot.index}`}
             className={`ss-ring-slot-group${changedIndices.has(slot.index) ? ' is-changed' : ''}`}
             data-index={slot.index}
             data-state={slot.state}
+            role="listitem"
+            tabIndex={0}
+            aria-label={slotTitle(slot)}
           >
             <path className={`ss-ring-slot ${slotClass(slot)}`} d={slot.sectorPath} />
             {slot.state === 'stale' ? (
@@ -183,6 +204,7 @@ export function RingView({
             ) : null}
             {slot.state === 'free' ? (
               <text
+                key={`free-${slot.index}`}
                 className="ss-ring-free-label"
                 x={slot.valuePoint.x}
                 y={slot.valuePoint.y}
@@ -194,6 +216,7 @@ export function RingView({
             ) : (
               <>
                 <text
+                  key={`value-${slot.index}-${slot.text}`}
                   className={`ss-ring-value${slot.state === 'stale' ? ' is-stale' : ''}`}
                   x={slot.valuePoint.x}
                   y={slot.valuePoint.y}
@@ -282,6 +305,7 @@ export function RingView({
           <g
             key={`ring-index-${slot.index}`}
             className={`ss-ring-index ${indexClass(slot)}`}
+            data-index={slot.index}
           >
             <rect
               x={slot.indexRect.x}
@@ -304,7 +328,15 @@ export function RingView({
 
       <g className="ss-ring-pointers">
         {geometry.pointers.map((pointer) => (
-          <PointerShape key={`ring-pointer-${pointer.key}`} pointer={pointer} />
+          <PointerShape
+            key={`ring-pointer-${pointer.key}-${pointer.text}`}
+            pointer={pointer}
+            changed={
+              pointer.key === 'both'
+                ? changedGlobals.has('av') || changedGlobals.has('ar')
+                : changedGlobals.has(pointer.key)
+            }
+          />
         ))}
       </g>
 

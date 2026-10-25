@@ -173,6 +173,7 @@ export function StaticStructuresSupport({
               <div
                 key={`memory-${slot.index}`}
                 className={classes}
+                data-index={slot.index}
                 role="listitem"
                 aria-label={S.memoryCell(slot.index, slot.state, slot.value, roles)}
               >

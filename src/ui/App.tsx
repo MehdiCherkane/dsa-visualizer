@@ -615,6 +615,7 @@ export function DemoApp<S extends BaseSnapshot>({
               presentation={presentation}
               speed={playerState.speed}
               stepIndex={playerState.index}
+              animate={stackAnimate}
               highlightedNodeId={callStackFocus?.nodeId}
               operationSteps={
                 activeOperation && !activeOperation.committed ? activeOperation.steps : undefined

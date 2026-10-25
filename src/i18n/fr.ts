@@ -778,6 +778,7 @@ export const fr = {
       rank: 'ordre FIFO',
       arrival: (rank: number) => (rank === 1 ? '1er arrivé' : `${rank}e arrivé`),
       ringCase: (index: number) => `Case ${index}`,
+      ringSlots: 'Cases de l’anneau',
       wrapFormula: (from: number, max: number, to: number) =>
         `(${from} + 1) % ${max} = ${to}`,
       freeSlots: (free: number) =>
