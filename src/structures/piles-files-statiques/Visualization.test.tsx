@@ -199,6 +199,11 @@ describe('rendu SVG des piles et files statiques', () => {
     expect(file2).toContain('File vide : ar = 0.')
     expect(file2).toContain(V.insertFile)
 
+    const file3 = render(idleStep(emptySnapshot('file-circulaire')), null, () => {})
+    expect(file3).toContain('viz-stage is-empty is-ring')
+    expect(file3).toContain('ss-empty-banner')
+    expect(file3).toContain(V.insertFile)
+
     expect(render(idleStep(emptySnapshot('pile')))).not.toContain('ss-empty-banner')
   })
 

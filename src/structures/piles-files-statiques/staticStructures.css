@@ -1272,6 +1272,32 @@
   backdrop-filter: blur(6px);
 }
 
+/* File 3 keeps its empty callout under the Bilan button, clear of the ring. */
+.viz-stage.is-ring .ss-empty-banner {
+  top: 96px;
+  right: 12px;
+  bottom: auto;
+  left: auto;
+  flex-direction: column;
+  align-items: flex-start;
+  width: min(300px, calc(100% - 24px));
+  max-width: none;
+  transform: none;
+}
+
+.viz-stage.is-ring .ss-empty-button {
+  width: 100%;
+  justify-content: center;
+}
+
+@container (max-width: 620px) {
+  .viz-stage.is-ring .ss-empty-banner {
+    top: 144px;
+    right: 8px;
+    width: min(250px, calc(100% - 16px));
+  }
+}
+
 .ss-empty-text {
   margin: 0;
   color: var(--muted);

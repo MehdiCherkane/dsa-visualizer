@@ -565,13 +565,13 @@ export default function StaticStructuresVisualization({
         FIT_PADDING,
         MIN_AUTO_K,
         MAX_AUTO_K,
-        empty && onEmptyInsert
+        empty && onEmptyInsert && !isRing
           ? stageW < 620
             ? EMPTY_COMPACT_CAMERA_INSETS
             : EMPTY_CAMERA_INSETS
           : undefined,
       ),
-    [empty, fitBounds, onEmptyInsert, stageW, stageH],
+    [empty, fitBounds, isRing, onEmptyInsert, stageW, stageH],
   )
   const [camera, setCamera] = useState<Camera>(autoCamera)
   const [mode, setMode] = useState<'auto' | 'manual'>('auto')
@@ -847,7 +847,7 @@ export default function StaticStructuresVisualization({
 
   return (
     <div
-      className={`viz-stage${panning ? ' panning' : ''}${empty ? ' is-empty' : ''}`}
+      className={`viz-stage${panning ? ' panning' : ''}${empty ? ' is-empty' : ''}${isRing ? ' is-ring' : ''}`}
       ref={stageRef}
     >
       <svg
