@@ -4,8 +4,11 @@ import type { ArrowRoute, Point, Rect } from '../ldc/geometry'
 import {
   circleGeometry,
   circleNodeRect,
+  isRowFlipped,
   layoutNodes,
+  pointerAnchor,
   routeArrow,
+  PRECEDENT_LANE,
 } from '../ldc/geometry'
 import type { PointerField } from '../ldc/memory'
 import type { LdcSnapshot } from './memory'
@@ -388,8 +391,10 @@ describe('routage des flèches du chapitre 5', () => {
     })
 
     for (const detail of details) {
-      expect(detail.bulge).toBeGreaterThan(24)
-      expect(detail.entryAngle).toBeLessThan(Math.PI / 6)
+      // The resting link wraps around the outside of the node pair and enters
+      // the lateral border horizontally, as in the reference sketch.
+      expect(detail.bulge).toBeGreaterThan(80)
+      expect(detail.entryAngle).toBeGreaterThan(Math.PI / 3)
     }
   })
 
@@ -491,13 +496,14 @@ describe('routage des flèches du chapitre 5', () => {
     expect(issues, issues.join('\n')).toEqual([])
   })
 
-  it('attache les liens precedent de la forme finale aux bords des nœuds', () => {
+  it('part du point ou du bord extérieur et arrive sur la voie precedent', () => {
     const finals = growingFinalSnapshots()
     const issues: string[] = []
     for (let count = 2; count <= 8; count += 1) {
       const snapshot = finals[count - 1]!
       const nodes = snapshot.nodes.filter((node) => !node.freed)
       const layout = layoutNodes(nodes, 'circle')
+      const ring = circleGeometry(nodes)!
       for (const node of nodes) {
         const pointer = node.precedent
         if (pointer.kind !== 'node') continue
@@ -513,13 +519,31 @@ describe('routage des flèches du chapitre 5', () => {
           { finalForm: true },
         )
         if (!route) continue
-        const sourceRect = circleNodeRect(layout.get(node.id)!)
+        const point = layout.get(node.id)!
+        const sourceRect = circleNodeRect(point)
         const targetRect = circleNodeRect(layout.get(target.id)!)
-        if (!onBorder(route.tail, sourceRect)) {
-          issues.push(`${count} nœuds: queue de ${node.id} hors du bord`)
+        const dot = pointerAnchor(
+          node,
+          point,
+          'precedent',
+          isRowFlipped(node, point, ring),
+        )
+        if (
+          distance(route.tail, dot) > 1e-6 &&
+          !onBorder(route.tail, sourceRect)
+        ) {
+          issues.push(
+            `${count} nœuds: queue de ${node.id} ni sur le point ni sur le bord`,
+          )
         }
-        if (!onBorder(route.tip, targetRect)) {
-          issues.push(`${count} nœuds: pointe vers ${target.id} hors du bord`)
+        const lateral =
+          Math.abs(route.tip.x - targetRect.x) < 1e-6 ||
+          Math.abs(route.tip.x - (targetRect.x + targetRect.width)) < 1e-6
+        const lane = targetRect.y + targetRect.height * PRECEDENT_LANE
+        if (!lateral || Math.abs(route.tip.y - lane) > 1e-6) {
+          issues.push(
+            `${count} nœuds: pointe vers ${target.id} hors de la voie precedent`,
+          )
         }
       }
     }
@@ -607,7 +631,24 @@ describe('routage des flèches du chapitre 5', () => {
           )
         }
         const samples = samplePath(route.path)
+        // The resting link may start at the pointer dot inside its own node,
+        // so only flag a re-entry after the curve has left the source.
+        const sourceRect = circleNodeRect(layout.get(node.id)!)
+        let exited = false
+        for (const sample of samples) {
+          if (!exited) {
+            if (!inside(sample, sourceRect, 1)) exited = true
+            continue
+          }
+          if (inside(sample, sourceRect, 1)) {
+            issues.push(
+              `${count} nœuds: ${node.id}.precedent rentre dans son nœud`,
+            )
+            break
+          }
+        }
         for (const other of nodes) {
+          if (other.id === node.id) continue
           const rect = circleNodeRect(layout.get(other.id)!)
           if (samples.some((sample) => inside(sample, rect, 1))) {
             issues.push(

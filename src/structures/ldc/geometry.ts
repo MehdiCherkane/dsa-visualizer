@@ -627,6 +627,163 @@ function normalizeAngle(angle: number): number {
 
 const ROW_ROW_SOURCE_WRAP = 0.55
 const ROW_ROW_TARGET_WRAP = 0.25
+/**
+ * Resting `precedent` links share the outside of the ring with `suivant`
+ * links. A small extra radius keeps the two arrows parallel instead of
+ * stacking them on the same curve.
+ */
+const FINAL_PRECEDENT_LANE = 20
+/**
+ * When the pointer dot faces the ring centre, the resting link starts on the
+ * outer border. Offset that artificial anchor toward the outgoing direction so
+ * it does not land on the incoming link of the same node or cross it.
+ */
+const FINAL_PRECEDENT_BORDER_LANE_RIGHT = 0.58
+const FINAL_PRECEDENT_BORDER_LANE_LEFT = 0.86
+/** Gap between a two-node lateral border and its outer `suivant` lane. */
+const TWO_NODE_SUIVANT_LANE = 50
+
+/**
+ * Side of a node that faces the outside of the ring for a given link. When the
+ * gap is almost vertical, use the other node's side instead so the two nodes
+ * still connect through their facing borders.
+ */
+function outerSide(
+  gap: Point,
+  nodePoint: Point,
+  otherCenter: Point,
+): 'left' | 'right' {
+  const center = nodeCenter(nodePoint)
+  const threshold = 8
+  if (gap.x < center.x - threshold) return 'left'
+  if (gap.x > center.x + threshold) return 'right'
+  return otherCenter.x < center.x ? 'left' : 'right'
+}
+
+/**
+ * Resting `precedent` link. Both endpoints sit on the outside of the ring and
+ * the curve leaves and enters horizontally, so it wraps around the node group
+ * like the reference sketch. When the pointer dot faces the ring centre, the
+ * link starts on the outer border instead of crossing the node.
+ */
+function finalPrecedentRoute(
+  tail: Point,
+  sourcePoint: Point,
+  targetPoint: Point,
+  ring: CircleGeometry,
+): ArrowRoute {
+  const sourceCenter = nodeCenter(sourcePoint)
+  const targetCenter = nodeCenter(targetPoint)
+  const sourceRect = circleNodeRect(sourcePoint)
+  const targetRect = circleNodeRect(targetPoint)
+  const sourceAngle = Math.atan2(
+    sourceCenter.y - ring.cy,
+    sourceCenter.x - ring.cx,
+  )
+  const targetAngle = Math.atan2(
+    targetCenter.y - ring.cy,
+    targetCenter.x - ring.cx,
+  )
+  const clockwise = normalizeAngle(targetAngle - sourceAngle)
+  let delta = clockwise > Math.PI ? clockwise - Math.PI * 2 : clockwise
+  if (ring.count === 2) {
+    const plusMidpoint = sourceAngle + Math.PI / 2
+    const dotRight = tail.x >= sourceCenter.x
+    const plusRight = Math.cos(plusMidpoint) >= 0
+    delta = dotRight === plusRight ? Math.PI : -Math.PI
+  }
+  const midpoint = sourceAngle + delta / 2
+  const outer =
+    ring.count === 2
+      ? Math.max(90, ring.radius - 30)
+      : ring.radius + NODE_W / 2 + 26
+  const gapRadius = outer + FINAL_PRECEDENT_LANE
+  const gap = {
+    x: ring.cx + Math.cos(midpoint) * gapRadius,
+    y: ring.cy + Math.sin(midpoint) * gapRadius,
+  }
+
+  const sourceSide = outerSide(gap, sourcePoint, targetCenter)
+  const targetSide = outerSide(gap, targetPoint, sourceCenter)
+  const dotSide = tail.x < sourceCenter.x ? 'left' : 'right'
+  const anchor =
+    dotSide === sourceSide
+      ? tail
+      : {
+          x:
+            sourceSide === 'left'
+              ? sourceRect.x
+              : sourceRect.x + sourceRect.width,
+          y:
+            sourceRect.y +
+            sourceRect.height *
+              (sourceSide === 'right'
+                ? FINAL_PRECEDENT_BORDER_LANE_RIGHT
+                : FINAL_PRECEDENT_BORDER_LANE_LEFT),
+        }
+  const entry = {
+    x:
+      targetSide === 'left'
+        ? targetRect.x
+        : targetRect.x + targetRect.width,
+    y: targetRect.y + targetRect.height * PRECEDENT_LANE,
+  }
+
+  const chord = Math.hypot(entry.x - anchor.x, entry.y - anchor.y)
+  const control = clamp(chord * 0.45, 70, 160)
+  const sourceOutward = sourceSide === 'left' ? -1 : 1
+  const targetOutward = targetSide === 'left' ? -1 : 1
+  const startControl = { x: anchor.x + sourceOutward * control, y: anchor.y }
+  const endControl = { x: entry.x + targetOutward * control, y: entry.y }
+  const points = [anchor, startControl, endControl, entry]
+  return {
+    kind: 'curve',
+    path: `M ${anchor.x} ${anchor.y} C ${startControl.x} ${startControl.y}, ${endControl.x} ${endControl.y}, ${entry.x} ${entry.y}`,
+    tail: anchor,
+    tip: entry,
+    bounds: boundsOfPoints(points, 2),
+    points,
+  }
+}
+
+/** Move an entry on a vertical node border onto the pointer's own lane. */
+function entryAtFieldLane(
+  entry: Point,
+  rect: Rect,
+  field: PointerField,
+): Point {
+  const epsilon = 0.5
+  const verticalBorder =
+    Math.abs(entry.x - rect.x) < epsilon ||
+    Math.abs(entry.x - (rect.x + rect.width)) < epsilon
+  if (!verticalBorder) return entry
+  const lane = field === 'suivant' ? SUIVANT_LANE : PRECEDENT_LANE
+  return { x: entry.x, y: rect.y + rect.height * lane }
+}
+
+/**
+ * Lateral border on the outside of the ring. Resting links use it so an arrow
+ * wraps around the nodes and enters the target horizontally, as in the
+ * reference sketch, instead of cutting across the gap to the top border.
+ */
+function lateralEntry(
+  gap: Point,
+  targetPoint: Point,
+  sourceCenter: Point,
+  field: PointerField,
+): Point {
+  const rect = circleNodeRect(targetPoint)
+  const center = nodeCenter(targetPoint)
+  const threshold = 8
+  const gapLeft = gap.x < center.x - threshold
+  const gapRight = gap.x > center.x + threshold
+  const left = gapLeft || (!gapRight && sourceCenter.x < center.x)
+  const lane = field === 'suivant' ? SUIVANT_LANE : PRECEDENT_LANE
+  return {
+    x: left ? rect.x : rect.x + rect.width,
+    y: rect.y + rect.height * lane,
+  }
+}
 
 /**
  * Row-to-row ring link. The first control point is pulled toward the gap and
@@ -640,10 +797,37 @@ function rowRowGapRoute(
   sourcePoint: Point,
   targetPoint: Point,
   ring: CircleGeometry,
-  heapBand: Rect | null,
 ): ArrowRoute {
   const sourceCenter = nodeCenter(sourcePoint)
   const targetCenter = nodeCenter(targetPoint)
+  // With two nodes the group is a vertical pair and both fields wrap around
+  // the same two lateral corridors. Draw the following link as a wide single
+  // cubic that leaves the dot and enters the target border horizontally, on a
+  // lane just inside the wider resting `precedent` loop.
+  if (ring.count === 2 && field === 'suivant') {
+    const sourceRect = circleNodeRect(sourcePoint)
+    const targetRect = circleNodeRect(targetPoint)
+    const right = tail.x >= sourceCenter.x
+    const entry = {
+      x: right ? targetRect.x + targetRect.width : targetRect.x,
+      y: targetRect.y + targetRect.height * SUIVANT_LANE,
+    }
+    const laneX = right
+      ? sourceRect.x + sourceRect.width + TWO_NODE_SUIVANT_LANE
+      : sourceRect.x - TWO_NODE_SUIVANT_LANE
+    const controlX = (8 * laneX - tail.x - entry.x) / 6
+    const startControl = { x: controlX, y: tail.y }
+    const endControl = { x: controlX, y: entry.y }
+    const points = [tail, startControl, endControl, entry]
+    return {
+      kind: 'curve',
+      path: `M ${tail.x} ${tail.y} C ${startControl.x} ${startControl.y}, ${endControl.x} ${endControl.y}, ${entry.x} ${entry.y}`,
+      tail,
+      tip: entry,
+      bounds: boundsOfPoints(points, 2),
+      points,
+    }
+  }
   const sourceAngle = Math.atan2(
     sourceCenter.y - ring.cy,
     sourceCenter.x - ring.cx,
@@ -656,12 +840,18 @@ function rowRowGapRoute(
   // temporary non-adjacent links (deletion, reversal) off the nodes that sit
   // on the long side of the ring.
   const clockwise = normalizeAngle(targetAngle - sourceAngle)
-  const delta = clockwise > Math.PI ? clockwise - Math.PI * 2 : clockwise
+  let delta = clockwise > Math.PI ? clockwise - Math.PI * 2 : clockwise
+  // With two nodes the span is exactly half the ring, so both sides are
+  // equally short. Pick the side of the source dot: a `precedent` link then
+  // leaves through the same border as its dot instead of crossing the node.
+  if (ring.count === 2) {
+    const plusMidpoint = sourceAngle + Math.PI / 2
+    const dotRight = tail.x >= sourceCenter.x
+    const plusRight = Math.cos(plusMidpoint) >= 0
+    delta = dotRight === plusRight ? Math.PI : -Math.PI
+  }
   const midpoint = sourceAngle + delta / 2
-  const outer =
-    ring.count === 2
-      ? Math.max(90, ring.radius - 30)
-      : ring.radius + NODE_W / 2 + 26
+  const outer = ring.radius + NODE_W / 2 + 26
   const inner = Math.max(36, ring.radius - NODE_W / 2 - 12)
   // Reciprocal links (temporary deletion/reversal states) traverse the same
   // short span in opposite directions. Offset them by travel direction so the
@@ -671,26 +861,23 @@ function rowRowGapRoute(
     field === 'suivant'
       ? outer + (forward ? 0 : 22)
       : Math.max(28, inner - (forward ? 0 : 12))
-  let gap = {
+  const gap = {
     x: ring.cx + Math.cos(midpoint) * radius,
     y: ring.cy + Math.sin(midpoint) * radius,
   }
 
-  // On a two-node ring the left outside gap would fall inside the heap band.
-  // Pull that one lane back into the free corridor between heap and ring.
-  if (
-    ring.count === 2 &&
-    field === 'suivant' &&
-    heapBand &&
-    gap.x < heapBand.x + heapBand.width + 8 &&
-    gap.y > heapBand.y - 8 &&
-    gap.y < heapBand.y + heapBand.height + 8
-  ) {
-    gap = { x: heapBand.x + heapBand.width + 20, y: ring.cy }
-  }
-
   const exit = borderPoint(sourceCenter, gap, circleNodeRect(sourcePoint))
-  const entry = borderPoint(gap, targetCenter, circleNodeRect(targetPoint))
+  const rawEntry = borderPoint(gap, targetCenter, circleNodeRect(targetPoint))
+  // `suivant` links always enter on their own lane so the animation and the
+  // resting form share the same trace. On a two-node ring the link wraps around
+  // the outside, so it must enter the lateral border instead of cutting across
+  // the gap to the top border.
+  const entry =
+    field === 'suivant'
+      ? ring.count === 2
+        ? lateralEntry(gap, targetPoint, sourceCenter, field)
+        : entryAtFieldLane(rawEntry, circleNodeRect(targetPoint), field)
+      : rawEntry
   // Pull the first control point toward the gap and push the second one past
   // it: the link bows around the ring instead of cutting across it, while the
   // endpoints stay tangent for a soft, continuous curve.
@@ -709,259 +896,6 @@ function rowRowGapRoute(
     tip: entry,
     bounds: boundsOfPoints([tail, startControl, endControl, entry], 2),
     points: [tail, startControl, endControl, entry],
-  }
-}
-
-const FINAL_PRECEDENT_ANCHOR_GAP = 18
-const TWO_NODE_PRECEDENT_GAP = 28
-const TWO_NODE_PRECEDENT_BOW = 50
-const TWO_NODE_PRECEDENT_TARGET_BOW = 36
-const TWO_NODE_PRECEDENT_SOFTNESS = 104
-const FINAL_PRECEDENT_ANCHOR_MARGIN = 8
-const FINAL_PRECEDENT_CONTROL_MIN = 32
-const FINAL_PRECEDENT_CONTROL_MAX = 58
-
-/**
- * Direction from a node centre into the ring. Used as the tangent of the
- * resting `precedent` curve at its endpoints, so an arrow leaves and enters
- * the node through its inner border instead of grazing it.
- */
-function ringInwardUnit(point: Point, ring: CircleGeometry): Point {
-  const center = nodeCenter(point)
-  const dx = ring.cx - center.x
-  const dy = ring.cy - center.y
-  const length = Math.hypot(dx, dy)
-  if (length < 1e-6) return { x: 0, y: 1 }
-  return { x: dx / length, y: dy / length }
-}
-
-type FinalPrecedentEdge = 'top' | 'right' | 'bottom' | 'left'
-
-function edgeNormal(edge: FinalPrecedentEdge): Point {
-  if (edge === 'top') return { x: 0, y: -1 }
-  if (edge === 'bottom') return { x: 0, y: 1 }
-  if (edge === 'left') return { x: -1, y: 0 }
-  return { x: 1, y: 0 }
-}
-
-function edgeTangent(edge: FinalPrecedentEdge): Point {
-  return edge === 'left' || edge === 'right'
-    ? { x: 0, y: 1 }
-    : { x: 1, y: 0 }
-}
-
-function edgeMidpoint(
-  edge: FinalPrecedentEdge,
-  rect: Rect,
-  center: Point,
-): Point {
-  if (edge === 'top') return { x: center.x, y: rect.y }
-  if (edge === 'bottom') {
-    return { x: center.x, y: rect.y + rect.height }
-  }
-  if (edge === 'left') return { x: rect.x, y: center.y }
-  return { x: rect.x + rect.width, y: center.y }
-}
-
-function clampToEdge(
-  point: Point,
-  edge: FinalPrecedentEdge,
-  rect: Rect,
-): Point {
-  if (edge === 'left' || edge === 'right') {
-    return {
-      x: point.x,
-      y: clamp(
-        point.y,
-        rect.y + FINAL_PRECEDENT_ANCHOR_MARGIN,
-        rect.y + rect.height - FINAL_PRECEDENT_ANCHOR_MARGIN,
-      ),
-    }
-  }
-  return {
-    x: clamp(
-      point.x,
-      rect.x + FINAL_PRECEDENT_ANCHOR_MARGIN,
-      rect.x + rect.width - FINAL_PRECEDENT_ANCHOR_MARGIN,
-    ),
-    y: point.y,
-  }
-}
-
-/**
- * Anchor on the inner border of a node, on the side facing `towardPoint`.
- * The chosen edge is the inner edge that best faces the neighbour, and the
- * small tangential shift keeps the incoming and outgoing arrows of a node
- * separate. The arrows therefore never merge into one continuous circle.
- */
-function finalPrecedentAnchor(
-  point: Point,
-  ring: CircleGeometry,
-  towardPoint: Point,
-): Point {
-  const rect = circleNodeRect(point)
-  const center = nodeCenter(point)
-  const inward = ringInwardUnit(point, ring)
-  const targetX = towardPoint.x - center.x
-  const targetY = towardPoint.y - center.y
-  const targetLength = Math.hypot(targetX, targetY)
-  const direction =
-    targetLength < 1e-6
-      ? inward
-      : { x: targetX / targetLength, y: targetY / targetLength }
-
-  const candidates: FinalPrecedentEdge[] = []
-  if (inward.x > 0.05) candidates.push('right')
-  if (inward.x < -0.05) candidates.push('left')
-  if (inward.y > 0.05) candidates.push('bottom')
-  if (inward.y < -0.05) candidates.push('top')
-  if (candidates.length === 0) candidates.push('bottom')
-
-  let edge = candidates[0]!
-  let best = -Infinity
-  for (const candidate of candidates) {
-    const normal = edgeNormal(candidate)
-    const score = normal.x * direction.x + normal.y * direction.y
-    if (score > best) {
-      best = score
-      edge = candidate
-    }
-  }
-
-  const tangent = edgeTangent(edge)
-  const along = tangent.x * direction.x + tangent.y * direction.y
-  const shift =
-    Math.abs(along) < 0.05
-      ? 0
-      : (along > 0 ? 1 : -1) * FINAL_PRECEDENT_ANCHOR_GAP
-  const base = edgeMidpoint(edge, rect, center)
-  return clampToEdge(
-    { x: base.x + tangent.x * shift, y: base.y + tangent.y * shift },
-    edge,
-    rect,
-  )
-}
-
-function finalPrecedentControl(
-  anchor: Point,
-  point: Point,
-  ring: CircleGeometry,
-  distance: number,
-): Point {
-  const inward = ringInwardUnit(point, ring)
-  return {
-    x: anchor.x + inward.x * distance,
-    y: anchor.y + inward.y * distance,
-  }
-}
-
-/**
- * Two-node rings need a lateral bow: both nodes share the same vertical axis,
- * so radial controls alone would draw the two reciprocal links on top of each
- * other. One link bows left and the other right, giving two distinct arrows
- * instead of a closed circle.
- */
-function twoNodePrecedentRoute(
-  sourcePoint: Point,
-  targetPoint: Point,
-  ring: CircleGeometry,
-): ArrowRoute {
-  const sourceCenter = nodeCenter(sourcePoint)
-  const targetCenter = nodeCenter(targetPoint)
-  const sourceAbove = sourceCenter.y < targetCenter.y
-  const side = sourceAbove ? -1 : 1
-  const sourceBase = borderPoint(
-    sourceCenter,
-    { x: ring.cx, y: ring.cy },
-    circleNodeRect(sourcePoint),
-  )
-  const targetBase = borderPoint(
-    targetCenter,
-    { x: ring.cx, y: ring.cy },
-    circleNodeRect(targetPoint),
-  )
-  const sourceAnchor = {
-    x: sourceBase.x + side * TWO_NODE_PRECEDENT_GAP,
-    y: sourceBase.y,
-  }
-  const targetAnchor = {
-    x: targetBase.x + side * TWO_NODE_PRECEDENT_GAP,
-    y: targetBase.y,
-  }
-  const vertical = sourceAbove ? 1 : -1
-  const sourceControl = {
-    x: sourceAnchor.x + side * TWO_NODE_PRECEDENT_BOW,
-    y: sourceAnchor.y + vertical * TWO_NODE_PRECEDENT_SOFTNESS,
-  }
-  const targetControl = {
-    x: targetAnchor.x + side * TWO_NODE_PRECEDENT_TARGET_BOW,
-    y: targetAnchor.y - vertical * TWO_NODE_PRECEDENT_SOFTNESS,
-  }
-  const points = [sourceAnchor, sourceControl, targetControl, targetAnchor]
-  return {
-    kind: 'curve',
-    path: `M ${sourceAnchor.x} ${sourceAnchor.y} C ${sourceControl.x} ${sourceControl.y}, ${targetControl.x} ${targetControl.y}, ${targetAnchor.x} ${targetAnchor.y}`,
-    tail: sourceAnchor,
-    tip: targetAnchor,
-    bounds: boundsOfPoints(points, 2),
-    points,
-  }
-}
-
-/**
- * Resting state of a circular list. Every `precedent` link is a single
- * node-to-node curve on the inner side of the ring: the arrows no longer join
- * into one concentric circle. Transient animation frames keep the
- * dot-to-border routing, which is why this is only used once the operation is
- * committed.
- */
-function finalPrecedentRoute(
-  sourcePoint: Point,
-  targetPoint: Point,
-  ring: CircleGeometry,
-): ArrowRoute {
-  if (ring.count === 2) {
-    return twoNodePrecedentRoute(sourcePoint, targetPoint, ring)
-  }
-  const sourceAnchor = finalPrecedentAnchor(
-    sourcePoint,
-    ring,
-    nodeCenter(targetPoint),
-  )
-  const targetAnchor = finalPrecedentAnchor(
-    targetPoint,
-    ring,
-    nodeCenter(sourcePoint),
-  )
-  const chord = Math.hypot(
-    targetAnchor.x - sourceAnchor.x,
-    targetAnchor.y - sourceAnchor.y,
-  )
-  const control = clamp(
-    chord * 0.3,
-    FINAL_PRECEDENT_CONTROL_MIN,
-    FINAL_PRECEDENT_CONTROL_MAX,
-  )
-  const sourceControl = finalPrecedentControl(
-    sourceAnchor,
-    sourcePoint,
-    ring,
-    control,
-  )
-  const targetControl = finalPrecedentControl(
-    targetAnchor,
-    targetPoint,
-    ring,
-    control,
-  )
-  const points = [sourceAnchor, sourceControl, targetControl, targetAnchor]
-  return {
-    kind: 'curve',
-    path: `M ${sourceAnchor.x} ${sourceAnchor.y} C ${sourceControl.x} ${sourceControl.y}, ${targetControl.x} ${targetControl.y}, ${targetAnchor.x} ${targetAnchor.y}`,
-    tail: sourceAnchor,
-    tip: targetAnchor,
-    bounds: boundsOfPoints(points, 2),
-    points,
   }
 }
 
@@ -1364,25 +1298,14 @@ export function routeArrow(
   }
 
   if (mode === 'circle' && ring) {
-    if (
-      options.finalForm &&
-      field === 'precedent' &&
-      source.lane === 'row' &&
-      target.lane === 'row' &&
-      ring.count >= 2 &&
-      nodes.every((node) => node.freed || node.lane === 'row')
-    ) {
-      return finalPrecedentRoute(sourcePoint, targetPoint, ring)
-    }
     if (source.lane === 'row' && target.lane === 'row' && ring.radius > 0) {
-      return rowRowGapRoute(
-        field,
-        tail,
-        sourcePoint,
-        targetPoint,
-        ring,
-        circleHeapBand(nodes),
-      )
+      const resting =
+        options.finalForm === true &&
+        nodes.every((node) => node.freed || node.lane === 'row')
+      if (resting && field === 'precedent') {
+        return finalPrecedentRoute(tail, sourcePoint, targetPoint, ring)
+      }
+      return rowRowGapRoute(field, tail, sourcePoint, targetPoint, ring)
     }
     if (source.lane !== target.lane) {
       const route = mixedRoute(

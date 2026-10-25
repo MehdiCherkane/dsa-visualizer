@@ -440,7 +440,7 @@ describe('géométrie circulaire du chapitre 5', () => {
   })
 
   it('fait partir les flèches des points et arriver sur la bordure la plus proche', () => {
-    for (const count of [3, 4, 8]) {
+    for (const count of [2, 3, 4, 8]) {
       const snapshot = createCircularSnapshot(
         'int',
         Array.from({ length: count }, (_, index) => ({
@@ -500,17 +500,23 @@ describe('géométrie circulaire du chapitre 5', () => {
             targetRect.y + targetRect.height + 1e-6,
           )
 
-          // The tip is the first border hit from the last waypoint: the arrow
-          // enters through the side facing the approach instead of crossing
-          // the target and landing on its far border.
+          // The tip lands on the border facing the approach. Its exact
+          // position may be snapped to the pointer lane, so check that the
+          // curve enters through the same side as the first intersection.
           const approach = route!.points[route!.points.length - 2]!
           const expectedTip = borderPoint(
             approach,
             nodeCenter(targetPoint),
             targetRect,
           )
-          expect(tip.x).toBeCloseTo(expectedTip.x, 6)
-          expect(tip.y).toBeCloseTo(expectedTip.y, 6)
+          const verticalBorder =
+            Math.abs(expectedTip.x - targetRect.x) < 1e-6 ||
+            Math.abs(expectedTip.x - (targetRect.x + targetRect.width)) < 1e-6
+          if (verticalBorder) {
+            expect(tip.x).toBeCloseTo(expectedTip.x, 6)
+          } else {
+            expect(tip.y).toBeCloseTo(expectedTip.y, 6)
+          }
         }
       }
     }
