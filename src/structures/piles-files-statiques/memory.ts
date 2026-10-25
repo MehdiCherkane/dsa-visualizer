@@ -162,6 +162,22 @@ export function deriveCircular(
   }
 }
 
+export type CircularMemoryRole = 'av' | 'ar' | 'both' | null
+
+/** Which marker a memory cell carries. Only the av = ar cell is combined. */
+export function circularMemoryRole(
+  index: number,
+  circular: Pick<CircularState, 'av' | 'ar' | 'taille'>,
+): CircularMemoryRole {
+  if (circular.taille === 0) return null
+  const head = index === circular.av
+  const tail = index === circular.ar
+  if (circular.taille === 1) return head && tail ? 'both' : null
+  if (head) return 'av'
+  if (tail) return 'ar'
+  return null
+}
+
 export function deepFreeze<T>(value: T): T {
   if (value !== null && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.freeze(value)

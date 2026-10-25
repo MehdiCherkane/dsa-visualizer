@@ -6,9 +6,11 @@ import { pileCode } from './code/pile'
 import { pilesFilesStatiquesPlugin } from './index'
 import { fitCamera } from './geometry'
 import {
+  MAX_CAPACITY,
   MAX_CELLS,
   cellValue,
   checkInvariants,
+  circularMemoryRole,
   cloneSnapshot,
   createSnapshot,
   emptySnapshot,
@@ -165,6 +167,46 @@ describe('mémoire des tableaux fixes', () => {
     expect(() => createSnapshot('pile', [1, 2, 3, 4, 5, 6])).toThrow(
       'At most 5 cells can be represented',
     )
+  })
+})
+
+describe('rôles mémoire de la file circulaire', () => {
+  it('ne combine av et ar que sur la case unique, pour tous les repères', () => {
+    for (let capacity = 3; capacity <= MAX_CAPACITY; capacity += 1) {
+      for (let av = -1; av < capacity; av += 1) {
+        for (let ar = -1; ar < capacity; ar += 1) {
+          for (let taille = 0; taille <= capacity; taille += 1) {
+            const roles = Array.from({ length: capacity }, (_, index) =>
+              circularMemoryRole(index, { av, ar, taille }),
+            )
+            const both = roles.flatMap((role, index) =>
+              role === 'both' ? [index] : [],
+            )
+            expect(both.length, `N=${capacity} av=${av} ar=${ar} taille=${taille}`).toBeLessThanOrEqual(1)
+
+            if (taille === 0) {
+              expect(roles.every((role) => role === null)).toBe(true)
+              continue
+            }
+            if (taille === 1) {
+              const expected = av === ar && av >= 0 ? [av] : []
+              expect(both).toEqual(expected)
+              expect(
+                roles.filter((role) => role !== null).length,
+                `N=${capacity} av=${av} ar=${ar} taille=1`,
+              ).toBe(expected.length)
+              continue
+            }
+            if (av >= 0) {
+              expect(roles[av], `av N=${capacity} taille=${taille}`).not.toBeNull()
+            }
+            if (ar >= 0) {
+              expect(roles[ar], `ar N=${capacity} taille=${taille}`).not.toBeNull()
+            }
+          }
+        }
+      }
+    }
   })
 })
 

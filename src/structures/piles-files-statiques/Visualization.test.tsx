@@ -268,6 +268,19 @@ describe('rendu SVG des piles et files statiques', () => {
     expect(fullMarkup).toContain(fr.staticStructures.support.occupied(0))
     expect(fullMarkup).toContain('ss-calc-verdict is-yes')
 
+    const one = createSnapshot('file-circulaire', [42])
+    const oneMarkup = renderToStaticMarkup(
+      <StaticStructuresSupport
+        snapshot={one}
+        step={idleStep(one)}
+        presentation={false}
+      />,
+    )
+    expect(oneMarkup.match(/is-one/g)).toHaveLength(1)
+    expect(oneMarkup.match(/ss-memory-marker is-both/g)).toHaveLength(1)
+    expect(oneMarkup).toContain('ss-memory-column is-used is-head is-tail is-one')
+    expect(oneMarkup).toContain('ss-memory-column is-free')
+
     for (const profile of ['pile', 'file-ordinaire', 'file-decalage'] as const) {
       const other = emptySnapshot(profile)
       expect(

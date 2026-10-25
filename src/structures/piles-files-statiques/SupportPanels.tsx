@@ -1,7 +1,7 @@
 import type { JSX } from 'react'
 import type { SupportingPanelsProps } from '../../core/types'
 import { fr } from '../../i18n/fr'
-import { deriveCircular } from './memory'
+import { circularMemoryRole, deriveCircular } from './memory'
 import type { ArraySnapshot } from './memory'
 
 const S = fr.staticStructures.support
@@ -147,16 +147,11 @@ export function StaticStructuresSupport({
           aria-label={S.memoryAria}
         >
           {circular.elements.map((slot) => {
-            const head = !empty && slot.index === av
-            const tail = !empty && slot.index === ar
-            const marker = one
-              ? 'both'
-              : head
-                ? 'av'
-                : tail
-                  ? 'ar'
-                  : null
-            const roles = one ? 'tête et queue' : head ? 'tête' : tail ? 'queue' : ''
+            const role = circularMemoryRole(slot.index, circular)
+            const head = role === 'av' || role === 'both'
+            const tail = role === 'ar' || role === 'both'
+            const roles =
+              role === 'both' ? 'tête et queue' : role === 'av' ? 'tête' : role === 'ar' ? 'queue' : ''
             const classes = [
               'ss-memory-column',
               slot.state === 'used' ? 'is-used' : '',
@@ -164,7 +159,7 @@ export function StaticStructuresSupport({
               slot.state === 'free' ? 'is-free' : '',
               head ? 'is-head' : '',
               tail ? 'is-tail' : '',
-              one ? 'is-one' : '',
+              role === 'both' ? 'is-one' : '',
               changed.has(slot.index) ? 'is-recent' : '',
             ]
               .filter(Boolean)
@@ -178,7 +173,7 @@ export function StaticStructuresSupport({
                 aria-label={S.memoryCell(slot.index, slot.state, slot.value, roles)}
               >
                 <span className="ss-memory-marker-track" aria-hidden="true">
-                  {marker ? <Marker kind={marker} index={slot.index} /> : null}
+                  {role ? <Marker kind={role} index={slot.index} /> : null}
                 </span>
                 <span className="ss-memory-cell" aria-hidden="true">
                   {slot.state === 'free' ? (
