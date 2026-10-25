@@ -32,7 +32,7 @@ import {
   debutRoute,
   emptyListBand,
   fitCamera,
-  isNodeFlipped,
+  isRowFlipped,
   layoutNodes,
   layoutPins,
   pointerAnchor,
@@ -525,7 +525,7 @@ export default function LdcVisualization({
     }
   }
 
-  const strokeWidth = presentation ? 4 : 3
+  const strokeWidth = presentation ? 5 : 4
   const renderRoute = (
     source: LdcNode,
     field: PointerField,
@@ -639,8 +639,8 @@ export default function LdcVisualization({
               viewBox="0 0 12 10"
               refX="12"
               refY="5"
-              markerWidth="12"
-              markerHeight="10"
+              markerWidth="14"
+              markerHeight="12"
               markerUnits="userSpaceOnUse"
               orient="auto"
             >
@@ -652,8 +652,8 @@ export default function LdcVisualization({
             viewBox="0 0 12 10"
             refX="12"
             refY="5"
-            markerWidth="12"
-            markerHeight="10"
+            markerWidth="14"
+            markerHeight="12"
             markerUnits="userSpaceOnUse"
             orient="auto"
           >
@@ -766,7 +766,7 @@ export default function LdcVisualization({
                   </title>
                   <NodeShape
                     node={node}
-                    flipped={Boolean(ring && isNodeFlipped(point, ring))}
+                    flipped={isRowFlipped(node, point, ring)}
                   />
                 </motion.g>
               )
@@ -867,7 +867,7 @@ export default function LdcVisualization({
                   node,
                   point,
                   field,
-                  Boolean(ring && isNodeFlipped(point, ring)),
+                  isRowFlipped(node, point, ring),
                 )
                 return [
                   <circle
@@ -875,7 +875,7 @@ export default function LdcVisualization({
                     className={`pointer-dot pointer-dot-${field}`}
                     cx={anchor.x}
                     cy={anchor.y}
-                    r="5.5"
+                    r="6.5"
                   >
                     <title>{`${field} de ${node.address}`}</title>
                   </circle>,
