@@ -46,6 +46,21 @@ describe('menu principal', () => {
     expect(container.textContent).toContain(fr.menu.subtitle)
   })
 
+  it('ouvre les crédits depuis la barre et affiche les noms dans l’ordre', () => {
+    const trigger = container.querySelector<HTMLButtonElement>(
+      `button[aria-label="${fr.credits.title}"]`,
+    )
+    expect(trigger).not.toBeNull()
+    act(() => {
+      trigger?.click()
+    })
+    const credits = container.querySelector('#credits-popover')?.textContent ?? ''
+    expect(credits).toContain(fr.credits.title)
+    for (const name of fr.credits.names) expect(credits).toContain(name)
+    expect(credits.indexOf('El Mahdi Cherkane')).toBeLessThan(credits.indexOf('Omar Moussaid'))
+    expect(credits.indexOf('Omar Moussaid')).toBeLessThan(credits.indexOf('Hamza Agour'))
+  })
+
   it('rend une carte par plugin enregistré, construite depuis le registre', () => {
     const cards = container.querySelectorAll('.chapter-card:not(.is-soon)')
     expect(cards).toHaveLength(plugins.length)

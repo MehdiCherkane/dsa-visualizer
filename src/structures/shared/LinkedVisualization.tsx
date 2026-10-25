@@ -37,7 +37,6 @@ import {
   pointerAnchor,
   routeField,
   routeGlobal,
-  screenPoint,
   unionBounds,
   worldPoint,
   zoomAtCursor,
@@ -297,7 +296,9 @@ function GlobalCell({
   const anchor =
     placement === 'bottom'
       ? { x: cell.x + cell.width / 2, y: cell.y }
-      : globalAnchor(cell)
+      : placement === 'top'
+        ? { x: cell.x + cell.width / 2, y: cell.y + cell.height }
+        : globalAnchor(cell)
   const captionY = placement === 'bottom' ? cell.y + cell.height + 15 : cell.y - 7
   return (
     <g
@@ -886,7 +887,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
         }
   const heapNodes = nodes.filter((node) => node.lane === 'heap')
   const heapBand: Rect | null =
-    heapNodes.length > 0
+    heapNodes.length > 0 || model.showHeap
       ? model.orientation === 'horizontal'
         ? { x: bandX, y: HEAP_Y - 66, width: bandWidth, height: NODE_H + 130 }
         : {
@@ -897,10 +898,6 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
           }
       : null
   const pulseGlobal = step.badge === 'debut-modifie' || globalChanges.length > 0
-  const emptyOverlay = screenPoint(camera, {
-    x: emptyBounds(model.orientation).x + emptyBounds(model.orientation).width / 2,
-    y: emptyBounds(model.orientation).y + emptyBounds(model.orientation).height - 80,
-  })
 
   const oldGlobalRoutes = globalChanges.flatMap((change) => {
     if (change.kind !== 'variable' || !isPointerValue(change.from)) return []
@@ -1272,10 +1269,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
       </svg>
 
       {empty ? (
-        <div
-          className="empty-overlay"
-          style={{ left: `${emptyOverlay.x}px`, top: `${emptyOverlay.y}px` }}
-        >
+        <div className="empty-overlay empty-overlay-docked">
           <p className="empty-overlay-text">{model.emptyText}</p>
           <button type="button" className="primary-button empty-insert-button" onClick={onEmptyInsert}>
             {model.emptyInsert}

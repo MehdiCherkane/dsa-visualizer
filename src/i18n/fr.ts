@@ -5,6 +5,10 @@ export function plural(count: number, one: string, many: string): string {
 }
 
 export const fr = {
+  credits: {
+    title: 'Réalisé par',
+    names: ['El Mahdi Cherkane', 'Omar Moussaid', 'Hamza Agour'],
+  },
   app: {
     title: 'Listes doublement chaînées',
     course: 'Structures de données',
@@ -33,9 +37,8 @@ export const fr = {
     soonAria: (title: string) => `« ${title} » : bientôt disponible`,
     soonItems: [] as Array<{ chapter: number; title: string; description: string }>,
     footer: 'Tout fonctionne hors ligne : un seul fichier, aucune connexion.',
-    backArrow: '←',
-    backLabel: 'Menu',
-    backAria: 'Revenir au menu principal',
+    homeLabel: 'Accueil',
+    homeAria: 'Revenir au menu principal',
   },
   chapters: {
     staticStructures: {
