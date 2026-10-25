@@ -1543,6 +1543,12 @@
   .viz-stage:has(.ss-ring-view) .ss-hud-hint {
     display: none;
   }
+
+  /* In a short presentation the ring reaches the callout; the HUD and the
+     undefined pointers already state that the queue is empty. */
+  .presentation .viz-stage.is-ring .ss-empty-text {
+    display: none;
+  }
 }
 
 .presentation .ss-structure-chip,
