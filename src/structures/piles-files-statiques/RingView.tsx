@@ -255,13 +255,20 @@ export function RingView({
 
       <g className="ss-ring-centre" aria-hidden="true">
         <circle className="ss-ring-hole" r={RING_HOLE_RADIUS} />
-        <g className="ss-ring-centre-icon">
+        <svg
+          className="ss-ring-centre-icon"
+          x={-11}
+          y={-46}
+          width={22}
+          height={22}
+          viewBox="0 0 24 24"
+        >
           <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
           <path d="M21 3v5h-5" />
-        </g>
+        </svg>
         <text
           className="ss-ring-count"
-          y={-2}
+          y={-4}
           textAnchor="middle"
           dominantBaseline="central"
         >
@@ -269,7 +276,7 @@ export function RingView({
         </text>
         <text
           className={`ss-ring-status${geometry.empty ? ' is-empty' : geometry.full ? ' is-full' : ''}`}
-          y={26}
+          y={24}
           textAnchor="middle"
           dominantBaseline="central"
         >

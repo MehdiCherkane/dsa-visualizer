@@ -358,11 +358,18 @@
 }
 
 .ss-ring-centre-icon {
+  overflow: visible;
   fill: none;
   stroke: var(--muted);
   stroke-width: 2.2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+@media (max-height: 560px) {
+  .ss-ring-centre-icon {
+    display: none;
+  }
 }
 
 .ss-ring-count {

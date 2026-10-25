@@ -146,6 +146,16 @@ describe('rendu SVG des piles et files statiques', () => {
     expect(markup).not.toContain('ss-band')
   })
 
+  it('empile l’icône de 22 px au-dessus du compteur et du statut', () => {
+    const markup = render(idleStep(createSnapshot('file-circulaire', [10, 20, 30, 40, 50])))
+    expect(markup).toContain('class="ss-ring-centre-icon" x="-11" y="-46" width="22" height="22"')
+    expect(markup).toContain('class="ss-ring-count" y="-4"')
+    expect(markup).toContain('class="ss-ring-status is-full" y="24"')
+
+    const one = render(idleStep(createSnapshot('file-circulaire', [10])))
+    expect(one).toContain('class="ss-ring-centre-icon" x="-11" y="-46" width="22" height="22"')
+  })
+
   it('expose les cases de l’anneau au clavier et coupe le mouvement sur les sauts', () => {
     const step = idleStep(createSnapshot('file-circulaire', [10, 20, 30]))
     const markup = render(step)
