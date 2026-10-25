@@ -14,12 +14,12 @@ import {
   NULL_STUB,
   PIN_DEBUT_CLEARANCE,
   PIN_NULL_STUB,
-  PRECEDENT_LANE,
   ROW_Y,
-  SUIVANT_LANE,
+  borderPoint,
   cameraAtOne,
   circleGeometry,
   circleHeapBand,
+  circleNodeRect,
   debutCellGeometry,
   debutRoute,
   emptyListBand,
@@ -27,6 +27,7 @@ import {
   isNodeFlipped,
   layoutNodes,
   layoutPins,
+  nodeCenter,
   pointerAnchor,
   pointerSide,
   routeArrow,
@@ -438,7 +439,7 @@ describe('géométrie circulaire du chapitre 5', () => {
     }
   })
 
-  it('fait partir les flèches des points et arriver sur la bordure opposée', () => {
+  it('fait partir les flèches des points et arriver sur la bordure la plus proche', () => {
     for (const count of [3, 4, 8]) {
       const snapshot = createCircularSnapshot(
         'int',
@@ -462,7 +463,6 @@ describe('géométrie circulaire du chapitre 5', () => {
         ] as const) {
           const target = nodes[(index + offset + nodes.length) % nodes.length]!
           const targetPoint = layout.get(target.id)!
-          const targetFlipped = isNodeFlipped(targetPoint, ring)
           const route = routeArrow(
             source,
             field,
@@ -482,17 +482,35 @@ describe('géométrie circulaire du chapitre 5', () => {
           expect(route!.tail.x).toBeCloseTo(expectedTail.x, 6)
           expect(route!.tail.y).toBeCloseTo(expectedTail.y, 6)
 
-          const endAtRight =
-            field === 'suivant' ? targetFlipped : !targetFlipped
-          const expectedTip = {
-            x: endAtRight ? targetPoint.x + NODE_W : targetPoint.x,
-            y:
-              targetPoint.y +
-              NODE_H *
-                (field === 'suivant' ? PRECEDENT_LANE : SUIVANT_LANE),
-          }
-          expect(route!.tip.x).toBeCloseTo(expectedTip.x, 6)
-          expect(route!.tip.y).toBeCloseTo(expectedTip.y, 6)
+          const targetRect = circleNodeRect(targetPoint)
+          const tip = route!.tip
+          const onVerticalBorder =
+            Math.abs(tip.x - targetRect.x) < 1e-6 ||
+            Math.abs(tip.x - (targetRect.x + targetRect.width)) < 1e-6
+          const onHorizontalBorder =
+            Math.abs(tip.y - targetRect.y) < 1e-6 ||
+            Math.abs(tip.y - (targetRect.y + targetRect.height)) < 1e-6
+          expect(onVerticalBorder || onHorizontalBorder).toBe(true)
+          expect(tip.x).toBeGreaterThanOrEqual(targetRect.x - 1e-6)
+          expect(tip.x).toBeLessThanOrEqual(
+            targetRect.x + targetRect.width + 1e-6,
+          )
+          expect(tip.y).toBeGreaterThanOrEqual(targetRect.y - 1e-6)
+          expect(tip.y).toBeLessThanOrEqual(
+            targetRect.y + targetRect.height + 1e-6,
+          )
+
+          // The tip is the first border hit from the last waypoint: the arrow
+          // enters through the side facing the approach instead of crossing
+          // the target and landing on its far border.
+          const approach = route!.points[route!.points.length - 2]!
+          const expectedTip = borderPoint(
+            approach,
+            nodeCenter(targetPoint),
+            targetRect,
+          )
+          expect(tip.x).toBeCloseTo(expectedTip.x, 6)
+          expect(tip.y).toBeCloseTo(expectedTip.y, 6)
         }
       }
     }

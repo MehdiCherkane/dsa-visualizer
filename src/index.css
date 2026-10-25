@@ -807,7 +807,7 @@ body.is-resizing-horizontal * {
 
 .arrow-precedent {
   stroke: var(--arrow-prev);
-  stroke-dasharray: 7 5;
+  stroke-dasharray: 9 6;
 }
 
 .arrow-old {

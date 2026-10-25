@@ -240,6 +240,611 @@ export function pointerAnchor(
   }
 }
 
+/** Heap nodes keep their field order; only ring nodes are mirrored. */
+export function isRowFlipped(
+  node: LdcNode,
+  point: Point,
+  ring: CircleGeometry | null,
+): boolean {
+  return node.lane === 'row' && isNodeFlipped(point, ring)
+}
+
+export function circleNodeRect(point: Point): Rect {
+  return { x: point.x, y: point.y, width: NODE_W, height: NODE_H }
+}
+
+export function nodeCenter(point: Point): Point {
+  return { x: point.x + NODE_W / 2, y: point.y + NODE_H / 2 }
+}
+
+/**
+ * First border crossed by the ray `from -> toward`. `from` may be inside the
+ * rectangle (source exit) or outside it (target entry).
+ */
+export function borderPoint(from: Point, toward: Point, rect: Rect): Point {
+  const dx = toward.x - from.x
+  const dy = toward.y - from.y
+  const axis = (
+    start: number,
+    delta: number,
+    min: number,
+    max: number,
+  ): [number, number] | null => {
+    if (Math.abs(delta) < 1e-9) {
+      return start < min || start > max ? null : [-Infinity, Infinity]
+    }
+    const first = (min - start) / delta
+    const second = (max - start) / delta
+    return [Math.min(first, second), Math.max(first, second)]
+  }
+  const xAxis = axis(from.x, dx, rect.x, rect.x + rect.width)
+  const yAxis = axis(from.y, dy, rect.y, rect.y + rect.height)
+  if (!xAxis || !yAxis) return { ...from }
+  const enter = Math.max(xAxis[0], yAxis[0])
+  const exit = Math.min(xAxis[1], yAxis[1])
+  if (enter > exit) return { ...from }
+  // Inside the rectangle: leave through the far border. Outside: enter
+  // through the near border. `from` sits on a dot inside the source node.
+  const t = enter >= 0 ? enter : exit
+  if (!Number.isFinite(t)) return { ...from }
+  return { x: from.x + dx * t, y: from.y + dy * t }
+}
+
+function roundedPath(points: Point[], radius: number): string {
+  if (points.length < 2) return ''
+  const first = points[0]!
+  const parts = [`M ${first.x} ${first.y}`]
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const previous = points[index - 1]!
+    const current = points[index]!
+    const next = points[index + 1]!
+    const inLength = Math.hypot(current.x - previous.x, current.y - previous.y)
+    const outLength = Math.hypot(next.x - current.x, next.y - current.y)
+    if (inLength < 1e-6 || outLength < 1e-6) continue
+    const bend = Math.min(radius, inLength / 2, outLength / 2)
+    const before = {
+      x: current.x + ((previous.x - current.x) * bend) / inLength,
+      y: current.y + ((previous.y - current.y) * bend) / inLength,
+    }
+    const after = {
+      x: current.x + ((next.x - current.x) * bend) / outLength,
+      y: current.y + ((next.y - current.y) * bend) / outLength,
+    }
+    parts.push(`L ${before.x} ${before.y}`)
+    parts.push(`Q ${current.x} ${current.y} ${after.x} ${after.y}`)
+  }
+  const last = points[points.length - 1]!
+  parts.push(`L ${last.x} ${last.y}`)
+  return parts.join(' ')
+}
+
+function routeFromPoints(
+  kind: ArrowRoute['kind'],
+  points: Point[],
+  tail: Point,
+  tip: Point,
+  radius = 16,
+): ArrowRoute {
+  return {
+    kind,
+    path: roundedPath(points, radius),
+    tail,
+    tip,
+    bounds: boundsOfPoints(points, 2),
+    points,
+  }
+}
+
+interface YSpan {
+  top: number
+  bottom: number
+}
+
+function mergeSpans(spans: YSpan[]): YSpan[] {
+  const sorted = spans.slice().sort((first, second) => first.top - second.top)
+  const merged: YSpan[] = []
+  for (const span of sorted) {
+    const last = merged[merged.length - 1]
+    if (last && span.top <= last.bottom + 0.5) {
+      last.bottom = Math.max(last.bottom, span.bottom)
+    } else {
+      merged.push({ ...span })
+    }
+  }
+  return merged
+}
+
+/** Free horizontal corridors from the left heap side to the ring centre. */
+function leftChannels(
+  rowRects: Rect[],
+  fromX: number,
+  toX: number,
+  centerY: number,
+): YSpan[] {
+  const blocking = rowRects.filter(
+    (rect) => rect.x < toX && rect.x + rect.width > fromX,
+  )
+  if (blocking.length === 0) {
+    return [{ top: centerY - 80, bottom: centerY + 80 }]
+  }
+  const margin = 10
+  const blocked = mergeSpans(
+    blocking.map((rect) => ({
+      top: rect.y - margin,
+      bottom: rect.y + rect.height + margin,
+    })),
+  )
+  const minY = Math.min(...blocked.map((span) => span.top))
+  const maxY = Math.max(...blocked.map((span) => span.bottom))
+  const marginY = 160
+  const clear: YSpan[] = []
+  let cursor = minY - marginY
+  for (const span of blocked) {
+    if (span.top > cursor) clear.push({ top: cursor, bottom: span.top })
+    cursor = Math.max(cursor, span.bottom)
+  }
+  clear.push({ top: cursor, bottom: maxY + marginY })
+  return clear.filter((span) => span.bottom - span.top >= 24)
+}
+
+interface MixedChannels {
+  upper: YSpan
+  lower: YSpan
+  shared: boolean
+}
+
+function pickChannels(spans: YSpan[], centerY: number): MixedChannels {
+  const containing = spans.find(
+    (span) => span.top <= centerY && span.bottom >= centerY,
+  )
+  if (containing) {
+    return { upper: containing, lower: containing, shared: true }
+  }
+  const above = spans
+    .filter((span) => span.bottom <= centerY + 0.5)
+    .sort((first, second) => second.bottom - first.bottom)[0]
+  const below = spans
+    .filter((span) => span.top >= centerY - 0.5)
+    .sort((first, second) => first.top - second.top)[0]
+  const fallback = above ?? below ?? spans[0] ?? { top: centerY - 40, bottom: centerY + 40 }
+  return {
+    upper: above ?? fallback,
+    lower: below ?? fallback,
+    shared: !above || !below,
+  }
+}
+
+function spanY(span: YSpan, fraction: number): number {
+  return span.top + (span.bottom - span.top) * fraction
+}
+
+function mixedEntryY(channels: MixedChannels, lane: number): number {
+  if (channels.shared) {
+    const fraction =
+      lane === 0 ? 0.28 : lane === 2 ? 0.4 : lane === 1 ? 0.6 : 0.72
+    return spanY(channels.upper, fraction)
+  }
+  if (lane === 0) return spanY(channels.upper, 0.35)
+  if (lane === 2) return spanY(channels.upper, 0.65)
+  if (lane === 1) return spanY(channels.lower, 0.65)
+  return spanY(channels.lower, 0.35)
+}
+
+function mixedHub(lane: number, ring: CircleGeometry): Point {
+  switch (lane) {
+    case 0:
+      return { x: ring.cx - 14, y: ring.cy - 36 }
+    case 1:
+      return { x: ring.cx - 14, y: ring.cy + 36 }
+    case 2:
+      return { x: ring.cx + 14, y: ring.cy - 56 }
+    default:
+      return { x: ring.cx + 14, y: ring.cy + 56 }
+  }
+}
+
+interface Corridor {
+  x: number
+  half: number
+  left: number
+  right: number
+}
+
+function corridorFor(
+  rowRects: Rect[],
+  heapRects: Rect[],
+): Corridor | null {
+  if (rowRects.length === 0 || heapRects.length === 0) return null
+  const heapRight = Math.max(...heapRects.map((rect) => rect.x + rect.width))
+  const ringLeft = Math.min(...rowRects.map((rect) => rect.x))
+  if (ringLeft - heapRight < 16) return null
+  return {
+    x: (heapRight + ringLeft) / 2,
+    half: (ringLeft - heapRight) / 2,
+    left: heapRight,
+    right: ringLeft,
+  }
+}
+
+function mixedLaneX(corridor: Corridor, lane: number): number {
+  // Heap-to-row links approach the ring from the right of the corridor;
+  // row-to-heap links approach the heap from the left. Keeping those two
+  // groups apart stops their final horizontal segments from overlapping.
+  const fractions = [0.85, 0.65, 0.35, 0.15]
+  const left = corridor.left + 4
+  const right = corridor.right - 4
+  const width = Math.max(8, right - left)
+  return left + width * (fractions[lane] ?? 0.5)
+}
+
+function mixedLaneFor(
+  source: LdcNode,
+  field: PointerField,
+): number {
+  if (source.lane === 'heap') return field === 'suivant' ? 0 : 1
+  return field === 'suivant' ? 2 : 3
+}
+
+/** Keep mixed links clear of the two pointer dots on a heap node. */
+function mixedHeapEntryY(point: Point, field: PointerField): number {
+  return point.y + NODE_H / 2 + (field === 'suivant' ? -36 : 36)
+}
+
+/** Keep mixed links clear of the two pointer dots on a ring node. */
+function mixedRowEntryY(point: Point, field: PointerField): number {
+  return point.y + NODE_H / 2 + (field === 'suivant' ? -30 : 30)
+}
+
+function sameRect(first: Rect, second: Rect): boolean {
+  return (
+    first.x === second.x &&
+    first.y === second.y &&
+    first.width === second.width &&
+    first.height === second.height
+  )
+}
+
+/** True when a horizontal segment does not cut through a non-endpoint node. */
+function horizontalClear(
+  y: number,
+  fromX: number,
+  toX: number,
+  rects: Rect[],
+  endpoint: Rect,
+): boolean {
+  const left = Math.min(fromX, toX)
+  const right = Math.max(fromX, toX)
+  return rects.every((rect) => {
+    if (sameRect(rect, endpoint)) return true
+    if (y <= rect.y + 4 || y >= rect.y + rect.height - 4) return true
+    return rect.x >= right - 4 || rect.x + rect.width <= left + 4
+  })
+}
+
+function appendHeapExit(
+  points: Point[],
+  sourcePoint: Point,
+  tail: Point,
+  laneX: number,
+): void {
+  const heapRight = sourcePoint.x + NODE_W
+  const heapLeft = sourcePoint.x
+  const heapBottom = sourcePoint.y + NODE_H
+  const centerX = sourcePoint.x + NODE_W / 2
+  if (tail.x >= centerX) {
+    points.push({ x: heapRight, y: tail.y })
+    return
+  }
+  const sideX = heapLeft - 18
+  points.push({ x: heapLeft, y: tail.y })
+  points.push({ x: sideX, y: tail.y })
+  points.push({ x: sideX, y: heapBottom + 12 })
+  points.push({ x: laneX, y: heapBottom + 12 })
+}
+
+function appendRowExit(
+  points: Point[],
+  sourcePoint: Point,
+  tail: Point,
+  hub: Point,
+): void {
+  const rect = circleNodeRect(sourcePoint)
+  const center = nodeCenter(sourcePoint)
+  const inner = borderPoint(center, hub, rect)
+  const distance = Math.hypot(inner.x - tail.x, inner.y - tail.y)
+  const dotRight = tail.x > center.x + 1
+  const dotLeft = tail.x < center.x - 1
+  const innerRight = inner.x > center.x + 1
+  const innerLeft = inner.x < center.x - 1
+  const crossesHorizontally =
+    distance > 120 && ((dotRight && innerLeft) || (dotLeft && innerRight))
+  if (!crossesHorizontally) {
+    points.push(inner)
+    return
+  }
+
+  // The pointer dot sits on the outer side of the node: leave through that
+  // side, round the node above/below, then join the interior hub lane.
+  const above = tail.y <= center.y
+  const outerX = dotRight ? sourcePoint.x + NODE_W + 24 : sourcePoint.x - 24
+  const detourY = above ? sourcePoint.y - 22 : sourcePoint.y + NODE_H + 22
+  const innerX = innerRight ? sourcePoint.x + NODE_W + 24 : sourcePoint.x - 24
+  const sideX = dotRight ? sourcePoint.x + NODE_W : sourcePoint.x
+  points.push({ x: sideX, y: tail.y })
+  points.push({ x: outerX, y: tail.y })
+  points.push({ x: outerX, y: detourY })
+  points.push({ x: innerX, y: detourY })
+}
+
+/**
+ * Leaves a ring node towards the left corridor. The direct left exit is used
+ * when clear; otherwise the arrow rounds the node above or below. Returns
+ * false when neither option is free, so the caller can use the interior hub.
+ */
+function appendRowToLaneExit(
+  points: Point[],
+  sourcePoint: Point,
+  tail: Point,
+  laneX: number,
+  heapEntryY: number,
+  rowRects: Rect[],
+  sourceRect: Rect,
+): boolean {
+  const center = nodeCenter(sourcePoint)
+  const detourBelow = heapEntryY >= center.y
+  const detourY = detourBelow
+    ? sourcePoint.y + NODE_H + 24
+    : sourcePoint.y - 24
+  if (tail.x < center.x) {
+    if (horizontalClear(tail.y, sourcePoint.x, laneX, rowRects, sourceRect)) {
+      points.push({ x: sourcePoint.x, y: tail.y })
+      points.push({ x: laneX, y: tail.y })
+      return true
+    }
+    if (!horizontalClear(detourY, sourcePoint.x, laneX, rowRects, sourceRect)) {
+      return false
+    }
+    points.push({ x: sourcePoint.x, y: tail.y })
+    points.push({ x: sourcePoint.x, y: detourY })
+    points.push({ x: laneX, y: detourY })
+    return true
+  }
+
+  const sideX = sourcePoint.x + NODE_W + 24
+  if (!horizontalClear(detourY, sideX, laneX, rowRects, sourceRect)) {
+    return false
+  }
+  points.push({ x: sourcePoint.x + NODE_W, y: tail.y })
+  points.push({ x: sideX, y: tail.y })
+  points.push({ x: sideX, y: detourY })
+  points.push({ x: laneX, y: detourY })
+  return true
+}
+
+function rowRowGapRoute(
+  field: PointerField,
+  tail: Point,
+  sourcePoint: Point,
+  targetPoint: Point,
+  ring: CircleGeometry,
+  heapBand: Rect | null,
+): ArrowRoute {
+  const sourceCenter = nodeCenter(sourcePoint)
+  const targetCenter = nodeCenter(targetPoint)
+  const sourceAngle = Math.atan2(
+    sourceCenter.y - ring.cy,
+    sourceCenter.x - ring.cx,
+  )
+  const targetAngle = Math.atan2(
+    targetCenter.y - ring.cy,
+    targetCenter.x - ring.cx,
+  )
+  const normalize = (angle: number): number =>
+    ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
+  // A ring link is drawn along the shorter angular span. This also keeps
+  // temporary non-adjacent links (deletion, reversal) off the nodes that sit
+  // on the long side of the ring.
+  const clockwise = normalize(targetAngle - sourceAngle)
+  const delta = clockwise > Math.PI ? clockwise - Math.PI * 2 : clockwise
+  const midpoint = sourceAngle + delta / 2
+  const outer =
+    ring.count === 2
+      ? Math.max(90, ring.radius - 30)
+      : ring.radius + NODE_W / 2 + 26
+  const inner = Math.max(36, ring.radius - NODE_W / 2 - 12)
+  // Reciprocal links (temporary deletion/reversal states) traverse the same
+  // short span in opposite directions. Offset them by travel direction so the
+  // two paths never share a lane.
+  const forward = delta >= 0
+  const radius =
+    field === 'suivant'
+      ? outer + (forward ? 0 : 22)
+      : Math.max(28, inner - (forward ? 0 : 12))
+  let gap = {
+    x: ring.cx + Math.cos(midpoint) * radius,
+    y: ring.cy + Math.sin(midpoint) * radius,
+  }
+
+  // On a two-node ring the left outside gap would fall inside the heap band.
+  // Pull that one lane back into the free corridor between heap and ring.
+  if (
+    ring.count === 2 &&
+    field === 'suivant' &&
+    heapBand &&
+    gap.x < heapBand.x + heapBand.width + 8 &&
+    gap.y > heapBand.y - 8 &&
+    gap.y < heapBand.y + heapBand.height + 8
+  ) {
+    gap = { x: heapBand.x + heapBand.width + 20, y: ring.cy }
+  }
+
+  const exit = borderPoint(sourceCenter, gap, circleNodeRect(sourcePoint))
+  const entry = borderPoint(gap, targetCenter, circleNodeRect(targetPoint))
+  return {
+    kind: 'curve',
+    path: `M ${tail.x} ${tail.y} L ${exit.x} ${exit.y} Q ${gap.x} ${gap.y} ${entry.x} ${entry.y}`,
+    tail,
+    tip: entry,
+    bounds: boundsOfPoints([tail, exit, gap, entry], 2),
+    points: [tail, exit, gap, entry],
+  }
+}
+
+function singleRowMixedRoute(
+  source: LdcNode,
+  field: PointerField,
+  tail: Point,
+  sourcePoint: Point,
+  targetPoint: Point,
+  laneX: number,
+): ArrowRoute {
+  const heapSource = source.lane === 'heap'
+  const points: Point[] = [tail]
+  if (heapSource) {
+    appendHeapExit(points, sourcePoint, tail, laneX)
+    const rowEntryY = mixedRowEntryY(targetPoint, field)
+    points.push({ x: laneX, y: rowEntryY })
+    const tip = { x: targetPoint.x, y: rowEntryY }
+    points.push(tip)
+    return routeFromPoints('curve', points, tail, tip)
+  }
+
+  const center = nodeCenter(sourcePoint)
+  const heapEntryY = mixedHeapEntryY(targetPoint, field)
+  if (tail.x < center.x) {
+    points.push({ x: sourcePoint.x, y: tail.y })
+    points.push({ x: laneX, y: tail.y })
+    points.push({ x: laneX, y: heapEntryY })
+  } else {
+    const above = heapEntryY < center.y
+    const sideX = sourcePoint.x + NODE_W + 28
+    const detourY = above
+      ? sourcePoint.y - 42
+      : sourcePoint.y + NODE_H + 42
+    points.push({ x: sourcePoint.x + NODE_W, y: tail.y })
+    points.push({ x: sideX, y: tail.y })
+    points.push({ x: sideX, y: detourY })
+    points.push({ x: laneX, y: detourY })
+    points.push({ x: laneX, y: heapEntryY })
+  }
+  const tip = { x: targetPoint.x + NODE_W, y: heapEntryY }
+  points.push(tip)
+  return routeFromPoints('curve', points, tail, tip)
+}
+
+function mixedRoute(
+  source: LdcNode,
+  field: PointerField,
+  tail: Point,
+  sourcePoint: Point,
+  targetPoint: Point,
+  ring: CircleGeometry,
+  rowRects: Rect[],
+  heapRects: Rect[],
+): ArrowRoute | null {
+  const corridor = corridorFor(rowRects, heapRects)
+  if (!corridor) return null
+  const lane = mixedLaneFor(source, field)
+  const laneX = mixedLaneX(corridor, lane)
+  if (ring.count === 1) {
+    return singleRowMixedRoute(
+      source,
+      field,
+      tail,
+      sourcePoint,
+      targetPoint,
+      laneX,
+    )
+  }
+
+  const targetRect = circleNodeRect(targetPoint)
+  const sourceRect = circleNodeRect(sourcePoint)
+  const rowEntryY = mixedRowEntryY(targetPoint, field)
+  const heapEntryY = mixedHeapEntryY(targetPoint, field)
+  const points: Point[] = [tail]
+
+  if (source.lane === 'heap') {
+    if (horizontalClear(rowEntryY, laneX, targetPoint.x, rowRects, targetRect)) {
+      appendHeapExit(points, sourcePoint, tail, laneX)
+      points.push({ x: laneX, y: rowEntryY })
+      const tip = { x: targetPoint.x, y: rowEntryY }
+      points.push(tip)
+      return routeFromPoints('curve', points, tail, tip)
+    }
+    const channels = pickChannels(
+      leftChannels(rowRects, corridor.x, ring.cx, ring.cy),
+      ring.cy,
+    )
+    const entryY = mixedEntryY(channels, lane)
+    const hub = mixedHub(lane, ring)
+    appendHeapExit(points, sourcePoint, tail, laneX)
+    points.push({ x: laneX, y: entryY })
+    points.push(hub)
+    const tip = borderPoint(hub, nodeCenter(targetPoint), targetRect)
+    points.push(tip)
+    return routeFromPoints('curve', points, tail, tip)
+  }
+
+  if (
+    appendRowToLaneExit(
+      points,
+      sourcePoint,
+      tail,
+      laneX,
+      heapEntryY,
+      rowRects,
+      sourceRect,
+    )
+  ) {
+    points.push({ x: laneX, y: heapEntryY })
+    const tip = { x: targetPoint.x + NODE_W, y: heapEntryY }
+    points.push(tip)
+    return routeFromPoints('curve', points, tail, tip)
+  }
+
+  const channels = pickChannels(
+    leftChannels(rowRects, corridor.x, ring.cx, ring.cy),
+    ring.cy,
+  )
+  const entryY = mixedEntryY(channels, lane)
+  const hub = mixedHub(lane, ring)
+  appendRowExit(points, sourcePoint, tail, hub)
+  points.push(hub)
+  points.push({ x: laneX, y: entryY })
+  points.push({ x: laneX, y: heapEntryY })
+  const tip = { x: targetPoint.x + NODE_W, y: heapEntryY }
+  points.push(tip)
+  return routeFromPoints('curve', points, tail, tip)
+}
+
+function selfLoopRoute(
+  field: PointerField,
+  tail: Point,
+  sourcePoint: Point,
+): ArrowRoute {
+  const above = field === 'suivant'
+  const center = nodeCenter(sourcePoint)
+  const right = tail.x >= center.x
+  // Keep the loop tight around the node so it does not share the mixed-link
+  // corridor on the left of the ring.
+  const sideX = right ? sourcePoint.x + NODE_W + 10 : sourcePoint.x - 10
+  const laneY = above ? sourcePoint.y - 14 : sourcePoint.y + NODE_H + 14
+  const tipX = sourcePoint.x + NODE_W * (above ? 0.82 : 0.18)
+  const tip = {
+    x: tipX,
+    y: above ? sourcePoint.y : sourcePoint.y + NODE_H,
+  }
+  const points = [
+    tail,
+    { x: right ? sourcePoint.x + NODE_W : sourcePoint.x, y: tail.y },
+    { x: sideX, y: tail.y },
+    { x: sideX, y: laneY },
+    { x: tipX, y: laneY },
+    tip,
+  ]
+  return routeFromPoints('curve', points, tail, tip, 12)
+}
+
 export interface DebutCellGeometry {
   cell: Rect
   dot: Point
@@ -375,8 +980,12 @@ export function nullStubGeometry(
   node: LdcNode,
   field: PointerField,
   point: Point,
+  flipped = false,
 ): NullStubGeometry {
-  return makeNullStub(pointerAnchor(node, point, field), field === 'suivant' ? 1 : -1)
+  return makeNullStub(
+    pointerAnchor(node, point, field, flipped),
+    field === 'suivant' ? 1 : -1,
+  )
 }
 
 export function emptyNullStubGeometry(): NullStubGeometry {
@@ -419,80 +1028,9 @@ export interface ArrowRoute {
   tail: Point
   tip: Point
   bounds: Rect
+  /** On-path waypoints, used by collision tests and bounds checks. */
+  points: Point[]
   stub?: NullStubGeometry
-}
-
-/**
- * Routes a circular link locally around the ring. Every arrow starts at its
- * colored pointer dot, rounds the target on the side facing the source and
- * lands horizontally on the opposite border of that target.
- */
-function circularRoute(
-  field: PointerField,
-  sourcePoint: Point,
-  targetPoint: Point,
-  ring: CircleGeometry,
-): ArrowRoute {
-  const outward = field === 'suivant'
-  const sourceFlipped = isNodeFlipped(sourcePoint, ring)
-  const targetFlipped = isNodeFlipped(targetPoint, ring)
-  const startSide = pointerSide(field, sourceFlipped)
-  const start = {
-    x:
-      startSide === 'right'
-        ? sourcePoint.x + NODE_W - CELL_W / 2
-        : sourcePoint.x + CELL_W / 2,
-    y: sourcePoint.y + NODE_H * (outward ? SUIVANT_LANE : PRECEDENT_LANE),
-  }
-
-  // The arrow enters the target on the cell side opposite to the source
-  // pointer: a forward link lands on the PREC side, a backward link on SUIV.
-  const endAtRight = outward ? targetFlipped : !targetFlipped
-  const end = {
-    x: endAtRight ? targetPoint.x + NODE_W : targetPoint.x,
-    y:
-      targetPoint.y +
-      NODE_H * (outward ? PRECEDENT_LANE : SUIVANT_LANE),
-  }
-
-  const sourceSign = startSide === 'right' ? 1 : -1
-  const targetSign = endAtRight ? 1 : -1
-  const sourceCenterY = sourcePoint.y + NODE_H / 2
-  const targetCenterY = targetPoint.y + NODE_H / 2
-  const wrapAbove =
-    Math.abs(sourceCenterY - targetCenterY) < 1
-      ? !outward
-      : sourceCenterY < targetCenterY
-
-  // Approach the target from just outside its opposite border, then round the
-  // last corner so the tip lands horizontally on the border.
-  const margin = 34
-  const outside = { x: end.x + targetSign * margin, y: end.y }
-  const corner = {
-    x: outside.x,
-    y: end.y + (wrapAbove ? -margin : margin),
-  }
-  const delta = { x: corner.x - start.x, y: corner.y - start.y }
-  const c1 = {
-    x: start.x + delta.x * 0.35 + sourceSign * 26,
-    y: start.y + delta.y * 0.35,
-  }
-  const c2 = {
-    x: corner.x,
-    y: corner.y + (wrapAbove ? -36 : 36),
-  }
-
-  return {
-    kind: 'curve',
-    path: [
-      `M ${start.x} ${start.y}`,
-      `C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${corner.x} ${corner.y}`,
-      `Q ${outside.x} ${outside.y}, ${end.x} ${end.y}`,
-    ].join(' '),
-    tail: start,
-    tip: end,
-    bounds: boundsOfPoints([start, c1, c2, corner, outside, end], 2),
-  }
 }
 
 export function routeArrow(
@@ -510,17 +1048,23 @@ export function routeArrow(
     source,
     sourcePoint,
     field,
-    isNodeFlipped(sourcePoint, ring),
+    isRowFlipped(source, sourcePoint, ring),
   )
 
   if (!target) {
-    const stub = nullStubGeometry(source, field, sourcePoint)
+    const stub = nullStubGeometry(
+      source,
+      field,
+      sourcePoint,
+      isRowFlipped(source, sourcePoint, ring),
+    )
     return {
       kind: 'null',
       path: stub.path,
       tail,
       tip: stub.end,
       bounds: stub.bounds,
+      points: [tail, stub.end],
       stub,
     }
   }
@@ -532,34 +1076,36 @@ export function routeArrow(
   // case, but chapter 5 relies on it: draw a visible loop above the node for
   // `suivant` and below it for `precedent`.
   if (source.id === target.id) {
-    const above = field === 'suivant'
-    const exit = {
-      x: sourcePoint.x + (above ? NODE_W + 40 : -40),
-      y: tail.y,
-    }
-    const tip = {
-      x: sourcePoint.x + NODE_W * (above ? 0.86 : 0.14),
-      y: above ? sourcePoint.y : sourcePoint.y + NODE_H,
-    }
-    const bendY = above ? sourcePoint.y - 64 : sourcePoint.y + NODE_H + 64
-    const c1 = { x: exit.x + (above ? 24 : -24), y: bendY }
-    const c2 = { x: tip.x, y: bendY }
-    return {
-      kind: 'curve',
-      path: `M ${tail.x} ${tail.y} L ${exit.x} ${exit.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${tip.x} ${tip.y}`,
-      tail,
-      tip,
-      bounds: boundsOfPoints([tail, exit, c1, c2, tip], 2),
-    }
+    return selfLoopRoute(field, tail, sourcePoint)
   }
 
-  if (
-    mode === 'circle' &&
-    source.lane === 'row' &&
-    target.lane === 'row'
-  ) {
-    if (ring && ring.radius > 0) {
-      return circularRoute(field, sourcePoint, targetPoint, ring)
+  if (mode === 'circle' && ring) {
+    if (source.lane === 'row' && target.lane === 'row' && ring.radius > 0) {
+      return rowRowGapRoute(
+        field,
+        tail,
+        sourcePoint,
+        targetPoint,
+        ring,
+        circleHeapBand(nodes),
+      )
+    }
+    if (source.lane !== target.lane) {
+      const route = mixedRoute(
+        source,
+        field,
+        tail,
+        sourcePoint,
+        targetPoint,
+        ring,
+        nodes
+          .filter((node) => !node.freed && node.lane === 'row')
+          .map((node) => circleNodeRect(layout.get(node.id)!)),
+        nodes
+          .filter((node) => !node.freed && node.lane === 'heap')
+          .map((node) => circleNodeRect(layout.get(node.id)!)),
+      )
+      if (route) return route
     }
   }
 
@@ -574,6 +1120,7 @@ export function routeArrow(
       tail,
       tip,
       bounds: boundsOfPoints([tail, tip], 2),
+      points: [tail, tip],
     }
   }
 
@@ -585,6 +1132,7 @@ export function routeArrow(
       tail,
       tip,
       bounds: boundsOfPoints([tail, tip], 2),
+      points: [tail, tip],
     }
   }
 
@@ -615,6 +1163,7 @@ export function routeArrow(
       tail,
       tip,
       bounds: boundsOfPoints([tail, exit, c1, c2, tip], 2),
+      points: [tail, exit, c1, c2, tip],
     }
   }
 
@@ -639,6 +1188,7 @@ export function routeArrow(
       tail,
       tip,
       bounds: boundsOfPoints([tail, exit, c1, c2, tip], 2),
+      points: [tail, exit, c1, c2, tip],
     }
   }
 
@@ -667,6 +1217,7 @@ export function routeArrow(
       tail,
       tip,
       bounds: boundsOfPoints([tail, exit, c1, c2, tip], 2),
+      points: [tail, exit, c1, c2, tip],
     }
   }
 
@@ -689,6 +1240,7 @@ export function routeArrow(
     tail,
     tip,
     bounds: boundsOfPoints([tail, exit, c1, c2, tip], 2),
+    points: [tail, exit, c1, c2, tip],
   }
 }
 
@@ -707,6 +1259,7 @@ export function debutRoute(
       tail: geometry.dot,
       tip: stub.end,
       bounds: stub.bounds,
+      points: [geometry.dot, stub.end],
       stub,
     }
   }
@@ -722,6 +1275,7 @@ export function debutRoute(
     tail: geometry.dot,
     tip,
     bounds: boundsOfPoints([geometry.dot, tip], 2),
+    points: [geometry.dot, tip],
   }
 }
 
@@ -987,7 +1541,14 @@ export function snapshotBounds(
       const pointer = node[field]
       if (pointer.kind === 'uninit') continue
       if (pointer.kind === 'null') {
-        rects.push(nullStubGeometry(node, field, point).bounds)
+        rects.push(
+          nullStubGeometry(
+            node,
+            field,
+            point,
+            isRowFlipped(node, point, ring),
+          ).bounds,
+        )
         continue
       }
       const target = nodes.find((candidate) => candidate.id === pointer.id) ?? null
