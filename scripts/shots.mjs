@@ -24,6 +24,7 @@ const blur = async (page) => {
 const CHAPTER2 = `${BASE}/#/chapitre-2`
 const CHAPTER3 = `${BASE}/#/chapitre-3`
 const CHAPTER4 = `${BASE}/#/chapitre-4`
+const CHAPTER5 = `${BASE}/#/chapitre-5`
 const MENU = `${BASE}/#/`
 
 const openPage = async (browser, width, height) => {
@@ -371,6 +372,17 @@ if (!fileDock.includes('debut') || !fileDock.includes('fin')) {
 }
 await shot(filePage, '20-file-cours-1920', 800)
 await filePage.close()
+
+const lddcPage = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
+await lddcPage.goto(CHAPTER5, { waitUntil: 'networkidle' })
+await lddcPage.waitForSelector('.ldc-svg', { timeout: 10000 })
+await loadScenario(lddcPage, 'Le cours : le cercle 9 → 2 → 5')
+const lddcDock = (await lddcPage.locator('.bottom-dock').textContent()) ?? ''
+if (!lddcDock.includes('debut')) {
+  throw new Error('chapter 5 dock does not expose debut')
+}
+await shot(lddcPage, '21-lddc-cours-1920', 800)
+await lddcPage.close()
 
 await browser.close()
 console.log(`done -> ${OUT}`)

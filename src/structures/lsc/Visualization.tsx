@@ -16,7 +16,6 @@ function makeModel(profile: LscSnapshot['profile']): LinkedModel<LscSnapshot> {
     emptyInsert:
       profile === 'etudiant' ? fr.viz.insertEmptyEtudiant : fr.viz.insertEmptyLsc,
     ariaLabel: fr.chapters.lsc.title,
-    globalLegend: fr.legend.debut,
     nodes(snapshot) {
       return snapshot.nodes.map<VizNode>((node) => {
         const subtitle = studentSubtitle(node)
@@ -35,7 +34,9 @@ function makeModel(profile: LscSnapshot['profile']): LinkedModel<LscSnapshot> {
       })
     },
     globals(snapshot) {
-      return [{ name: 'debut', value: snapshot.globals.debut ?? { kind: 'null' } }]
+      return [
+        { name: 'debut', value: snapshot.globals.debut ?? { kind: 'null' }, placement: 'top' },
+      ]
     },
     pins(snapshot) {
       const frame = snapshot.frames[snapshot.frames.length - 1]

@@ -3,8 +3,9 @@ import { ldcPlugin } from './structures/ldc'
 import { lddcPlugin } from './structures/lddc'
 import { lscPlugin } from './structures/lsc'
 import { pilesFilesPlugin } from './structures/piles-files'
+import { treesPlugin } from './structures/trees'
 
-export const plugins = [ldcPlugin, lddcPlugin, lscPlugin, pilesFilesPlugin] as const
+export const plugins = [lscPlugin, pilesFilesPlugin, ldcPlugin, lddcPlugin, treesPlugin] as const
 export const defaultPlugin = ldcPlugin
 
 /**

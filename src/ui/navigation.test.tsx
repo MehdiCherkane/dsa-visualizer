@@ -71,7 +71,7 @@ describe('navigation par hash', () => {
     window.location.hash = '#/chapitre-4'
     const markup = renderToStaticMarkup(<App />)
     expect(markup).toContain('ldc-svg')
-    expect(markup).toContain(fr.menu.backLabel)
+    expect(markup).toContain(fr.menu.homeLabel)
     expect(markup).not.toContain(fr.menu.subtitle)
   })
 
@@ -108,9 +108,9 @@ describe('navigation par hash', () => {
     expect(query('.ldc-svg')).toBeNull()
   })
 
-  it('revient au menu avec le bouton ← Menu', () => {
+  it('revient au menu avec le bouton Accueil', () => {
     openDemo()
-    const back = query<HTMLButtonElement>(`button[aria-label="${fr.menu.backAria}"]`)
+    const back = query<HTMLButtonElement>(`button[aria-label="${fr.menu.homeLabel}"]`)
     expect(back).not.toBeNull()
     act(() => {
       back?.click()
@@ -176,7 +176,15 @@ describe('raccourcis clavier', () => {
     act(() => {
       help?.click()
     })
-    expect(query('#shortcuts-popover')).not.toBeNull()
+    const popover = query('#shortcuts-popover')
+    expect(popover).not.toBeNull()
+    const credits = popover?.textContent ?? ''
+    expect(credits).toContain(fr.credits.title)
+    expect(credits).toContain('El Mahdi Cherkane')
+    expect(credits).toContain('Omar Moussaid')
+    expect(credits).toContain('Hamza Agour')
+    expect(credits.indexOf('El Mahdi Cherkane')).toBeLessThan(credits.indexOf('Omar Moussaid'))
+    expect(credits.indexOf('Omar Moussaid')).toBeLessThan(credits.indexOf('Hamza Agour'))
 
     press('Escape')
     expect(query('#shortcuts-popover')).toBeNull()

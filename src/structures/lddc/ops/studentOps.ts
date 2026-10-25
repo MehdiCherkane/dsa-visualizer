@@ -471,6 +471,9 @@ export function runStudentDetruireListe(
     if (!notEmpty) break
 
     const head = r.node(debut.id)
+    if (r.activeFrame) {
+      delete r.activeFrame.vars.dernier
+    }
     r.declareLocal('ancien', debut)
     r.step(fn, fnLabels.declAncien.line, fr.captions.declarePointer('ancien', r.describe(debut)))
 
@@ -486,7 +489,7 @@ export function runStudentDetruireListe(
 
     if (single) {
       r.freeNode(head.id)
-      r.step(fn, fnLabels.freeSingle.line, fr.captions.freeNodeDangling(head.id))
+      r.step(fn, fnLabels.freeSingle.line, C.removeSingleNode)
       r.setGlobal('debut', { kind: 'null' })
       r.step(fn, fnLabels.setDebutNull.line, fr.captions.assignGlobalDebut(fr.common.null), {
         badge: 'debut-modifie',

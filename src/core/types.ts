@@ -21,6 +21,8 @@ export type VarValue =
 export interface FrameState {
   fn: string
   vars: Record<string, VarValue>
+  /** Human-readable call, e.g. `detruireArbre(80)`; used by the breadcrumb. */
+  callLabel?: string
 }
 
 export interface BaseSnapshot {
@@ -104,6 +106,8 @@ export interface OperationDef<S extends BaseSnapshot> {
   complexity: string
   complexityNote: string
   inserts: boolean
+  /** Enables a structure-specific recursive call-stack teaching panel. */
+  showCallStack?: boolean
   run: (state: S, params: ParamValues) => Step<S>[]
 }
 
@@ -146,6 +150,8 @@ export interface VisualizationProps<S extends BaseSnapshot> {
   operationSteps?: Step<S>[]
   cameraResetKey?: number
   callText?: string
+  /** Optional secondary focus, supplied by a companion teaching panel. */
+  highlightedNodeId?: number | null
   onNodeClick?: (nodeId: number) => void
   onEmptyInsert?: () => void
   presentation: boolean

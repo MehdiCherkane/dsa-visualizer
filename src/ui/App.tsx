@@ -11,6 +11,8 @@ import type {
 } from '../core/types'
 import { fr } from '../i18n/fr'
 import { CaptionPanel } from './CaptionPanel'
+import { CallStackPanel } from './CallStackPanel'
+import type { CallStackFocus } from './CallStackPanel'
 import { CodePanel } from './CodePanel'
 import { BottomDock } from './BottomDock'
 import { Controls } from './Controls'
@@ -32,6 +34,7 @@ import {
 import type { LayoutPatch, LayoutState } from './layout'
 import { ScenarioStrip } from './ScenarioStrip'
 import { usePlayerState } from './usePlayer'
+import type { TreeSnapshot } from '../structures/trees/memory'
 
 const WORKSPACE_SASH_SIZE = 7
 
@@ -125,6 +128,7 @@ export function DemoApp<S extends BaseSnapshot>({
   const [presentation, setPresentation] = useState(false)
   const [simulationFullscreen, setSimulationFullscreen] = useState(false)
   const [cameraResetKey, setCameraResetKey] = useState(0)
+  const [callStackFocus, setCallStackFocus] = useState<CallStackFocus | null>(null)
   const appRef = useRef<HTMLDivElement | null>(null)
   const workspaceRef = useRef<HTMLElement | null>(null)
   const codeColumnRef = useRef<HTMLDivElement | null>(null)
@@ -132,6 +136,20 @@ export function DemoApp<S extends BaseSnapshot>({
 
   const player = useMemo(() => new Player<S>(), [])
   const playerState = usePlayerState(player)
+  /**
+   * The call-stack panel needs to know, in the same render as the new
+   * snapshot, whether the transition came from a forward step. A state flag
+   * set from an effect is one render too late, so the event handlers mark the
+   * intent synchronously and the next render consumes it.
+   */
+  const stackMotionRef = useRef<'forward' | 'instant' | null>(null)
+  const stackAnimate =
+    stackMotionRef.current === 'forward' ||
+    (playerState.playing && stackMotionRef.current !== 'instant')
+
+  useEffect(() => {
+    stackMotionRef.current = null
+  }, [playerState.index, playerState.playing, playerState.total])
 
   useEffect(() => () => player.destroy(), [player])
   useEffect(() => {
@@ -222,6 +240,7 @@ export function DemoApp<S extends BaseSnapshot>({
   const activeCall = activeOperation
     ? formatCall(activeOperation.operation, activeOperation.params)
     : undefined
+  const callStackVisible = Boolean(activeOperation?.operation.showCallStack)
   const globalsText =
     Object.entries(currentStep.snapshot.globals)
       .map(([name, value]) => `${name} = ${plugin.formatValue(currentStep.snapshot, value)}`)
@@ -277,6 +296,8 @@ export function DemoApp<S extends BaseSnapshot>({
       const base = options.state ?? committedState
       const steps = operation.run(base, params)
       if (steps.length === 0) return
+      stackMotionRef.current = 'forward'
+      setCallStackFocus(null)
       player.load(steps)
       const next: ActiveOperation<S> = {
         operation,
@@ -312,6 +333,7 @@ export function DemoApp<S extends BaseSnapshot>({
     (id: string) => {
       player.clear()
       setActiveOperation(null)
+      setCallStackFocus(null)
       setSelectedId(id)
       const operation = profile.operations.find((candidate) => candidate.id === id)
       setParamValues(defaultParams(operation))
@@ -358,12 +380,42 @@ export function DemoApp<S extends BaseSnapshot>({
   }, [simulationFullscreen])
 
   const finishOperation = useCallback(() => {
+    stackMotionRef.current = 'instant'
     player.last()
   }, [player])
+
+  const nextStep = useCallback(() => {
+    stackMotionRef.current = 'forward'
+    player.next()
+  }, [player])
+
+  const stepBack = useCallback(() => {
+    stackMotionRef.current = 'instant'
+    player.prev()
+  }, [player])
+
+  const firstStep = useCallback(() => {
+    stackMotionRef.current = 'instant'
+    player.first()
+  }, [player])
+
+  const togglePlayback = useCallback(() => {
+    stackMotionRef.current = player.state.playing ? 'instant' : 'forward'
+    player.toggle()
+  }, [player])
+
+  const goToStep = useCallback(
+    (index: number) => {
+      stackMotionRef.current = 'instant'
+      player.goto(index)
+    },
+    [player],
+  )
 
   const cancelOperation = useCallback(() => {
     player.clear()
     setActiveOperation(null)
+    setCallStackFocus(null)
   }, [player])
 
   const resetAll = useCallback(() => {
@@ -372,6 +424,7 @@ export function DemoApp<S extends BaseSnapshot>({
     setCommittedState(profile.initialState())
     setJournal([])
     setActiveOperation(null)
+    setCallStackFocus(null)
     setScenarioRun(null)
     setParamValues(defaultParams(selectedOperation))
     setCameraResetKey((key) => key + 1)
@@ -389,6 +442,7 @@ export function DemoApp<S extends BaseSnapshot>({
       setParamValues(defaultParams(operation))
       setJournal([])
       setActiveOperation(null)
+      setCallStackFocus(null)
       setScenarioRun(null)
       setCameraResetKey((key) => key + 1)
     },
@@ -407,6 +461,7 @@ export function DemoApp<S extends BaseSnapshot>({
       setParamValues(defaultParams(operation))
       setJournal([])
       setActiveOperation(null)
+      setCallStackFocus(null)
       setScenarioRun({
         scenarioId: scenario.id,
         title: scenario.title,
@@ -421,6 +476,7 @@ export function DemoApp<S extends BaseSnapshot>({
   const quitScenario = useCallback(() => {
     player.clear()
     setActiveOperation(null)
+    setCallStackFocus(null)
     setScenarioRun(null)
   }, [player])
 
@@ -492,23 +548,23 @@ export function DemoApp<S extends BaseSnapshot>({
           break
         case 'ArrowRight':
           event.preventDefault()
-          player.next()
+          nextStep()
           break
         case 'ArrowLeft':
           event.preventDefault()
-          player.prev()
+          stepBack()
           break
         case ' ':
           event.preventDefault()
-          player.toggle()
+          togglePlayback()
           break
         case 'Home':
           event.preventDefault()
-          player.first()
+          firstStep()
           break
         case 'End':
           event.preventDefault()
-          player.last()
+          finishOperation()
           break
         case 'ArrowUp':
           event.preventDefault()
@@ -537,7 +593,7 @@ export function DemoApp<S extends BaseSnapshot>({
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [player, resetAll, simulationFullscreen, onMenu])
+  }, [finishOperation, firstStep, nextStep, stepBack, resetAll, simulationFullscreen, onMenu, togglePlayback])
 
   const appClassName = [
     'app',
@@ -575,6 +631,7 @@ export function DemoApp<S extends BaseSnapshot>({
               presentation={presentation}
               speed={playerState.speed}
               stepIndex={playerState.index}
+              highlightedNodeId={callStackFocus?.nodeId}
               operationSteps={
                 activeOperation && !activeOperation.committed ? activeOperation.steps : undefined
               }
@@ -590,12 +647,12 @@ export function DemoApp<S extends BaseSnapshot>({
 
           <Controls
             state={playerState}
-            onFirst={() => player.first()}
-            onPrev={() => player.prev()}
-            onToggle={() => player.toggle()}
-            onNext={() => player.next()}
-            onLast={() => player.last()}
-            onGoto={(index) => player.goto(index)}
+            onFirst={firstStep}
+            onPrev={stepBack}
+            onToggle={togglePlayback}
+            onNext={nextStep}
+            onLast={finishOperation}
+            onGoto={goToStep}
             onSpeed={(speed) => player.setSpeed(speed)}
             fullscreen={simulationFullscreen}
             onFullscreen={toggleSimulationFullscreen}
@@ -612,6 +669,7 @@ export function DemoApp<S extends BaseSnapshot>({
             onFinish={finishOperation}
             onCancel={cancelOperation}
             operationActive={operationActive}
+            operationFinished={Boolean(activeOperation?.committed)}
             listCount={listCount}
             maxed={maxed}
           />
@@ -650,8 +708,29 @@ export function DemoApp<S extends BaseSnapshot>({
           onReset={resetWorkspace}
         />
 
-        <div ref={codeColumnRef} className="right-column" id="workspace-code">
-          <CodePanel profile={profile} step={currentStep} presentation={presentation} />
+        <div
+          ref={codeColumnRef}
+          className={`right-column${callStackVisible ? ' has-call-stack' : ''}`}
+          id="workspace-code"
+        >
+          <CodePanel
+            profile={profile}
+            step={currentStep}
+            presentation={presentation}
+            hideBreadcrumb={callStackVisible}
+            secondaryLine={
+              callStackFocus ? { fn: callStackFocus.fn, line: callStackFocus.line } : null
+            }
+          />
+          {callStackVisible ? (
+            <CallStackPanel
+              snapshot={currentStep.snapshot as unknown as TreeSnapshot}
+              callStack={(currentStep.snapshot as unknown as TreeSnapshot).callStack}
+              speed={playerState.speed}
+              animate={stackAnimate}
+              onFrameFocus={setCallStackFocus}
+            />
+          ) : null}
         </div>
       </main>
 

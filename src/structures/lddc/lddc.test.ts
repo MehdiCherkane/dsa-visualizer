@@ -135,6 +135,7 @@ describe('chapitre 5 — liste doublement chaînée circulaire', () => {
 
     const twice = run(once, runPasserAuSuivant).final
     expect(listValues(twice)).toEqual([5, 9, 2])
+    expect(listValues(run(ints(9), runPasserAuSuivant).final)).toEqual([9])
     expect(listValues(run(emptyCircularSnapshot('int'), runPasserAuSuivant).final)).toEqual([])
   })
 
@@ -186,7 +187,10 @@ describe('chapitre 5 — liste doublement chaînée circulaire', () => {
     expect(listValues(rotated)).toEqual([102, 103, 101])
     expect(last(run(state, runStudentAfficherListe).steps).console.output).toBe('101 102 103 ')
     expect(last(run(state, runStudentAfficherListeEnvers).steps).console.output).toBe('103 102 101 ')
-    expect(run(state, runStudentDetruireListe).final.nodes).toHaveLength(0)
+    const detruireSteps = run(state, runStudentDetruireListe).steps
+    expect(detruireSteps[detruireSteps.length - 1].snapshot.nodes).toHaveLength(0)
+    const singleNodeFreeStep = detruireSteps.find((s) => s.caption.includes('Le nœud est seul'))
+    expect(singleNodeFreeStep?.snapshot.frames[0]?.vars.dernier).toBeUndefined()
   })
 
   it('utilise uniquement des lignes de code existantes pour chaque opération', () => {

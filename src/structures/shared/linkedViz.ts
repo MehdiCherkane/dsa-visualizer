@@ -3,6 +3,7 @@ import type { BaseSnapshot, PointerValue } from '../../core/types'
 export type VizOrientation = 'horizontal' | 'vertical'
 export type VizField = 'suivant' | 'precedent'
 export type VizLane = 'row' | 'heap'
+export type GlobalPlacement = 'left' | 'top' | 'bottom' | 'row'
 
 export interface VizNode {
   id: number
@@ -20,6 +21,12 @@ export interface VizNode {
 export interface VizGlobal {
   name: string
   value: PointerValue
+  placement?: GlobalPlacement
+}
+
+export interface GlobalCellPlacement {
+  rect: Rect
+  placement: GlobalPlacement
 }
 
 export interface VizPin {
@@ -36,7 +43,7 @@ export interface LinkedModel<S extends BaseSnapshot> {
   emptyText: string
   emptyInsert: string
   ariaLabel: string
-  globalLegend: string
+  showHeap?: boolean
   nodes: (snapshot: S) => VizNode[]
   globals: (snapshot: S) => VizGlobal[]
   pins: (snapshot: S) => VizPin[]
@@ -87,7 +94,7 @@ export const HEAP_Y = 92
 export const STACK_X = 340
 export const STACK_TOP = 160
 export const STACK_SLIDE = 138
-export const HEAP_STACK_X = 660
+export const HEAP_STACK_X = 760
 
 export const GLOBAL_W = 132
 export const GLOBAL_H = 44
@@ -148,6 +155,128 @@ export function globalCellGeometry(
 
 export function globalAnchor(cell: Rect): Point {
   return { x: cell.x + cell.width, y: cell.y + cell.height / 2 }
+}
+
+export function layoutGlobals(
+  globals: VizGlobal[],
+  nodes: VizNode[],
+  layout: Map<number, Point>,
+  orientation: VizOrientation,
+): Map<string, GlobalCellPlacement> {
+  const result = new Map<string, GlobalCellPlacement>()
+  const row = nodes
+    .filter((node) => node.lane === 'row')
+    .slice()
+    .sort((a, b) => a.slot - b.slot)
+  const ordered = row.length > 0 ? row : nodes.slice().sort((a, b) => a.slot - b.slot)
+  const firstPoint = ordered.length > 0 ? layout.get(ordered[0]!.id) : undefined
+  const lastPoint =
+    ordered.length > 0 ? layout.get(ordered[ordered.length - 1]!.id) : undefined
+
+  if (nodes.length === 0) {
+    const bounds = emptyBounds(orientation)
+    const bandTop = orientation === 'horizontal' ? ROW_Y - 84 : STACK_TOP - 92
+    const centerX = orientation === 'horizontal' ? bounds.x + bounds.width / 2 : STACK_X + NODE_W / 2
+    const y = orientation === 'horizontal' ? bandTop - GLOBAL_H - 16 : bandTop + 18
+    const rowGlobals =
+      orientation === 'vertical'
+        ? globals.filter((global) => global.placement === 'row')
+        : []
+    const centeredGlobals = globals.filter((global) => !rowGlobals.includes(global))
+    const total =
+      Math.max(1, centeredGlobals.length) * GLOBAL_W +
+      Math.max(0, centeredGlobals.length - 1) * 16
+    let x = centerX - total / 2
+    for (const global of centeredGlobals) {
+      result.set(global.name, {
+        rect: { x, y, width: GLOBAL_W, height: GLOBAL_H },
+        placement: 'top',
+      })
+      x += GLOBAL_W + 16
+    }
+    rowGlobals.forEach((global, index) => {
+      result.set(global.name, {
+        rect: {
+          x: STACK_X + (NODE_W - GLOBAL_W) / 2,
+          y: STACK_TOP - 8 + index * (GLOBAL_H + 18),
+          width: GLOBAL_W,
+          height: GLOBAL_H,
+        },
+        placement: 'row',
+      })
+    })
+    return result
+  }
+
+  const rowGlobals =
+    orientation === 'vertical' ? globals.filter((global) => global.placement === 'row') : []
+  rowGlobals.forEach((global, index) => {
+    result.set(global.name, {
+      rect: {
+        x: STACK_X + (NODE_W - GLOBAL_W) / 2,
+        y: STACK_TOP - 8 + index * (GLOBAL_H + 18),
+        width: GLOBAL_W,
+        height: GLOBAL_H,
+      },
+      placement: 'row',
+    })
+  })
+  const leftGlobals = globals.filter(
+    (global) =>
+      global.placement !== 'top' &&
+      global.placement !== 'bottom' &&
+      global.placement !== 'row',
+  )
+  leftGlobals.forEach((global, index) => {
+    result.set(global.name, {
+      rect: globalCellGeometry(index, leftGlobals.length, orientation),
+      placement: 'left',
+    })
+  })
+
+  for (const global of globals) {
+    if (global.placement === 'top' && firstPoint) {
+      result.set(global.name, {
+        rect: {
+          x:
+            orientation === 'horizontal'
+              ? firstPoint.x - GLOBAL_W - 12
+              : firstPoint.x + (NODE_W - GLOBAL_W) / 2,
+          y:
+            orientation === 'horizontal'
+              ? ROW_Y - 84 - GLOBAL_H - 14
+              : firstPoint.y - GLOBAL_H - 28,
+          width: GLOBAL_W,
+          height: GLOBAL_H,
+        },
+        placement: 'top',
+      })
+    }
+  }
+
+  for (const global of globals) {
+    if (global.placement === 'bottom' && lastPoint) {
+      result.set(global.name, {
+        rect: {
+          x: lastPoint.x + (NODE_W - GLOBAL_W) / 2,
+          y: lastPoint.y + NODE_H + 28,
+          width: GLOBAL_W,
+          height: GLOBAL_H,
+        },
+        placement: 'bottom',
+      })
+    }
+  }
+
+  for (const global of globals) {
+    if (result.has(global.name)) continue
+    const index = leftGlobals.length
+    result.set(global.name, {
+      rect: globalCellGeometry(index, Math.max(1, index + 1), orientation),
+      placement: 'left',
+    })
+  }
+  return result
 }
 
 export function nodeCenter(point: Point): Point {
@@ -252,6 +381,7 @@ export function routeGlobal(
   targetPoint: Point | null,
   index: number,
   orientation: VizOrientation,
+  placement: GlobalPlacement = 'left',
 ): {
   path: string
   start: Point
@@ -259,6 +389,43 @@ export function routeGlobal(
   nullStub?: NullStub
   marker: 'gold' | 'alert' | 'success'
 } {
+  if (placement === 'bottom' && target && targetPoint) {
+    const start = { x: cell.x + cell.width / 2, y: cell.y }
+    const tip = { x: targetPoint.x + NODE_W / 2, y: targetPoint.y + NODE_H }
+    return {
+      path: `M ${start.x} ${start.y} L ${tip.x} ${tip.y}`,
+      start,
+      tip,
+      marker: 'gold',
+    }
+  }
+  if (placement === 'top' && target && targetPoint) {
+    const start = { x: cell.x + cell.width / 2, y: cell.y + cell.height }
+    const tip = { x: targetPoint.x + NODE_W / 2, y: targetPoint.y }
+    return {
+      path: `M ${start.x} ${start.y} L ${tip.x} ${tip.y}`,
+      start,
+      tip,
+      marker: 'gold',
+    }
+  }
+  if (placement === 'top' || placement === 'bottom') {
+    const start = { x: cell.x + cell.width / 2, y: cell.y + cell.height }
+    const end = { x: start.x, y: start.y + 54 }
+    return {
+      path: `M ${start.x} ${start.y} L ${end.x} ${end.y}`,
+      start,
+      tip: end,
+      marker: 'gold',
+      nullStub: {
+        start,
+        end,
+        path: `M ${start.x} ${start.y} L ${end.x} ${end.y}`,
+        label: { x: end.x, y: end.y + 26 },
+        orientation: 'vertical',
+      },
+    }
+  }
   const start = globalAnchor(cell)
   if (!target || !targetPoint) {
     if (orientation === 'horizontal') {
@@ -353,8 +520,8 @@ export function unionBounds(rects: Rect[]): Rect {
 
 export function emptyBounds(orientation: VizOrientation): Rect {
   return orientation === 'horizontal'
-    ? { x: 90, y: 236, width: 720, height: 300 }
-    : { x: 60, y: 86, width: 720, height: 500 }
+    ? { x: 90, y: 200, width: 720, height: 340 }
+    : { x: 180, y: 40, width: 860, height: 320 }
 }
 
 export function contentBounds(
@@ -367,12 +534,29 @@ export function contentBounds(
   const rects: Rect[] = [emptyBounds(orientation)]
   for (const node of nodes) {
     const point = layout.get(node.id)
-    if (point) rects.push(nodeRect(point))
+    if (!point) continue
+    rects.push(nodeRect(point))
+    if (node.pointer.kind === 'null') {
+      if (orientation === 'horizontal') {
+        rects.push({
+          x: point.x + NODE_W,
+          y: point.y + NODE_H / 2 - 22,
+          width: NULL_STUB + 74,
+          height: 62,
+        })
+      } else {
+        rects.push({
+          x: point.x + VALUE_W - 18,
+          y: point.y + NODE_H,
+          width: FIELD_W + 44,
+          height: NULL_DOWN + 58,
+        })
+      }
+    }
   }
-  globals.forEach((_global, index) => {
-    const cell = globalCellGeometry(index, globals.length, orientation)
-    rects.push({ x: cell.x - 8, y: cell.y - 26, width: cell.width + 16, height: cell.height + 34 })
-  })
+  for (const { rect: cell } of layoutGlobals(globals, nodes, layout, orientation).values()) {
+    rects.push({ x: cell.x - 8, y: cell.y - 26, width: cell.width + 16, height: cell.height + 70 })
+  }
   for (const pin of pins) {
     const target =
       pin.value.kind === 'node' ? layout.get(pin.value.id) ?? null : null
