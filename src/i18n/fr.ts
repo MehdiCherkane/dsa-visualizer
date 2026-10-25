@@ -819,7 +819,7 @@ export const fr = {
       fit: 'Ajuster',
       zoomIn: 'Zoom avant',
       zoomOut: 'Zoom arrière',
-      zoomReset: 'Revenir à 100 %',
+      zoomReset: 'Revenir à l’ajustement automatique',
       auto: 'Auto',
       manual: 'Manuel',
       bilanOpen: 'Bilan des 3 files',

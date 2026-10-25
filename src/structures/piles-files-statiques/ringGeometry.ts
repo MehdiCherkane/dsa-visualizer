@@ -18,14 +18,16 @@ export const RING_INDEX_W = 26
 export const RING_INDEX_H = 22
 export const RING_POINTER_W = 84
 export const RING_POINTER_H = 32
-export const RING_POINTER_START_RADIUS = 220
+export const RING_POINTER_START_RADIUS = 194
 export const RING_POINTER_MAX_RADIUS = 324
-export const RING_POINTER_GAP = 20
+export const RING_POINTER_GAP = 4
 export const RING_WRAP_RADIUS = 184
 export const RING_WRAP_CHIP_H = 26
 export const RING_WRAP_CHIP_MIN_W = 118
 export const RING_CHIP_MAX_RADIUS = 336
 export const RING_CANVAS = { x: -360, y: -360, width: 720, height: 720 }
+/** The HUD sits above the ring canvas; fit the ring in the space below it. */
+export const RING_FIT_INSETS = { top: 64, right: 4, bottom: 8, left: 4 }
 
 export interface RingPoint {
   x: number
@@ -389,6 +391,118 @@ function buildPointer(
  * Builds the circular ring layout for File 3. Returns `null` for every other
  * structure, which keeps the linear visualisations untouched.
  */
+interface RingMarkers {
+  empty: boolean
+  one: boolean
+  av: number
+  ar: number
+}
+
+function buildPointers(
+  markers: RingMarkers,
+  max: number,
+  indexRects: RingRect[],
+): RingPointerGeometry[] {
+  const pointers: RingPointerGeometry[] = []
+  if (markers.empty) {
+    const top = -Math.PI / 2
+    const first = buildPointer('av', markers.av, top - 22 * DEG, indexRects, true)
+    pointers.push(first)
+    pointers.push(
+      buildPointer('ar', markers.ar, top + 22 * DEG, [...indexRects, first.rect], true),
+    )
+    return pointers
+  }
+
+  if (markers.one) {
+    const index = markers.av
+    const angle = slotAngle(index, max)
+    const text = `av = ar = ${index}`
+    const width = Math.max(118, Math.ceil(textWidth(text, 13) + 18))
+    const placement = placePointer(
+      angle,
+      width,
+      RING_POINTER_H,
+      indexRects,
+      RING_POINTER_GAP,
+    )
+    pointers.push({
+      key: 'both',
+      text,
+      tone: 'both',
+      rect: placement.rect,
+      fontSize: 13,
+      dashed: false,
+      connectors: pointerConnectors(placement.rect, angle, ['gold', 'success']),
+    })
+    return pointers
+  }
+
+  const first = buildPointer('av', markers.av, slotAngle(markers.av, max), indexRects)
+  pointers.push(first)
+  pointers.push(
+    buildPointer(
+      'ar',
+      markers.ar,
+      slotAngle(markers.ar, max),
+      [...indexRects, first.rect],
+    ),
+  )
+  return pointers
+}
+
+const fitBoundsCache = new Map<number, RingRect>()
+
+/**
+ * Worst-case ring bounds for one capacity, symmetric around the ring origin.
+ * The camera is fitted once from this box so the ring never moves while the
+ * user steps through an operation.
+ */
+export function ringFitBounds(max: number): RingRect {
+  const cached = fitBoundsCache.get(max)
+  if (cached) return cached
+
+  const indexRects = Array.from({ length: max }, (_, index) =>
+    centeredRect(polar(slotAngle(index, max), RING_INDEX_RADIUS), RING_INDEX_W, RING_INDEX_H),
+  )
+  const rects: RingRect[] = [
+    { x: -RING_TRACK_RADIUS - 4, y: -RING_TRACK_RADIUS - 4, width: (RING_TRACK_RADIUS + 4) * 2, height: (RING_TRACK_RADIUS + 4) * 2 },
+    { x: -RING_WRAP_RADIUS - 4, y: -RING_WRAP_RADIUS - 4, width: (RING_WRAP_RADIUS + 4) * 2, height: (RING_WRAP_RADIUS + 4) * 2 },
+    ...indexRects.map((rect) => expand(rect, 3)),
+  ]
+
+  const collect = (markers: RingMarkers, wrap: boolean): void => {
+    const pointers = buildPointers(markers, max, indexRects)
+    rects.push(...pointers.map((pointer) => expand(pointer.rect, 4)))
+    if (wrap) {
+      rects.push(expand(buildWrap(max, false, pointers, indexRects).chipRect, 4))
+    }
+  }
+
+  collect({ empty: true, one: false, av: -1, ar: -1 }, false)
+  for (let index = 0; index < max; index += 1) {
+    collect({ empty: false, one: true, av: index, ar: index }, index === max - 1)
+  }
+  for (let av = 0; av < max; av += 1) {
+    for (let ar = 0; ar < max; ar += 1) {
+      if (av === ar) continue
+      collect({ empty: false, one: false, av, ar }, ar === 0 || ar === max - 1)
+    }
+  }
+
+  const union = unionRects(rects)
+  const halfX = Math.max(Math.abs(union.x), Math.abs(union.x + union.width))
+  const halfY = Math.max(Math.abs(union.y), Math.abs(union.y + union.height))
+  const bounds = {
+    x: -halfX,
+    y: -halfY,
+    width: halfX * 2,
+    height: halfY * 2,
+  }
+  fitBoundsCache.set(max, bounds)
+  return bounds
+}
+
 export function ringGeometry(
   snapshot: ArraySnapshot,
   options: RingGeometryOptions = {},
@@ -446,58 +560,11 @@ export function ringGeometry(
     }
   })
 
-  const pointers: RingPointerGeometry[] = []
-  if (empty) {
-    const top = -Math.PI / 2
-    const first = buildPointer(
-      'av',
-      circular.av,
-      top - 22 * DEG,
-      indexRects,
-      true,
-    )
-    pointers.push(first)
-    pointers.push(
-      buildPointer('ar', circular.ar, top + 22 * DEG, [...indexRects, first.rect], true),
-    )
-  } else if (one) {
-    const index = circular.av
-    const angle = slotAngle(index, max)
-    const text = `av = ar = ${index}`
-    const width = Math.max(118, Math.ceil(textWidth(text, 13) + 18))
-    const placement = placePointer(
-      angle,
-      width,
-      RING_POINTER_H,
-      indexRects,
-      RING_POINTER_GAP,
-    )
-    pointers.push({
-      key: 'both',
-      text,
-      tone: 'both',
-      rect: placement.rect,
-      fontSize: 13,
-      dashed: false,
-      connectors: pointerConnectors(placement.rect, angle, ['gold', 'success']),
-    })
-  } else {
-    const first = buildPointer(
-      'av',
-      circular.av,
-      slotAngle(circular.av, max),
-      indexRects,
-    )
-    pointers.push(first)
-    pointers.push(
-      buildPointer(
-        'ar',
-        circular.ar,
-        slotAngle(circular.ar, max),
-        [...indexRects, first.rect],
-      ),
-    )
-  }
+  const pointers = buildPointers(
+    { empty, one, av: circular.av, ar: circular.ar },
+    max,
+    indexRects,
+  )
 
   const formula = circular.formula
   const wrapped = formula?.wrapped === true

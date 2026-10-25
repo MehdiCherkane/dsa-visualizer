@@ -4,7 +4,7 @@ import { fr } from '../../i18n/fr'
 import { fileCirculaire, fileDecalage, fileOrdinaire } from './code/file'
 import { pileCode } from './code/pile'
 import { pilesFilesStatiquesPlugin } from './index'
-import { fitCamera } from './geometry'
+import { FIT_PADDING, MAX_AUTO_K, MIN_AUTO_K, fitCamera } from './geometry'
 import {
   MAX_CAPACITY,
   MAX_CELLS,
@@ -34,8 +34,11 @@ import {
 } from './scenarios'
 import {
   RING_CANVAS,
+  RING_FIT_INSETS,
+  RING_TRACK_RADIUS,
   rectGap,
   rectInside,
+  ringFitBounds,
   ringGeometry,
   wrapArcPoints,
 } from './ringGeometry'
@@ -639,7 +642,7 @@ describe('géométrie de l’anneau', () => {
         expect(
           rectGap(pointer.rect, slot.indexRect),
           `${label} : ${pointer.key} doit rester à distance de l’indice ${slot.index}`,
-        ).toBeGreaterThan(15)
+        ).toBeGreaterThan(2)
       }
     }
 
@@ -654,6 +657,93 @@ describe('géométrie de l’anneau', () => {
       }
     }
   }
+
+  it('garde un cadrage fixe, centré et assez grand pour tous les états', () => {
+    const stage = { width: 973, height: 428 }
+    for (let capacity = 3; capacity <= 8; capacity += 1) {
+      const values = Array.from({ length: capacity }, (_, index) => 10 + index)
+      let snapshot = createSnapshot('file-circulaire', values, { capacity })
+      snapshot = lastStep(runOperation('file-circulaire', 'defiler', snapshot, {})).snapshot
+      snapshot = lastStep(runOperation('file-circulaire', 'defiler', snapshot, {})).snapshot
+      snapshot = lastStep(
+        runOperation('file-circulaire', 'enfiler', snapshot, { valeur: 71 }),
+      ).snapshot
+
+      const states = [
+        emptySnapshot('file-circulaire', capacity),
+        createSnapshot('file-circulaire', [42], { capacity }),
+        createSnapshot('file-circulaire', values, { capacity }),
+        snapshot,
+      ]
+      const fitBounds = ringFitBounds(capacity)
+      expect(fitBounds.x + fitBounds.width / 2).toBeCloseTo(0)
+      expect(fitBounds.y + fitBounds.height / 2).toBeCloseTo(0)
+      const camera = fitCamera(fitBounds, stage, FIT_PADDING, MIN_AUTO_K, MAX_AUTO_K, RING_FIT_INSETS)
+      expect(camera.x).toBeCloseTo(stage.width / 2)
+      expect(camera.y).toBeCloseTo(
+        RING_FIT_INSETS.top + (stage.height - RING_FIT_INSETS.top - RING_FIT_INSETS.bottom) / 2,
+      )
+
+      for (const state of states) {
+        const ring = ringGeometry(state, { idle: true })
+        expect(ring, `capacité ${capacity}`).not.toBeNull()
+        if (!ring) continue
+        expect(
+          rectInside(ring.bounds, fitBounds),
+          `capacité ${capacity} : l’état doit tenir dans le cadrage fixe`,
+        ).toBe(true)
+        const top = camera.y + ring.bounds.y * camera.k
+        const bottom = camera.y + (ring.bounds.y + ring.bounds.height) * camera.k
+        expect(top, `capacité ${capacity} : le HUD doit rester dégagé`).toBeGreaterThanOrEqual(
+          RING_FIT_INSETS.top - 0.5,
+        )
+        expect(bottom).toBeLessThanOrEqual(stage.height - RING_FIT_INSETS.bottom + 0.5)
+      }
+
+      const canvasHeight = stage.height - RING_FIT_INSETS.top - RING_FIT_INSETS.bottom
+      const trackShare = (camera.k * RING_TRACK_RADIUS * 2) / canvasHeight
+      if (capacity <= 5) expect(trackShare).toBeGreaterThan(0.69)
+      else expect(trackShare).toBeGreaterThan(0.55)
+
+      for (let av = 0; av < capacity; av += 1) {
+        for (let ar = 0; ar < capacity; ar += 1) {
+          const count = ((ar - av + capacity) % capacity) + 1
+          const base = createSnapshot('file-circulaire', values.slice(0, count), {
+            capacity,
+          })
+          const cells = Array.from({ length: capacity }, () => null as (typeof base.cells)[number])
+          for (let offset = 0; offset < count; offset += 1) {
+            cells[(av + offset) % capacity] = base.cells[offset] ?? null
+          }
+          const state: ArraySnapshot = {
+            ...base,
+            cells,
+            globals: {
+              ...base.globals,
+              av: { kind: 'int', value: av },
+              ar: { kind: 'int', value: ar },
+            },
+          }
+          delete state.circular
+          const ring = ringGeometry(state, { idle: true })
+          expect(ring, `N=${capacity} av=${av} ar=${ar}`).not.toBeNull()
+          if (ring) {
+            expect(
+              ring.bounds.x,
+              `N=${capacity} av=${av} ar=${ar} doit tenir dans le cadrage fixe`,
+            ).toBeGreaterThanOrEqual(fitBounds.x - 0.01)
+            expect(ring.bounds.y).toBeGreaterThanOrEqual(fitBounds.y - 0.01)
+            expect(ring.bounds.x + ring.bounds.width).toBeLessThanOrEqual(
+              fitBounds.x + fitBounds.width + 0.01,
+            )
+            expect(ring.bounds.y + ring.bounds.height).toBeLessThanOrEqual(
+              fitBounds.y + fitBounds.height + 0.01,
+            )
+          }
+        }
+      }
+    }
+  })
 
   it('place les secteurs, valeurs, badges, pilules et arcs sans croisement de 3 à 8 cases', () => {
     for (let capacity = 3; capacity <= 8; capacity += 1) {

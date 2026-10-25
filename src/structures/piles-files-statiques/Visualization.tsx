@@ -25,7 +25,6 @@ import {
   TAG_H,
   TAPE_BOX_H,
   TAPE_Y,
-  cameraAtOne,
   cellRect,
   clamp,
   contentBounds,
@@ -40,7 +39,7 @@ import {
 } from './geometry'
 import type { Camera, MarkerGeometry, MarkerTone, Point, Size } from './geometry'
 import { RingView } from './RingView'
-import { ringGeometry } from './ringGeometry'
+import { RING_FIT_INSETS, ringFitBounds, ringGeometry } from './ringGeometry'
 import {
   cellText,
   countOccupied,
@@ -555,7 +554,8 @@ export default function StaticStructuresVisualization({
       ),
     )
   }, [operationSteps])
-  const fitBounds = operationBounds ?? content
+  // The ring is fitted once from its worst case so it never moves while stepping.
+  const fitBounds = isRing ? ringFitBounds(ring?.max ?? 5) : (operationBounds ?? content)
 
   const autoCamera = useMemo(
     () =>
@@ -565,18 +565,19 @@ export default function StaticStructuresVisualization({
         FIT_PADDING,
         MIN_AUTO_K,
         MAX_AUTO_K,
-        empty && onEmptyInsert && !isRing
-          ? stageW < 620
-            ? EMPTY_COMPACT_CAMERA_INSETS
-            : EMPTY_CAMERA_INSETS
-          : undefined,
+        isRing
+          ? RING_FIT_INSETS
+          : empty && onEmptyInsert
+            ? stageW < 620
+              ? EMPTY_COMPACT_CAMERA_INSETS
+              : EMPTY_CAMERA_INSETS
+            : undefined,
       ),
     [empty, fitBounds, isRing, onEmptyInsert, stageW, stageH],
   )
   const [camera, setCamera] = useState<Camera>(autoCamera)
   const [mode, setMode] = useState<'auto' | 'manual'>('auto')
   const cameraRef = useRef(camera)
-  const fitBoundsRef = useRef(fitBounds)
   const stageSizeRef = useRef({ width: stageW, height: stageH })
   const frameRef = useRef<number | null>(null)
   const pointersRef = useRef(new Map<number, Point>())
@@ -597,10 +598,6 @@ export default function StaticStructuresVisualization({
   useEffect(() => {
     cameraRef.current = camera
   }, [camera])
-
-  useEffect(() => {
-    fitBoundsRef.current = fitBounds
-  }, [fitBounds])
 
   useEffect(() => {
     stageSizeRef.current = { width: stageW, height: stageH }
@@ -680,8 +677,8 @@ export default function StaticStructuresVisualization({
   )
 
   const resetZoom = useCallback((): void => {
-    enterManual(cameraAtOne(fitBoundsRef.current, stageSizeRef.current), true)
-  }, [enterManual])
+    fitView()
+  }, [fitView])
 
   useEffect(() => {
     const element = stageRef.current
@@ -1155,10 +1152,10 @@ export default function StaticStructuresVisualization({
           type="button"
           className="camera-button camera-zoom-label"
           onClick={resetZoom}
-          title={fr.camera.zoomReset}
-          aria-label={fr.camera.zoomReset}
+          title={V.zoomReset}
+          aria-label={V.zoomReset}
         >
-          {Math.round(camera.k * 100)} %
+          {Math.round((camera.k / autoCamera.k) * 100)} %
         </button>
         <button
           type="button"
