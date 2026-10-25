@@ -6,6 +6,7 @@ import {
   layoutNodes,
   routeArrow,
 } from '../ldc/geometry'
+import type { PointerField } from '../ldc/memory'
 import type { LdcSnapshot } from './memory'
 import { intOperations, studentOperations } from './operations'
 import { intScenarios, studentScenarios } from './scenarios'
@@ -102,15 +103,24 @@ function distance(first: Point, second: Point): number {
   return Math.hypot(first.x - second.x, first.y - second.y)
 }
 
+interface AuditOptions {
+  finalForm?: boolean
+}
+
 interface RouteEntry {
   label: string
+  field: PointerField
   route: ArrowRoute
   sourceId: number
   targetId: number
   samples: Point[]
 }
 
-function auditSnapshot(label: string, snapshot: LdcSnapshot): string[] {
+function auditSnapshot(
+  label: string,
+  snapshot: LdcSnapshot,
+  options: AuditOptions = {},
+): string[] {
   const nodes = snapshot.nodes.filter((node) => !node.freed)
   if (nodes.length === 0) return []
   const layout = layoutNodes(nodes, 'circle')
@@ -123,10 +133,13 @@ function auditSnapshot(label: string, snapshot: LdcSnapshot): string[] {
       if (pointer.kind !== 'node') continue
       const target = nodes.find((candidate) => candidate.id === pointer.id)
       if (!target) continue
-      const route = routeArrow(node, field, target, layout, 'circle', nodes)
+      const route = routeArrow(node, field, target, layout, 'circle', nodes, {
+        finalForm: options.finalForm,
+      })
       if (!route) continue
       entries.push({
         label: `${node.id}(${node.lane}).${field}->${target.id}`,
+        field,
         route,
         sourceId: node.id,
         targetId: target.id,
@@ -150,6 +163,14 @@ function auditSnapshot(label: string, snapshot: LdcSnapshot): string[] {
     for (let second = first + 1; second < entries.length; second += 1) {
       const a = entries[first]!
       const b = entries[second]!
+      // Consecutive resting `precedent` links share their radial connector at
+      // the node they meet; that is the intended continuous inner loop, not
+      // two arrows running side by side.
+      const connectedPrecedent =
+        a.field === 'precedent' &&
+        b.field === 'precedent' &&
+        (a.targetId === b.sourceId || b.targetId === a.sourceId)
+      if (connectedPrecedent) continue
       let close = 0
       for (const point of a.samples) {
         if (b.samples.some((other) => distance(point, other) < 2.5)) close += 1
@@ -159,6 +180,57 @@ function auditSnapshot(label: string, snapshot: LdcSnapshot): string[] {
       if (close > 3) {
         issues.push(`${label}: ${a.label} overlaps ${b.label} (${close} samples)`)
       }
+    }
+  }
+  return issues
+}
+
+function onBorder(point: Point, rect: Rect, epsilon = 0.5): boolean {
+  const insideX =
+    point.x >= rect.x - epsilon && point.x <= rect.x + rect.width + epsilon
+  const insideY =
+    point.y >= rect.y - epsilon && point.y <= rect.y + rect.height + epsilon
+  const onVertical =
+    Math.abs(point.x - rect.x) <= epsilon ||
+    Math.abs(point.x - (rect.x + rect.width)) <= epsilon
+  const onHorizontal =
+    Math.abs(point.y - rect.y) <= epsilon ||
+    Math.abs(point.y - (rect.y + rect.height)) <= epsilon
+  return insideX && insideY && (onVertical || onHorizontal)
+}
+
+/** Final snapshots of a ring grown one node at a time, from one to eight. */
+function growingFinalSnapshots(): LdcSnapshot[] {
+  let snapshot = intScenarios.find((scenario) => scenario.id === 'vide')!.state
+  const insert = intOperations.find((operation) => operation.id === 'insererEnFin')!
+  const finals: LdcSnapshot[] = []
+  for (let count = 1; count <= 8; count += 1) {
+    const steps = insert.run(snapshot, { valeur: count })
+    snapshot = steps[steps.length - 1]!.snapshot
+    finals.push(snapshot)
+  }
+  return finals
+}
+
+/** Routes that differ between the transient routing and the resting routing. */
+function routeChanges(
+  label: string,
+  snapshot: LdcSnapshot,
+  field: PointerField,
+  options: AuditOptions,
+): string[] {
+  const nodes = snapshot.nodes.filter((node) => !node.freed)
+  const layout = layoutNodes(nodes, 'circle')
+  const issues: string[] = []
+  for (const node of nodes) {
+    const pointer = node[field]
+    if (pointer.kind !== 'node') continue
+    const target = nodes.find((candidate) => candidate.id === pointer.id)
+    if (!target) continue
+    const animated = routeArrow(node, field, target, layout, 'circle', nodes)
+    const resting = routeArrow(node, field, target, layout, 'circle', nodes, options)
+    if (animated?.path !== resting?.path) {
+      issues.push(`${label}: ${node.id}.${field}->${target.id} change de tracé`)
     }
   }
   return issues
@@ -215,6 +287,137 @@ describe('routage des flèches du chapitre 5', () => {
       })
       growing = steps[steps.length - 1]!.snapshot
     }
+    expect(issues, issues.join('\n')).toEqual([])
+  })
+
+  it('garde la forme finale lisible de deux à huit nœuds', () => {
+    const finals = growingFinalSnapshots()
+    const issues: string[] = []
+    for (let count = 2; count <= 8; count += 1) {
+      issues.push(
+        ...auditSnapshot(`forme finale ${count}`, finals[count - 1]!, {
+          finalForm: true,
+        }),
+      )
+    }
+    expect(issues, issues.join('\n')).toEqual([])
+  })
+
+  it('utilise le routage de repos pour les liens precedent de deux à huit nœuds', () => {
+    const finals = growingFinalSnapshots()
+    const issues: string[] = []
+    for (let count = 2; count <= 8; count += 1) {
+      const snapshot = finals[count - 1]!
+      const nodes = snapshot.nodes.filter((node) => !node.freed)
+      const layout = layoutNodes(nodes, 'circle')
+      const changed = nodes.some((node) => {
+        const pointer = node.precedent
+        if (pointer.kind !== 'node') return false
+        const target = nodes.find((candidate) => candidate.id === pointer.id)
+        if (!target) return false
+        const animated = routeArrow(
+          node,
+          'precedent',
+          target,
+          layout,
+          'circle',
+          nodes,
+        )
+        const resting = routeArrow(
+          node,
+          'precedent',
+          target,
+          layout,
+          'circle',
+          nodes,
+          { finalForm: true },
+        )
+        return animated?.path !== resting?.path
+      })
+      if (!changed) {
+        issues.push(`${count} nœuds: aucun lien precedent ne change de tracé`)
+      }
+    }
+    expect(issues, issues.join('\n')).toEqual([])
+  })
+
+  it('attache les liens precedent de la forme finale aux bords des nœuds', () => {
+    const finals = growingFinalSnapshots()
+    const issues: string[] = []
+    for (let count = 2; count <= 8; count += 1) {
+      const snapshot = finals[count - 1]!
+      const nodes = snapshot.nodes.filter((node) => !node.freed)
+      const layout = layoutNodes(nodes, 'circle')
+      for (const node of nodes) {
+        const pointer = node.precedent
+        if (pointer.kind !== 'node') continue
+        const target = nodes.find((candidate) => candidate.id === pointer.id)
+        if (!target) continue
+        const route = routeArrow(
+          node,
+          'precedent',
+          target,
+          layout,
+          'circle',
+          nodes,
+          { finalForm: true },
+        )
+        if (!route) continue
+        const sourceRect = circleNodeRect(layout.get(node.id)!)
+        const targetRect = circleNodeRect(layout.get(target.id)!)
+        if (!onBorder(route.tail, sourceRect)) {
+          issues.push(`${count} nœuds: queue de ${node.id} hors du bord`)
+        }
+        if (!onBorder(route.tip, targetRect)) {
+          issues.push(`${count} nœuds: pointe vers ${target.id} hors du bord`)
+        }
+      }
+    }
+    expect(issues, issues.join('\n')).toEqual([])
+  })
+
+  it('laisse les liens suivant identiques entre animation et forme finale', () => {
+    const finals = growingFinalSnapshots()
+    const issues = finals
+      .slice(1)
+      .flatMap((snapshot, index) =>
+        routeChanges(`forme finale ${index + 2}`, snapshot, 'suivant', {
+          finalForm: true,
+        }),
+      )
+    expect(issues, issues.join('\n')).toEqual([])
+  })
+
+  it('ne change pas la forme finale à un seul nœud', () => {
+    const one = growingFinalSnapshots()[0]!
+    const issues = [
+      ...routeChanges('un nœud', one, 'suivant', { finalForm: true }),
+      ...routeChanges('un nœud', one, 'precedent', { finalForm: true }),
+    ]
+    expect(issues, issues.join('\n')).toEqual([])
+  })
+
+  it('ignore la forme finale pendant une insertion encore dans le tas', () => {
+    const finals = growingFinalSnapshots()
+    const insert = intOperations.find(
+      (operation) => operation.id === 'insererEnFin',
+    )!
+    const steps = insert.run(finals[1]!, { valeur: 3 })
+    const transient = steps.find((step) =>
+      step.snapshot.nodes.some(
+        (node) => !node.freed && node.lane === 'heap',
+      ),
+    )
+    expect(transient).toBeDefined()
+    const snapshot = transient!.snapshot
+    const issues = [
+      ...routeChanges('insertion transitoire', snapshot, 'suivant', {
+        finalForm: true,
+      }),
+      ...routeChanges('insertion transitoire', snapshot, 'precedent', {
+        finalForm: true,
+      }),
+    ]
     expect(issues, issues.join('\n')).toEqual([])
   })
 })
