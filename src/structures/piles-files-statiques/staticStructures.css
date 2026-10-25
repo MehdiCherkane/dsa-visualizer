@@ -278,8 +278,8 @@
 
 .ss-ring-slot.is-free {
   fill: transparent;
-  stroke: var(--line);
-  stroke-width: 1.5;
+  stroke: var(--muted);
+  stroke-width: 2;
   stroke-dasharray: 4 5;
 }
 
@@ -555,9 +555,10 @@
 }
 
 .ss-ring-pointer.is-dashed rect {
-  fill: color-mix(in srgb, var(--panel) 82%, transparent);
+  fill: color-mix(in srgb, var(--panel-2) 88%, transparent);
+  stroke: var(--muted);
   stroke-dasharray: 4 3;
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .ss-ring-pointer.is-dashed .ss-ring-pointer-text {

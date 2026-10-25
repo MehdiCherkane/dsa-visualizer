@@ -460,11 +460,11 @@ function buildPointers(
 ): RingPointerGeometry[] {
   const pointers: RingPointerGeometry[] = []
   if (markers.empty) {
-    const top = -Math.PI / 2
+    // Left/right keeps the undefined pointers away from the index 0 pill.
     const first = buildPointer(
       'av',
       markers.av,
-      top - 22 * DEG,
+      Math.PI,
       indexRects,
       indexRects[0]!,
       true,
@@ -474,7 +474,7 @@ function buildPointers(
       buildPointer(
         'ar',
         markers.ar,
-        top + 22 * DEG,
+        0,
         [...indexRects, first.rect],
         indexRects[0]!,
         true,

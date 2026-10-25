@@ -889,8 +889,70 @@ describe('géométrie de l’anneau', () => {
         expect(emptyRing.empty).toBe(true)
         expect(emptyRing.pointers).toHaveLength(2)
         expect(emptyRing.pointers.every((pointer) => pointer.dashed)).toBe(true)
+        expect(emptyRing.pointers.map((pointer) => pointer.key)).toEqual(['av', 'ar'])
         expect(emptyRing.wrap).toBeNull()
+        for (const pointer of emptyRing.pointers) {
+          const centreDistance = Math.hypot(
+            pointer.rect.x + pointer.rect.width / 2,
+            pointer.rect.y + pointer.rect.height / 2,
+          )
+          expect(
+            centreDistance,
+            `vide N=${capacity} : ${pointer.key} doit rester hors de l’anneau`,
+          ).toBeGreaterThan(RING_TRACK_RADIUS)
+          expect(
+            rectGap(pointer.rect, emptyRing.slots[0]!.indexRect),
+            `vide N=${capacity} : ${pointer.key} doit éviter la case 0`,
+          ).toBeGreaterThan(8)
+        }
         expectClearLayout(emptyRing, `vide N=${capacity}`)
+      }
+    }
+  })
+
+  it('garde la bannière vide hors de l’anneau à 1366×768 et 1920×1080', () => {
+    // `.viz-stage.is-ring .ss-empty-banner`: top 96px, right 12px, width 300px.
+    const cta = (stage: { width: number }) => ({
+      x: stage.width - 12 - 300,
+      y: 96,
+      width: 300,
+      height: 84,
+    })
+    const stages = [
+      { width: 899, height: 432 },
+      { width: 1317.5, height: 608 },
+    ]
+    for (const stage of stages) {
+      const camera = fitCamera(
+        ringFitBounds(5),
+        stage,
+        FIT_PADDING,
+        MIN_AUTO_K,
+        MAX_AUTO_K,
+        RING_FIT_INSETS,
+      )
+      const banner = cta(stage)
+      const world = {
+        x: (banner.x - camera.x) / camera.k,
+        y: (banner.y - camera.y) / camera.k,
+        width: banner.width / camera.k,
+        height: banner.height / camera.k,
+      }
+      const nearestX = Math.max(world.x, -world.x - world.width, 0)
+      const nearestY = Math.max(world.y, -world.y - world.height, 0)
+      expect(
+        Math.hypot(nearestX, nearestY),
+        `${stage.width}×${stage.height} : la bannière doit rester hors de l’anneau`,
+      ).toBeGreaterThan(RING_TRACK_RADIUS)
+
+      const emptyRing = ringGeometry(emptySnapshot('file-circulaire', 5), { idle: true })
+      expect(emptyRing).not.toBeNull()
+      if (!emptyRing) continue
+      for (const slot of emptyRing.slots) {
+        expect(rectGap(slot.indexRect, world)).toBeGreaterThan(1)
+      }
+      for (const pointer of emptyRing.pointers) {
+        expect(rectGap(pointer.rect, world)).toBeGreaterThan(1)
       }
     }
   })

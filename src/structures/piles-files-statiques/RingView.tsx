@@ -118,7 +118,7 @@ function PointerShape({
       >
         {pointer.text}
       </text>
-      <title>{pointer.text}</title>
+      <title>{pointer.dashed ? `${pointer.text} · ${V.ringUndefined}` : pointer.text}</title>
     </g>
   )
 }

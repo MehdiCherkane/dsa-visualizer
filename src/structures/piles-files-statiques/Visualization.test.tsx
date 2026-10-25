@@ -217,6 +217,8 @@ describe('rendu SVG des piles et files statiques', () => {
     expect(file3).toContain('viz-stage is-empty is-ring')
     expect(file3).toContain('ss-empty-banner')
     expect(file3).toContain(V.insertFile)
+    expect(file3).toContain('ss-ring-pointer is-gold is-dashed')
+    expect(file3).toContain(V.ringUndefined)
 
     expect(render(idleStep(emptySnapshot('pile')))).not.toContain('ss-empty-banner')
   })
