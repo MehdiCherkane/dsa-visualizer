@@ -33,7 +33,7 @@ const pileModel: LinkedModel<PfSnapshot> = {
       id: node.id,
       address: node.address,
       slot: node.slot,
-      lane: node.lane,
+      lane: 'heap',
       freed: node.freed,
       value: payloadText(node),
       uninit: node.value === null,
@@ -43,7 +43,7 @@ const pileModel: LinkedModel<PfSnapshot> = {
   },
   globals(snapshot) {
     if (snapshot.profile !== 'pile') return []
-    return [{ name: 'sommet', value: snapshot.globals.sommet, placement: 'top' }]
+    return [{ name: 'sommet', value: snapshot.globals.sommet, placement: 'row' }]
   },
   pins: framePins,
 }

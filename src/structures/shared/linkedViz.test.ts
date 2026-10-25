@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  HEAP_STACK_X,
   NULL_STUB,
   NODE_H,
   NODE_W,
@@ -22,6 +23,10 @@ function node(id: number, slot: number, pointer: VizNode['pointer']): VizNode {
     pointer,
     pointerUninit: false,
   }
+}
+
+function heapNode(id: number, slot: number, pointer: VizNode['pointer']): VizNode {
+  return { ...node(id, slot, pointer), lane: 'heap' }
 }
 
 const nodes = [node(1, 0, { kind: 'node', id: 2 }), node(2, 1, { kind: 'null' })]
@@ -71,5 +76,39 @@ describe('géométrie partagée des listes', () => {
     expect(sommet!.rect.x).toBeGreaterThan(bounds.x)
     expect(sommet!.rect.y).toBeGreaterThan(bounds.y)
     expect(sommet!.rect.y + sommet!.rect.height).toBeLessThan(bounds.y + bounds.height)
+  })
+
+  it('place les nœuds de pile dans le TAS et le pointeur sommet dans PILE', () => {
+    const heapNodes = [
+      heapNode(1, 0, { kind: 'node', id: 2 }),
+      heapNode(2, 1, { kind: 'null' }),
+    ]
+    const layout = layoutNodes(heapNodes, 'vertical')
+    const pileGlobals: VizGlobal[] = [
+      { name: 'sommet', value: { kind: 'node', id: 1 }, placement: 'row' },
+    ]
+    const cells = layoutGlobals(pileGlobals, heapNodes, layout, 'vertical')
+    const sommet = cells.get('sommet')
+
+    expect(layout.get(1)?.x).toBe(HEAP_STACK_X)
+    expect(layout.get(2)?.x).toBe(HEAP_STACK_X)
+    expect(layout.get(1)!.y).toBeLessThan(layout.get(2)!.y)
+    expect(sommet?.placement).toBe('row')
+    expect(sommet!.rect.x).toBeLessThan(HEAP_STACK_X)
+    expect(sommet!.rect.y).toBeLessThan(layout.get(1)!.y)
+  })
+
+  it('accroche un global supérieur au premier nœud même sans nœud de ligne', () => {
+    const heapNodes = [heapNode(1, 0, { kind: 'null' })]
+    const layout = layoutNodes(heapNodes, 'vertical')
+    const topGlobals: VizGlobal[] = [
+      { name: 'sommet', value: { kind: 'node', id: 1 }, placement: 'top' },
+    ]
+    const cells = layoutGlobals(topGlobals, heapNodes, layout, 'vertical')
+    const sommet = cells.get('sommet')
+
+    expect(sommet?.placement).toBe('top')
+    expect(sommet!.rect.x).toBeGreaterThanOrEqual(HEAP_STACK_X)
+    expect(sommet!.rect.y).toBeLessThan(layout.get(1)!.y)
   })
 })

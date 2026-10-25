@@ -3,7 +3,7 @@ import type { BaseSnapshot, PointerValue } from '../../core/types'
 export type VizOrientation = 'horizontal' | 'vertical'
 export type VizField = 'suivant' | 'precedent'
 export type VizLane = 'row' | 'heap'
-export type GlobalPlacement = 'left' | 'top' | 'bottom'
+export type GlobalPlacement = 'left' | 'top' | 'bottom' | 'row'
 
 export interface VizNode {
   id: number
@@ -168,28 +168,64 @@ export function layoutGlobals(
     .filter((node) => node.lane === 'row')
     .slice()
     .sort((a, b) => a.slot - b.slot)
-  const firstPoint = row.length > 0 ? layout.get(row[0]!.id) : undefined
-  const lastPoint = row.length > 0 ? layout.get(row[row.length - 1]!.id) : undefined
+  const ordered = row.length > 0 ? row : nodes.slice().sort((a, b) => a.slot - b.slot)
+  const firstPoint = ordered.length > 0 ? layout.get(ordered[0]!.id) : undefined
+  const lastPoint =
+    ordered.length > 0 ? layout.get(ordered[ordered.length - 1]!.id) : undefined
 
-  if (row.length === 0) {
+  if (nodes.length === 0) {
     const bounds = emptyBounds(orientation)
     const bandTop = orientation === 'horizontal' ? ROW_Y - 84 : STACK_TOP - 92
     const centerX = orientation === 'horizontal' ? bounds.x + bounds.width / 2 : STACK_X + NODE_W / 2
     const y = orientation === 'horizontal' ? bandTop - GLOBAL_H - 16 : bandTop + 18
-    const total = Math.max(1, globals.length) * GLOBAL_W + Math.max(0, globals.length - 1) * 16
+    const rowGlobals =
+      orientation === 'vertical'
+        ? globals.filter((global) => global.placement === 'row')
+        : []
+    const centeredGlobals = globals.filter((global) => !rowGlobals.includes(global))
+    const total =
+      Math.max(1, centeredGlobals.length) * GLOBAL_W +
+      Math.max(0, centeredGlobals.length - 1) * 16
     let x = centerX - total / 2
-    for (const global of globals) {
+    for (const global of centeredGlobals) {
       result.set(global.name, {
         rect: { x, y, width: GLOBAL_W, height: GLOBAL_H },
         placement: 'top',
       })
       x += GLOBAL_W + 16
     }
+    rowGlobals.forEach((global, index) => {
+      result.set(global.name, {
+        rect: {
+          x: STACK_X + (NODE_W - GLOBAL_W) / 2,
+          y: STACK_TOP - 8 + index * (GLOBAL_H + 18),
+          width: GLOBAL_W,
+          height: GLOBAL_H,
+        },
+        placement: 'row',
+      })
+    })
     return result
   }
 
+  const rowGlobals =
+    orientation === 'vertical' ? globals.filter((global) => global.placement === 'row') : []
+  rowGlobals.forEach((global, index) => {
+    result.set(global.name, {
+      rect: {
+        x: STACK_X + (NODE_W - GLOBAL_W) / 2,
+        y: STACK_TOP - 8 + index * (GLOBAL_H + 18),
+        width: GLOBAL_W,
+        height: GLOBAL_H,
+      },
+      placement: 'row',
+    })
+  })
   const leftGlobals = globals.filter(
-    (global) => global.placement !== 'top' && global.placement !== 'bottom',
+    (global) =>
+      global.placement !== 'top' &&
+      global.placement !== 'bottom' &&
+      global.placement !== 'row',
   )
   leftGlobals.forEach((global, index) => {
     result.set(global.name, {
