@@ -173,6 +173,13 @@ export interface VisualizationProps<S extends BaseSnapshot> {
   stepIndex: number
 }
 
+/** Optional cards rendered under the code panel in the right column. */
+export interface SupportingPanelsProps<S extends BaseSnapshot> {
+  snapshot: S
+  step: Step<S>
+  presentation: boolean
+}
+
 export interface StructurePlugin<S extends BaseSnapshot> {
   id: string
   /** Chapter number in the course: drives the menu badge and the `#/chapitre-<n>` route. */
@@ -182,6 +189,8 @@ export interface StructurePlugin<S extends BaseSnapshot> {
   description: string
   profiles: ProfileDef<S>[]
   Visualization: ComponentType<VisualizationProps<S>>
+  /** Renders profile-specific cards below the code panel. */
+  SupportingPanels?: ComponentType<SupportingPanelsProps<S>>
   countNodes: (snapshot: S) => number
   formatValue: (snapshot: S, value: VarValue) => string
   nodeKey: (snapshot: S, nodeId: number) => ParamValue

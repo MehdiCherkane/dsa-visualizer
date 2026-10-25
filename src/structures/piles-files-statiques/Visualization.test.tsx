@@ -5,7 +5,9 @@ import { fr } from '../../i18n/fr'
 import { pilesFilesStatiquesPlugin } from './index'
 import { createSnapshot, emptySnapshot } from './memory'
 import type { ArraySnapshot } from './memory'
+import { fileCirculaireOperations } from './operations'
 import { fileCirculaireScenarios, fileDecalageScenarios, fileOrdinaireScenarios, pileScenarios } from './scenarios'
+import { StaticStructuresSupport } from './SupportPanels'
 import StaticStructuresVisualization, { BilanOverlay } from './Visualization'
 
 const V = fr.staticStructures.viz
@@ -187,5 +189,57 @@ describe('rendu SVG des piles et files statiques', () => {
     expect(markup).toContain(B.pileTraceTitle)
     expect(markup).toContain(B.fileTraceTitle)
     expect(markup).toContain(V.bilanClose)
+  })
+
+  it('rend les cartes de calcul et de mémoire pour la file circulaire seulement', () => {
+    const defiler = fileCirculaireOperations.find((operation) => operation.id === 'defiler')
+    const enfiler = fileCirculaireOperations.find((operation) => operation.id === 'enfiler')
+    if (!defiler || !enfiler) throw new Error('Missing circular queue operations')
+
+    let snapshot = createSnapshot('file-circulaire', [42, 17, 63, 8, 55])
+    for (let count = 0; count < 2; count += 1) {
+      const steps = defiler.run(snapshot, {})
+      snapshot = steps[steps.length - 1]!.snapshot
+    }
+    const steps = enfiler.run(snapshot, { valeur: 71 })
+    const step = steps[steps.length - 1]!
+
+    const markup = renderToStaticMarkup(
+      <StaticStructuresSupport snapshot={step.snapshot} step={step} presentation={false} />,
+    )
+    expect(markup).toContain(fr.staticStructures.support.indicesTitle)
+    expect(markup).toContain(fr.staticStructures.support.memoryTitle)
+    expect(markup).toContain('(0 + 1) % 5')
+    expect(markup).toContain(fr.staticStructures.support.staleTarget(1))
+    expect(markup).toContain('ss-calc-verdict is-no')
+    expect(markup).toContain(fr.staticStructures.support.wrap)
+    expect(markup).toContain(fr.staticStructures.support.memoryApplied(4, 5))
+    expect(markup).toContain('is-stale')
+    expect(markup).toContain('17')
+    expect(markup).toContain('71')
+
+    const full = createSnapshot('file-circulaire', [10, 20, 30, 40, 50])
+    const fullMarkup = renderToStaticMarkup(
+      <StaticStructuresSupport
+        snapshot={full}
+        step={idleStep(full)}
+        presentation={false}
+      />,
+    )
+    expect(fullMarkup).toContain(fr.staticStructures.support.occupied(0))
+    expect(fullMarkup).toContain('ss-calc-verdict is-yes')
+
+    for (const profile of ['pile', 'file-ordinaire', 'file-decalage'] as const) {
+      const other = emptySnapshot(profile)
+      expect(
+        renderToStaticMarkup(
+          <StaticStructuresSupport
+            snapshot={other}
+            step={idleStep(other)}
+            presentation={false}
+          />,
+        ),
+      ).toBe('')
+    }
   })
 })

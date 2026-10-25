@@ -706,6 +706,13 @@ export function DemoApp<S extends BaseSnapshot>({
               callStackFocus ? { fn: callStackFocus.fn, line: callStackFocus.line } : null
             }
           />
+          {plugin.SupportingPanels ? (
+            <plugin.SupportingPanels
+              snapshot={currentStep.snapshot}
+              step={currentStep}
+              presentation={presentation}
+            />
+          ) : null}
           {callStackVisible ? (
             <CallStackPanel
               snapshot={currentStep.snapshot as unknown as TreeSnapshot}

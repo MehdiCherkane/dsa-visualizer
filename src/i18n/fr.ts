@@ -407,6 +407,49 @@ export const fr = {
       file2: { traversed: 'décalages', comparisons: 'tests' },
       file3: { traversed: 'éléments lus', comparisons: 'tests' },
     },
+    support: {
+      indicesTitle: 'Calcul des indices',
+      memoryTitle: 'Mémoire · elements[MAX]',
+      indicesAria: 'Calcul des indices de la file circulaire',
+      memoryAria: 'Mémoire du tableau de la file circulaire',
+      capacity: (max: number) => `capacité ${max}`,
+      enqueue: 'Enfiler',
+      dequeue: 'Défiler',
+      fullQuestion: 'Pleine ?',
+      enqueueTemplate: 'ar ← (ar + 1) % MAX',
+      dequeueTemplate: 'av ← (av + 1) % MAX',
+      fullTemplate: 'taille == MAX',
+      occupied: (index: number) => `case ${index} déjà occupée`,
+      staleTarget: (index: number) => `case ${index} périmée, réutilisable`,
+      emptyQueue: 'file vide',
+      yes: 'oui',
+      no: 'non',
+      wrap: 'retour à 0',
+      memoryEmpty: (max: number) =>
+        `File vide : av = ar = −1. La première valeur ira en case 0 sur ${max}.`,
+      memoryFull: (ar: number) =>
+        `File pleine : ar = ${ar}. La prochaine arrivée viserait la case 0, déjà occupée.`,
+      memoryApplied: (from: number, max: number) =>
+        `ar a franchi la fin du tableau : (${from} + 1) % ${max} = 0. La mémoire se lit en anneau.`,
+      memoryUpcoming: (from: number) =>
+        `ar = ${from} : la prochaine arrivée revient en 0 par le modulo.`,
+      memoryOne: (index: number) =>
+        `av et ar partagent la case ${index} : un seul élément dans la file.`,
+      memoryLinear: (av: number, ar: number, last: number) =>
+        `av = ${av}, ar = ${ar} : lecture linéaire ; le retour à 0 n’a lieu qu’après la case ${last}.`,
+      memoryCell: (
+        index: number,
+        state: 'used' | 'stale' | 'free',
+        value: number | string | null,
+        role: string,
+      ) => {
+        if (state === 'free') return `Case ${index} libre.`
+        if (state === 'stale') {
+          return `Case ${index} : ${value} reste en mémoire mais n’est plus dans la file.`
+        }
+        return `Case ${index} : ${value}${role ? `, ${role}` : ''}.`
+      },
+    },
     ops: {
       initPile: {
         label: 'Initialiser la pile',

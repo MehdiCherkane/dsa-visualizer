@@ -23,6 +23,7 @@ import {
   pileScenarios,
 } from './scenarios'
 import StaticStructuresVisualization from './Visualization'
+import { StaticStructuresSupport } from './SupportPanels'
 
 const labels = fr.staticStructures.counterLabels
 
@@ -87,6 +88,7 @@ export const pilesFilesStatiquesPlugin: StructurePlugin<ArraySnapshot> = {
     },
   ],
   Visualization: StaticStructuresVisualization,
+  SupportingPanels: StaticStructuresSupport,
   countNodes: countOccupied,
   formatValue: formatVarValue,
   nodeKey: (snapshot, nodeId) => {
