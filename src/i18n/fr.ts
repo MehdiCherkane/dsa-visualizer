@@ -5,6 +5,10 @@ export function plural(count: number, one: string, many: string): string {
 }
 
 export const fr = {
+  credits: {
+    title: 'Réalisé par',
+    names: ['Mehdi Cherkane', 'Omar Moussaid', 'Hamza Agoure'],
+  },
   app: {
     title: 'Listes doublement chaînées',
     course: 'Structures de données',
@@ -91,8 +95,6 @@ export const fr = {
   shortcuts: {
     title: 'Raccourcis clavier',
     hint: 'Molette : zoom · Glisser : déplacer · Double-clic : ajuster',
-    creditsTitle: 'Réalisé par',
-    credits: ['Mehdi Cherkane', 'Omar Moussaid', 'Hamza Agoure'],
     rows: [
       { keys: ['←', '→'], label: 'Pas précédent / pas suivant' },
       { keys: ['Espace'], label: 'Lecture / pause' },

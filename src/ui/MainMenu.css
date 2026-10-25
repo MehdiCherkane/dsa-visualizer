@@ -49,6 +49,31 @@
   line-height: 1.45;
 }
 
+.menu-credits {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.menu-credits-title {
+  color: var(--gold);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.menu-credits-names {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
 .menu-section {
   width: 100%;
   max-width: 1100px;

@@ -63,8 +63,8 @@ export function Shortcuts(): JSX.Element {
             <p>{config.institution}</p>
             <p>{config.source}</p>
             <div className="shortcuts-credits">
-              <p className="shortcuts-credits-title">{fr.shortcuts.creditsTitle} :</p>
-              {fr.shortcuts.credits.map((name) => (
+              <p className="shortcuts-credits-title">{fr.credits.title} :</p>
+              {fr.credits.names.map((name) => (
                 <p key={name}>{name}</p>
               ))}
             </div>

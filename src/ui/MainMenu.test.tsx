@@ -44,6 +44,14 @@ describe('menu principal', () => {
     expect(container.textContent).toContain(fr.menu.subtitle)
   })
 
+  it('affiche les crédits dans l’ordre', () => {
+    const credits = container.querySelector('.menu-credits')?.textContent ?? ''
+    expect(credits).toContain(fr.credits.title)
+    for (const name of fr.credits.names) expect(credits).toContain(name)
+    expect(credits.indexOf('Mehdi Cherkane')).toBeLessThan(credits.indexOf('Omar Moussaid'))
+    expect(credits.indexOf('Omar Moussaid')).toBeLessThan(credits.indexOf('Hamza Agoure'))
+  })
+
   it('rend une carte par plugin enregistré, construite depuis le registre', () => {
     const cards = container.querySelectorAll('.chapter-card:not(.is-soon)')
     expect(cards).toHaveLength(plugins.length)

@@ -49,6 +49,14 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
             {fr.menu.title}
           </h1>
           <p className="menu-subtitle">{fr.menu.subtitle}</p>
+          <div className="menu-credits">
+            <span className="menu-credits-title">{fr.credits.title}</span>
+            <span className="menu-credits-names">
+              {fr.credits.names.map((name) => (
+                <span key={name}>{name}</span>
+              ))}
+            </span>
+          </div>
         </section>
 
         <section className="menu-section" aria-labelledby="menu-chapters">

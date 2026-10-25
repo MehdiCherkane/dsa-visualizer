@@ -164,7 +164,7 @@ describe('raccourcis clavier', () => {
     const popover = query('#shortcuts-popover')
     expect(popover).not.toBeNull()
     const credits = popover?.textContent ?? ''
-    expect(credits).toContain(fr.shortcuts.creditsTitle)
+    expect(credits).toContain(fr.credits.title)
     expect(credits).toContain('Mehdi Cherkane')
     expect(credits).toContain('Omar Moussaid')
     expect(credits).toContain('Hamza Agoure')
