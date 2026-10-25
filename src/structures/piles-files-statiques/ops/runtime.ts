@@ -15,7 +15,7 @@ import {
   deepFreeze,
   readGlobalInt,
 } from '../memory'
-import type { ArrayAtom, ArrayEntry, ArraySnapshot, ArrayTape } from '../memory'
+import type { ArrayAtom, ArrayEntry, ArraySnapshot, ArrayTape, CircularFormula } from '../memory'
 
 interface StepExtras {
   cond?: { expr: string; result: boolean }
@@ -169,6 +169,24 @@ export class ArrayRecorder {
     for (let index = 0; index < this.state.cells.length; index += 1) {
       this.clearCell(index)
     }
+  }
+
+  /** Records the index move currently being traced on the circular ring. */
+  setCircularFormula(formula: CircularFormula): void {
+    const circular = this.state.circular
+    if (!circular) return
+    circular.formula = { ...formula }
+  }
+
+  /** Marks the move as done so the ring can draw the solid wrap arc. */
+  markCircularApplied(): void {
+    const formula = this.state.circular?.formula
+    if (!formula || formula.applied) return
+    this.state.circular!.formula = { ...formula, applied: true }
+  }
+
+  clearCircularFormula(): void {
+    if (this.state.circular) delete this.state.circular.formula
   }
 
   /**

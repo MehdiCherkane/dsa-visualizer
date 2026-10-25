@@ -56,6 +56,45 @@ function emptyReason(r: ArrayRecorder): string {
   return C.fileEmptyReasonCirculaire(av, isEmpty(r.state))
 }
 
+/** Publishes the upcoming tail move so the ring can draw a dashed arc. */
+function prepareEnfilerFormula(r: ArrayRecorder): void {
+  if (r.state.profile !== 'file-circulaire') return
+  if (isFull(r.state)) {
+    r.clearCircularFormula()
+    return
+  }
+  const capacity = r.state.capacity
+  const ar = r.globalInt('ar')
+  const to = (ar + 1) % capacity
+  r.setCircularFormula({
+    kind: 'enfiler',
+    from: ar,
+    to,
+    wrapped: ar === capacity - 1 && to === 0,
+    applied: false,
+  })
+}
+
+/** Publishes the upcoming head move so the ring can draw a dashed arc. */
+function prepareDefilerFormula(r: ArrayRecorder): void {
+  if (r.state.profile !== 'file-circulaire') return
+  if (isEmpty(r.state)) {
+    r.clearCircularFormula()
+    return
+  }
+  const capacity = r.state.capacity
+  const av = r.globalInt('av')
+  const last = av === r.globalInt('ar')
+  const to = last ? -1 : (av + 1) % capacity
+  r.setCircularFormula({
+    kind: 'defiler',
+    from: av,
+    to,
+    wrapped: !last && av === capacity - 1 && to === 0,
+    applied: false,
+  })
+}
+
 function bodyEnfiler(r: ArrayRecorder, valeur: number): void {
   const profile = r.state.profile
   const fn = 'enfiler'
@@ -117,6 +156,7 @@ function bodyEnfiler(r: ArrayRecorder, valeur: number): void {
   const wasEmpty = av === -1
   const next = (ar + 1) % capacity
   r.setGlobalInt('ar', next)
+  r.markCircularApplied()
   r.step(fn, labels.advanceAr.line, C.enqueueWrap(next))
   conditionStep(
     r,
@@ -241,12 +281,14 @@ function bodyDefiler(r: ArrayRecorder): { value: number; early: boolean } {
   )
   if (last) {
     r.setGlobalInt('av', -1)
+    r.markCircularApplied()
     r.step(fn, labels.resetAv.line, C.resetAv)
     r.setGlobalInt('ar', -1)
     r.step(fn, labels.resetAr.line, C.resetAr)
   } else {
     const next = (av + 1) % capacity
     r.setGlobalInt('av', next)
+    r.markCircularApplied()
     r.step(fn, labels.advanceAv.line, C.dequeueCircularAdvance(next))
   }
   r.setReturnValue(value)
@@ -257,6 +299,7 @@ function bodyDefiler(r: ArrayRecorder): { value: number; early: boolean } {
 function callEnfiler(r: ArrayRecorder, valeur: number): void {
   const fn = 'enfiler'
   const labels = queueSource(r.state.profile).labels.enfiler
+  prepareEnfilerFormula(r)
   r.pushFrame(fn, { valeur: { kind: 'int', value: valeur } })
   r.step(fn, labels.entry.line, fr.captions.entry(fn))
   bodyEnfiler(r, valeur)
@@ -268,6 +311,7 @@ function callEnfiler(r: ArrayRecorder, valeur: number): void {
 function callDefiler(r: ArrayRecorder): number {
   const fn = 'defiler'
   const labels = queueSource(r.state.profile).labels.defiler
+  prepareDefilerFormula(r)
   r.pushFrame(fn)
   r.step(fn, labels.entry.line, fr.captions.entry(fn))
   const result = bodyDefiler(r)
@@ -284,6 +328,7 @@ export function runInitFile(
   const labels = queueSource(state.profile).labels.initFile
   const r = new ArrayRecorder(state)
   r.clearTape()
+  r.clearCircularFormula()
   r.pushFrame(fn)
   r.step(fn, labels.entry.line, fr.captions.entry(fn))
 
@@ -308,6 +353,7 @@ export function runEnfiler(
   const valeur = numberParam(params, 'valeur')
   const r = new ArrayRecorder(state)
   r.clearTape()
+  prepareEnfilerFormula(r)
   r.pushFrame(fn, { valeur: { kind: 'int', value: valeur } })
   r.step(fn, labels.entry.line, fr.captions.entry(fn))
   bodyEnfiler(r, valeur)
@@ -322,6 +368,7 @@ export function runDefiler(
   const labels = queueSource(state.profile).labels.defiler
   const r = new ArrayRecorder(state)
   r.clearTape()
+  prepareDefilerFormula(r)
   r.pushFrame(fn)
   r.step(fn, labels.entry.line, fr.captions.entry(fn))
   bodyDefiler(r)

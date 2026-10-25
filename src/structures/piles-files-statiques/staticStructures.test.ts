@@ -9,6 +9,7 @@ import {
   MAX_CELLS,
   cellValue,
   checkInvariants,
+  cloneSnapshot,
   createSnapshot,
   emptySnapshot,
   isFull,
@@ -145,10 +146,11 @@ describe('mémoire des tableaux fixes', () => {
     const wrapped = createSnapshot('file-circulaire', [10, 20, 30, 40, 50])
     wrapped.globals.av = { kind: 'int', value: 2 }
     wrapped.globals.ar = { kind: 'int', value: 1 }
-    expect(occupiedIndices(wrapped)).toEqual([2, 3, 4, 0, 1])
-    expect(liveValues(wrapped)).toEqual([30, 40, 50, 10, 20])
-    expect(isFull(wrapped)).toBe(true)
-    expect(checkInvariants(wrapped)).toEqual([])
+    const refreshed = cloneSnapshot(wrapped)
+    expect(occupiedIndices(refreshed)).toEqual([2, 3, 4, 0, 1])
+    expect(liveValues(refreshed)).toEqual([30, 40, 50, 10, 20])
+    expect(isFull(refreshed)).toBe(true)
+    expect(checkInvariants(refreshed)).toEqual([])
   })
 
   it('refuse de représenter plus de cinq cases', () => {
@@ -157,6 +159,284 @@ describe('mémoire des tableaux fixes', () => {
     )
   })
 })
+
+describe('anneau de la file circulaire', () => {
+  function expectSlotStates(snapshot: ArraySnapshot): void {
+    const circular = snapshot.circular
+    expect(circular).toBeDefined()
+    if (!circular) return
+    expect(circular.max).toBe(snapshot.capacity)
+    expect(circular.elements).toHaveLength(snapshot.capacity)
+    expect(new Set(circular.elements.map((element) => element.index)).size).toBe(
+      snapshot.capacity,
+    )
+    const used: number[] = []
+    for (const element of circular.elements) {
+      expect(['used', 'stale', 'free']).toContain(element.state)
+      expect(element.value === null).toBe(element.state === 'free')
+      if (element.state === 'used') used.push(element.index)
+    }
+    const sorted = (indices: number[]): number[] =>
+      [...indices].sort((left, right) => left - right)
+    expect(sorted(used)).toEqual(sorted(circular.order))
+    expect(circular.taille).toBe(used.length)
+    expect(checkInvariants(snapshot)).toEqual([])
+  }
+
+  it('suit le scénario 42, 17, 63, 8, 55 puis deux défiler et 71', () => {
+    let snapshot = createSnapshot('file-circulaire', [42, 17, 63, 8, 55])
+    expect(snapshot.circular).toMatchObject({
+      av: 0,
+      ar: 4,
+      taille: 5,
+      max: 5,
+      order: [0, 1, 2, 3, 4],
+    })
+    expect(snapshot.circular!.elements.map((element) => element.state)).toEqual([
+      'used',
+      'used',
+      'used',
+      'used',
+      'used',
+    ])
+    expectSlotStates(snapshot)
+
+    const first = lastStep(runOperation('file-circulaire', 'defiler', snapshot, {}))
+    expect(first.console.returnValue).toBe(42)
+    snapshot = first.snapshot
+    expect(snapshot.circular).toMatchObject({
+      av: 1,
+      ar: 4,
+      taille: 4,
+      order: [1, 2, 3, 4],
+    })
+    expect(snapshot.circular!.elements[0]).toEqual({
+      index: 0,
+      state: 'stale',
+      value: 42,
+    })
+    expect(snapshot.circular!.formula).toEqual({
+      kind: 'defiler',
+      from: 0,
+      to: 1,
+      wrapped: false,
+      applied: true,
+    })
+    expectSlotStates(snapshot)
+
+    const second = lastStep(runOperation('file-circulaire', 'defiler', snapshot, {}))
+    expect(second.console.returnValue).toBe(17)
+    snapshot = second.snapshot
+    expect(snapshot.circular).toMatchObject({
+      av: 2,
+      ar: 4,
+      taille: 3,
+      order: [2, 3, 4],
+    })
+    expect(snapshot.circular!.elements[1]).toEqual({
+      index: 1,
+      state: 'stale',
+      value: 17,
+    })
+    expectSlotStates(snapshot)
+
+    const enqueue = runOperation('file-circulaire', 'enfiler', snapshot, { valeur: 71 })
+    const upcoming = enqueue.find(
+      (step) => step.snapshot.circular?.formula?.applied === false,
+    )
+    expect(upcoming?.snapshot.circular?.formula).toEqual({
+      kind: 'enfiler',
+      from: 4,
+      to: 0,
+      wrapped: true,
+      applied: false,
+    })
+
+    const last = lastStep(enqueue).snapshot
+    expect(last.circular).toMatchObject({
+      av: 2,
+      ar: 0,
+      taille: 4,
+      max: 5,
+      order: [2, 3, 4, 0],
+    })
+    expect(last.circular!.elements[0]).toEqual({
+      index: 0,
+      state: 'used',
+      value: 71,
+    })
+    expect(last.circular!.elements[1]).toEqual({
+      index: 1,
+      state: 'stale',
+      value: 17,
+    })
+    expect(last.circular!.formula).toEqual({
+      kind: 'enfiler',
+      from: 4,
+      to: 0,
+      wrapped: true,
+      applied: true,
+    })
+    expectSlotStates(last)
+
+    for (const step of enqueue) expectSlotStates(step.snapshot)
+  })
+
+  it('gère la file pleine, vide et à un seul élément', () => {
+    const full = createSnapshot('file-circulaire', [10, 20, 30, 40, 50])
+    expect(full.circular).toMatchObject({ taille: 5, order: [0, 1, 2, 3, 4] })
+    expect(full.circular!.elements.every((element) => element.state === 'used')).toBe(true)
+    const refused = lastStep(
+      runOperation('file-circulaire', 'enfiler', full, { valeur: 60 }),
+    )
+    expect(refused.console.output).toContain('File pleine')
+    expect(refused.snapshot.circular).toMatchObject({ taille: 5 })
+    expect(refused.snapshot.circular!.formula).toBeUndefined()
+    expectSlotStates(refused.snapshot)
+
+    const empty = emptySnapshot('file-circulaire')
+    expect(empty.circular).toMatchObject({
+      av: -1,
+      ar: -1,
+      taille: 0,
+      max: 5,
+      order: [],
+    })
+    expect(
+      empty.circular!.elements.every(
+        (element) => element.state === 'free' && element.value === null,
+      ),
+    ).toBe(true)
+    const underflow = lastStep(runOperation('file-circulaire', 'defiler', empty, {}))
+    expect(underflow.console.returnValue).toBe(-1)
+    expect(underflow.snapshot.circular).toMatchObject({
+      av: -1,
+      ar: -1,
+      taille: 0,
+      order: [],
+    })
+    expect(underflow.snapshot.circular!.formula).toBeUndefined()
+    expectSlotStates(underflow.snapshot)
+
+    const single = createSnapshot('file-circulaire', [7])
+    expect(single.circular).toMatchObject({
+      av: 0,
+      ar: 0,
+      taille: 1,
+      order: [0],
+    })
+    const popped = lastStep(runOperation('file-circulaire', 'defiler', single, {}))
+    expect(popped.console.returnValue).toBe(7)
+    expect(popped.snapshot.circular).toMatchObject({
+      av: -1,
+      ar: -1,
+      taille: 0,
+      order: [],
+    })
+    expect(popped.snapshot.circular!.elements[0]).toEqual({
+      index: 0,
+      state: 'stale',
+      value: 7,
+    })
+    expect(popped.snapshot.circular!.formula).toEqual({
+      kind: 'defiler',
+      from: 0,
+      to: -1,
+      wrapped: false,
+      applied: true,
+    })
+    expectSlotStates(popped.snapshot)
+  })
+
+  it('distingue l’arc à venir de l’arc franchi pour enfiler et défiler', () => {
+    let snapshot = createSnapshot('file-circulaire', [10, 20, 30, 40, 50])
+    snapshot = lastStep(runOperation('file-circulaire', 'defiler', snapshot, {})).snapshot
+    snapshot = lastStep(runOperation('file-circulaire', 'defiler', snapshot, {})).snapshot
+    expect(snapshot.circular).toMatchObject({ av: 2, ar: 4, order: [2, 3, 4] })
+
+    const enqueue = runOperation('file-circulaire', 'enfiler', snapshot, { valeur: 60 })
+    expect(enqueue[0]!.snapshot.circular!.formula).toEqual({
+      kind: 'enfiler',
+      from: 4,
+      to: 0,
+      wrapped: true,
+      applied: false,
+    })
+    const enqueueApplied = enqueue.find(
+      (step) => step.snapshot.circular?.formula?.applied === true,
+    )
+    expect(enqueueApplied?.snapshot.circular?.formula).toEqual({
+      kind: 'enfiler',
+      from: 4,
+      to: 0,
+      wrapped: true,
+      applied: true,
+    })
+
+    let wrapped = createSnapshot('file-circulaire', [10, 20, 30, 40, 50])
+    for (let count = 0; count < 4; count += 1) {
+      wrapped = lastStep(runOperation('file-circulaire', 'defiler', wrapped, {})).snapshot
+    }
+    expect(wrapped.circular).toMatchObject({ av: 4, ar: 4, order: [4] })
+    wrapped = lastStep(
+      runOperation('file-circulaire', 'enfiler', wrapped, { valeur: 60 }),
+    ).snapshot
+    expect(wrapped.circular).toMatchObject({ av: 4, ar: 0, order: [4, 0] })
+
+    const dequeue = runOperation('file-circulaire', 'defiler', wrapped, {})
+    expect(dequeue[0]!.snapshot.circular!.formula).toEqual({
+      kind: 'defiler',
+      from: 4,
+      to: 0,
+      wrapped: true,
+      applied: false,
+    })
+    const dequeued = lastStep(dequeue).snapshot
+    expect(dequeued.circular).toMatchObject({ av: 0, ar: 0, taille: 1, order: [0] })
+    expect(dequeued.circular!.formula).toEqual({
+      kind: 'defiler',
+      from: 4,
+      to: 0,
+      wrapped: true,
+      applied: true,
+    })
+    expect(dequeued.circular!.elements[4]).toEqual({
+      index: 4,
+      state: 'stale',
+      value: 50,
+    })
+    expectSlotStates(dequeued)
+  })
+
+  it('accepte les capacités 3 à 8 et refuse les valeurs hors bornes', () => {
+    for (let capacity = 3; capacity <= 8; capacity += 1) {
+      const values = Array.from({ length: capacity }, (_, index) => index + 1)
+      const snapshot = createSnapshot('file-circulaire', values, { capacity })
+      expect(snapshot.capacity).toBe(capacity)
+      expect(snapshot.cells).toHaveLength(capacity)
+      expect(snapshot.circular).toMatchObject({
+        taille: capacity,
+        max: capacity,
+        av: 0,
+        ar: capacity - 1,
+        order: values.map((_, index) => index),
+      })
+      expect(isFull(snapshot)).toBe(true)
+      expectSlotStates(snapshot)
+    }
+
+    const emptyThree = createSnapshot('file-circulaire', [], { capacity: 3 })
+    expect(emptyThree.cells).toHaveLength(3)
+    expect(emptyThree.circular).toMatchObject({ taille: 0, max: 3, order: [] })
+    expect(() =>
+      createSnapshot('file-circulaire', [1, 2, 3, 4], { capacity: 3 }),
+    ).toThrow('At most 3 cells can be represented')
+    expect(() => createSnapshot('file-circulaire', [], { capacity: 9 })).toThrow(
+      'Capacity must be an integer between 1 and 8',
+    )
+  })
+})
+
 
 describe('pile statique — exercices du cours', () => {
   it('empile et dépile en LIFO', () => {
