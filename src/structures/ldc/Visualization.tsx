@@ -526,16 +526,26 @@ export default function LdcVisualization({
   }
 
   const strokeWidth = presentation ? 5 : 4
+  // Once an operation is committed there are no operation steps left: the
+  // ring is at rest and can use its cleaner concentric `precedent` lane.
+  const finalForm = !operationSteps || operationSteps.length === 0
   const renderRoute = (
     source: LdcNode,
     field: PointerField,
     pointer: PointerValue,
+    useFinalForm = finalForm,
   ): ReturnType<typeof routeArrow> => {
     if (pointer.kind === 'uninit') return null
-    if (pointer.kind === 'null') return routeArrow(source, field, null, layout, layoutMode, nodes)
+    if (pointer.kind === 'null') {
+      return routeArrow(source, field, null, layout, layoutMode, nodes, {
+        finalForm: useFinalForm,
+      })
+    }
     const target = nodes.find((candidate) => candidate.id === pointer.id) ?? null
     if (!target) return null
-    return routeArrow(source, field, target, layout, layoutMode, nodes)
+    return routeArrow(source, field, target, layout, layoutMode, nodes, {
+      finalForm: useFinalForm,
+    })
   }
 
   const showHeapBand = circleHeap !== null || (layoutMode === 'row' && hasHeap)
@@ -812,7 +822,7 @@ export default function LdcVisualization({
             if (!source) return null
             const field = change.field
             if (!isPointerField(field)) return null
-            const oldRoute = renderRoute(source, field, change.from)
+            const oldRoute = renderRoute(source, field, change.from, false)
             const newRoute = renderRoute(source, field, change.to)
             const key = `change-${change.nodeId}-${field}-${index}-${stepIndex}`
             const duration = reducedMotion ? 0.001 : Math.max(0.18, 0.85 / speed)

@@ -621,6 +621,10 @@ function appendRowToLaneExit(
   return true
 }
 
+function normalizeAngle(angle: number): number {
+  return ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
+}
+
 function rowRowGapRoute(
   field: PointerField,
   tail: Point,
@@ -639,12 +643,10 @@ function rowRowGapRoute(
     targetCenter.y - ring.cy,
     targetCenter.x - ring.cx,
   )
-  const normalize = (angle: number): number =>
-    ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
   // A ring link is drawn along the shorter angular span. This also keeps
   // temporary non-adjacent links (deletion, reversal) off the nodes that sit
   // on the long side of the ring.
-  const clockwise = normalize(targetAngle - sourceAngle)
+  const clockwise = normalizeAngle(targetAngle - sourceAngle)
   const delta = clockwise > Math.PI ? clockwise - Math.PI * 2 : clockwise
   const midpoint = sourceAngle + delta / 2
   const outer =
@@ -687,6 +689,134 @@ function rowRowGapRoute(
     tip: entry,
     bounds: boundsOfPoints([tail, exit, gap, entry], 2),
     points: [tail, exit, gap, entry],
+  }
+}
+
+/**
+ * Point where the node border faces the ring centre. The anchor stays on the
+ * node edge (never inside a cell), so the resting link can reach the inner
+ * lane without crossing the node it belongs to.
+ */
+function finalPrecedentAnchor(point: Point, ring: CircleGeometry): Point {
+  return borderPoint(
+    nodeCenter(point),
+    { x: ring.cx, y: ring.cy },
+    circleNodeRect(point),
+  )
+}
+
+/** Project an anchor onto a concentric lane around the ring centre. */
+function ringLanePoint(
+  anchor: Point,
+  ring: CircleGeometry,
+  radius: number,
+): { point: Point; angle: number } {
+  const dx = anchor.x - ring.cx
+  const dy = anchor.y - ring.cy
+  const distance = Math.hypot(dx, dy)
+  if (distance < 1e-6) {
+    return { point: { x: ring.cx + radius, y: ring.cy }, angle: 0 }
+  }
+  const angle = Math.atan2(dy, dx)
+  return {
+    point: {
+      x: ring.cx + (dx / distance) * radius,
+      y: ring.cy + (dy / distance) * radius,
+    },
+    angle,
+  }
+}
+
+/**
+ * Cubic approximation of a circular arc, split in segments of at most 90° so
+ * the result stays visually round. The signed delta drives the sweep
+ * direction: positive is clockwise in SVG coordinates, negative anticlockwise.
+ */
+function arcCubicPath(
+  center: Point,
+  radius: number,
+  startAngle: number,
+  delta: number,
+): { path: string; points: Point[] } {
+  const segments = Math.max(1, Math.ceil(Math.abs(delta) / (Math.PI / 2)))
+  const step = delta / segments
+  const control = (4 / 3) * Math.tan(Math.abs(step) / 4) * Math.sign(step)
+  const points: Point[] = []
+  let path = ''
+  let angle = startAngle
+  for (let index = 0; index < segments; index += 1) {
+    const next = angle + step
+    const start = {
+      x: center.x + Math.cos(angle) * radius,
+      y: center.y + Math.sin(angle) * radius,
+    }
+    const end = {
+      x: center.x + Math.cos(next) * radius,
+      y: center.y + Math.sin(next) * radius,
+    }
+    const first = {
+      x: start.x - Math.sin(angle) * radius * control,
+      y: start.y + Math.cos(angle) * radius * control,
+    }
+    const second = {
+      x: end.x + Math.sin(next) * radius * control,
+      y: end.y - Math.cos(next) * radius * control,
+    }
+    path += ` C ${first.x} ${first.y}, ${second.x} ${second.y}, ${end.x} ${end.y}`
+    points.push(start, end)
+    angle = next
+  }
+  return { path, points }
+}
+
+/**
+ * Resting state of a circular list: `precedent` links run on an inner lane
+ * and join the inner border of each node. Transient animation frames keep the
+ * dot-to-border routing, which is why this is only used once the operation is
+ * committed.
+ */
+function finalPrecedentRoute(
+  sourcePoint: Point,
+  targetPoint: Point,
+  ring: CircleGeometry,
+): ArrowRoute {
+  const sourceAnchor = finalPrecedentAnchor(sourcePoint, ring)
+  const targetAnchor = finalPrecedentAnchor(targetPoint, ring)
+  // Largest concentric lane that stays clear of the node corners. Two-node
+  // rings are constrained vertically; from three nodes on, the width of the
+  // diagonal nodes is the limiting dimension. On a two-node ring the outer
+  // `suivant` loop also comes close to the centre, hence the 45% cap.
+  const laneRadius = Math.max(
+    52,
+    ring.count === 2
+      ? Math.min(ring.radius - NODE_H / 2 - 24, ring.radius * 0.45)
+      : ring.radius - NODE_W / 2 - 24,
+  )
+  const sourceLane = ringLanePoint(sourceAnchor, ring, laneRadius)
+  const targetLane = ringLanePoint(targetAnchor, ring, laneRadius)
+  // Precedent walks anticlockwise; the short signed span keeps the arc on the
+  // side shared by the two neighbouring nodes.
+  const delta = -normalizeAngle(sourceLane.angle - targetLane.angle)
+  const arc = arcCubicPath(
+    { x: ring.cx, y: ring.cy },
+    laneRadius,
+    sourceLane.angle,
+    delta,
+  )
+  const points = [
+    sourceAnchor,
+    sourceLane.point,
+    ...arc.points,
+    targetLane.point,
+    targetAnchor,
+  ]
+  return {
+    kind: 'curve',
+    path: `M ${sourceAnchor.x} ${sourceAnchor.y} L ${sourceLane.point.x} ${sourceLane.point.y}${arc.path} L ${targetAnchor.x} ${targetAnchor.y}`,
+    tail: sourceAnchor,
+    tip: targetAnchor,
+    bounds: boundsOfPoints(points, 2),
+    points,
   }
 }
 
@@ -1033,6 +1163,14 @@ export interface ArrowRoute {
   stub?: NullStubGeometry
 }
 
+export interface RouteArrowOptions {
+  /**
+   * Committed circular-list state: use the resting concentric lanes instead of
+   * the transient dot-to-border routing. Animation frames never set this.
+   */
+  finalForm?: boolean
+}
+
 export function routeArrow(
   source: LdcNode,
   field: PointerField,
@@ -1040,6 +1178,7 @@ export function routeArrow(
   layout: Map<number, Point>,
   mode: LayoutMode = 'row',
   nodes: LdcNode[] = [],
+  options: RouteArrowOptions = {},
 ): ArrowRoute | null {
   const sourcePoint = layout.get(source.id)
   if (!sourcePoint) return null
@@ -1080,6 +1219,16 @@ export function routeArrow(
   }
 
   if (mode === 'circle' && ring) {
+    if (
+      options.finalForm &&
+      field === 'precedent' &&
+      source.lane === 'row' &&
+      target.lane === 'row' &&
+      ring.count >= 2 &&
+      nodes.every((node) => node.freed || node.lane === 'row')
+    ) {
+      return finalPrecedentRoute(sourcePoint, targetPoint, ring)
+    }
     if (source.lane === 'row' && target.lane === 'row' && ring.radius > 0) {
       return rowRowGapRoute(
         field,
