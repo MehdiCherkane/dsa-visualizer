@@ -57,7 +57,7 @@ describe('menu principal', () => {
     const credits = container.querySelector('#credits-popover')?.textContent ?? ''
     expect(credits).toContain(fr.credits.title)
     for (const name of fr.credits.names) expect(credits).toContain(name)
-    expect(credits.indexOf('Mehdi Cherkane')).toBeLessThan(credits.indexOf('Omar Moussaid'))
+    expect(credits.indexOf('El Mahdi Cherkane')).toBeLessThan(credits.indexOf('Omar Moussaid'))
     expect(credits.indexOf('Omar Moussaid')).toBeLessThan(credits.indexOf('Hamza Agoure'))
   })
 

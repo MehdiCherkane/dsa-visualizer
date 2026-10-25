@@ -165,10 +165,10 @@ describe('raccourcis clavier', () => {
     expect(popover).not.toBeNull()
     const credits = popover?.textContent ?? ''
     expect(credits).toContain(fr.credits.title)
-    expect(credits).toContain('Mehdi Cherkane')
+    expect(credits).toContain('El Mahdi Cherkane')
     expect(credits).toContain('Omar Moussaid')
     expect(credits).toContain('Hamza Agoure')
-    expect(credits.indexOf('Mehdi Cherkane')).toBeLessThan(credits.indexOf('Omar Moussaid'))
+    expect(credits.indexOf('El Mahdi Cherkane')).toBeLessThan(credits.indexOf('Omar Moussaid'))
     expect(credits.indexOf('Omar Moussaid')).toBeLessThan(credits.indexOf('Hamza Agoure'))
 
     press('Escape')
