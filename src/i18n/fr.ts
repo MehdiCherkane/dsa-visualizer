@@ -7,7 +7,7 @@ export function plural(count: number, one: string, many: string): string {
 export const fr = {
   credits: {
     title: 'Réalisé par',
-    names: ['El Mahdi Cherkane', 'Omar Moussaid', 'Hamza Agoure'],
+    names: ['El Mahdi Cherkane', 'Omar Moussaid', 'Hamza Agour'],
   },
   app: {
     title: 'Listes doublement chaînées',

@@ -58,7 +58,7 @@ describe('menu principal', () => {
     expect(credits).toContain(fr.credits.title)
     for (const name of fr.credits.names) expect(credits).toContain(name)
     expect(credits.indexOf('El Mahdi Cherkane')).toBeLessThan(credits.indexOf('Omar Moussaid'))
-    expect(credits.indexOf('Omar Moussaid')).toBeLessThan(credits.indexOf('Hamza Agoure'))
+    expect(credits.indexOf('Omar Moussaid')).toBeLessThan(credits.indexOf('Hamza Agour'))
   })
 
   it('rend une carte par plugin enregistré, construite depuis le registre', () => {

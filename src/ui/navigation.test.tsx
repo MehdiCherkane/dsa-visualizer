@@ -167,9 +167,9 @@ describe('raccourcis clavier', () => {
     expect(credits).toContain(fr.credits.title)
     expect(credits).toContain('El Mahdi Cherkane')
     expect(credits).toContain('Omar Moussaid')
-    expect(credits).toContain('Hamza Agoure')
+    expect(credits).toContain('Hamza Agour')
     expect(credits.indexOf('El Mahdi Cherkane')).toBeLessThan(credits.indexOf('Omar Moussaid'))
-    expect(credits.indexOf('Omar Moussaid')).toBeLessThan(credits.indexOf('Hamza Agoure'))
+    expect(credits.indexOf('Omar Moussaid')).toBeLessThan(credits.indexOf('Hamza Agour'))
 
     press('Escape')
     expect(query('#shortcuts-popover')).toBeNull()
