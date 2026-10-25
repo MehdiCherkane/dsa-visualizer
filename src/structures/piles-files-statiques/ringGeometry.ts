@@ -560,14 +560,15 @@ export function ringFitBounds(max: number): RingRect {
     }
   }
 
+  // Any applied formula can draw the wrap chip, so every slot pair must fit.
   collect({ empty: true, one: false, av: -1, ar: -1 }, false)
   for (let index = 0; index < max; index += 1) {
-    collect({ empty: false, one: true, av: index, ar: index }, index === max - 1)
+    collect({ empty: false, one: true, av: index, ar: index }, true)
   }
   for (let av = 0; av < max; av += 1) {
     for (let ar = 0; ar < max; ar += 1) {
       if (av === ar) continue
-      collect({ empty: false, one: false, av, ar }, ar === 0 || ar === max - 1)
+      collect({ empty: false, one: false, av, ar }, true)
     }
   }
 
@@ -684,11 +685,4 @@ export function ringGeometry(
     wrap,
     bounds: unionRects(rects),
   }
-}
-
-export function ringContentBounds(
-  snapshot: ArraySnapshot,
-  options: RingGeometryOptions = {},
-): RingRect | null {
-  return ringGeometry(snapshot, options)?.bounds ?? null
 }

@@ -772,6 +772,45 @@ describe('géométrie de l’anneau', () => {
     }
   })
 
+  it('couvre le retour appliqué même quand la tête revient en case 0', () => {
+    for (let capacity = 3; capacity <= 8; capacity += 1) {
+      const values = Array.from({ length: capacity }, (_, index) => 10 + index)
+      let snapshot = createSnapshot('file-circulaire', values, { capacity })
+      for (let count = 1; count < capacity; count += 1) {
+        snapshot = lastStep(runOperation('file-circulaire', 'defiler', snapshot, {})).snapshot
+      }
+      const two = lastStep(
+        runOperation('file-circulaire', 'enfiler', snapshot, { valeur: 71 }),
+      ).snapshot
+      const oneAtZero = lastStep(
+        runOperation('file-circulaire', 'defiler', two, {}),
+      ).snapshot
+      const three = lastStep(
+        runOperation('file-circulaire', 'enfiler', two, { valeur: 72 }),
+      ).snapshot
+      const twoAtZero = lastStep(
+        runOperation('file-circulaire', 'defiler', three, {}),
+      ).snapshot
+
+      expect(oneAtZero.circular, `N=${capacity}`).toMatchObject({ taille: 1, av: 0, ar: 0 })
+      expect(twoAtZero.circular, `N=${capacity}`).toMatchObject({ taille: 2, av: 0, ar: 1 })
+
+      const fitBounds = ringFitBounds(capacity)
+      for (const [name, state] of [
+        ['une case', oneAtZero],
+        ['deux cases', twoAtZero],
+      ] as const) {
+        const ring = ringGeometry(state, { idle: true })
+        expect(ring?.wrap?.applied, `N=${capacity} ${name}`).toBe(true)
+        if (!ring) continue
+        expect(
+          rectInside(ring.bounds, fitBounds),
+          `N=${capacity} ${name} : le retour appliqué doit tenir dans le cadrage fixe`,
+        ).toBe(true)
+      }
+    }
+  })
+
   it('place les secteurs, valeurs, badges, pilules et arcs sans croisement de 3 à 8 cases', () => {
     for (let capacity = 3; capacity <= 8; capacity += 1) {
       const values = Array.from({ length: capacity }, (_, index) => 10 + index)
