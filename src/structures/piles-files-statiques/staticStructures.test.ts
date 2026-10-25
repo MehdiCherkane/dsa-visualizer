@@ -33,6 +33,7 @@ import {
   pileScenarios,
 } from './scenarios'
 import {
+  RING_ARROW_GAP,
   RING_CANVAS,
   RING_FIT_INSETS,
   RING_TRACK_RADIUS,
@@ -890,6 +891,61 @@ describe('géométrie de l’anneau', () => {
         expect(emptyRing.pointers.every((pointer) => pointer.dashed)).toBe(true)
         expect(emptyRing.wrap).toBeNull()
         expectClearLayout(emptyRing, `vide N=${capacity}`)
+      }
+    }
+  })
+
+  it('termine les flèches du pointeur combiné quatre unités au-dessus de l’indice', () => {
+    for (let capacity = 3; capacity <= 8; capacity += 1) {
+      const base = createSnapshot('file-circulaire', [42], { capacity })
+      for (let index = 0; index < capacity; index += 1) {
+        const cells = Array.from({ length: capacity }, () => null as (typeof base.cells)[number])
+        cells[index] = base.cells[0] ?? null
+        const state: ArraySnapshot = {
+          ...base,
+          cells,
+          globals: {
+            ...base.globals,
+            av: { kind: 'int', value: index },
+            ar: { kind: 'int', value: index },
+          },
+        }
+        delete state.circular
+        const ring = ringGeometry(state, { idle: true })
+        expect(ring, `N=${capacity} k=${index}`).not.toBeNull()
+        if (!ring) continue
+        const pointer = ring.pointers[0]!
+        const indexRect = ring.slots[index]!.indexRect
+        expect(pointer.key, `N=${capacity} k=${index}`).toBe('both')
+        expect(pointer.connectors).toHaveLength(2)
+        const [firstArrow, secondArrow] = pointer.connectors
+        const arrowBase = {
+          x: (firstArrow!.to.x + secondArrow!.to.x) / 2,
+          y: (firstArrow!.to.y + secondArrow!.to.y) / 2,
+        }
+        expect(
+          pointRectGap(arrowBase, indexRect),
+          `N=${capacity} k=${index} : la flèche doit finir au moins ${RING_ARROW_GAP} unités au-dessus de l’indice`,
+        ).toBeGreaterThanOrEqual(RING_ARROW_GAP - 0.01)
+        if (index === 0) {
+          expect(pointRectGap(arrowBase, indexRect)).toBeCloseTo(RING_ARROW_GAP)
+        }
+        for (const connector of pointer.connectors) {
+          expect(
+            pointRectGap(connector.to, indexRect),
+            `N=${capacity} k=${index} : la flèche ne doit pas toucher l’indice`,
+          ).toBeGreaterThan(0.5)
+        }
+        expect(
+          Math.abs(pointer.connectors[0]!.to.x - pointer.connectors[1]!.to.x) +
+            Math.abs(pointer.connectors[0]!.to.y - pointer.connectors[1]!.to.y),
+          `N=${capacity} k=${index} : les deux flèches doivent être décalées`,
+        ).toBeGreaterThan(1)
+        expect(
+          rectGap(pointer.rect, indexRect),
+          `N=${capacity} k=${index} : le pointeur ne doit pas couvrir l’indice`,
+        ).toBeGreaterThan(2)
+        expect(rectInside(pointer.rect, RING_CANVAS)).toBe(true)
       }
     }
   })

@@ -18,9 +18,14 @@ export const RING_INDEX_W = 26
 export const RING_INDEX_H = 22
 export const RING_POINTER_W = 84
 export const RING_POINTER_H = 32
+export const RING_POINTER_CONNECTED_H = 26
 export const RING_POINTER_START_RADIUS = 194
 export const RING_POINTER_MAX_RADIUS = 324
 export const RING_POINTER_GAP = 4
+/** Room for a visible arrowhead between a connected pill and the index. */
+export const RING_POINTER_CONNECTED_GAP = 10
+/** Arrow tip clearance above the index pill, in world units. */
+export const RING_ARROW_GAP = 4
 export const RING_WRAP_RADIUS = RING_INDEX_RADIUS
 export const RING_WRAP_GAP = 3
 export const RING_WRAP_CHIP_H = 26
@@ -249,13 +254,31 @@ function placePointer(
   return { rect, radius: RING_POINTER_MAX_RADIUS }
 }
 
+/** Point on the outward radial side of a pill, `gap` units beyond its edge. */
+function radialTarget(rect: RingRect, angle: number, gap: number): RingPoint {
+  const center = {
+    x: rect.x + rect.width / 2,
+    y: rect.y + rect.height / 2,
+  }
+  const cos = Math.abs(Math.cos(angle))
+  const sin = Math.abs(Math.sin(angle))
+  const tx = cos < 1e-6 ? Number.POSITIVE_INFINITY : (rect.width / 2 + gap) / cos
+  const ty = sin < 1e-6 ? Number.POSITIVE_INFINITY : (rect.height / 2 + gap) / sin
+  const distance = Math.min(tx, ty)
+  return {
+    x: center.x + Math.cos(angle) * distance,
+    y: center.y + Math.sin(angle) * distance,
+  }
+}
+
 function pointerConnectors(
   rect: RingRect,
   angle: number,
   tones: Array<'gold' | 'success'>,
+  indexRect: RingRect,
 ): RingConnector[] {
   const inner = radialExit(rect, angle)
-  const target = polar(angle, RING_INDEX_RADIUS + 12)
+  const target = radialTarget(indexRect, angle, RING_ARROW_GAP)
   if (tones.length === 1) {
     return [{ from: inner, to: target, tone: tones[0]! }]
   }
@@ -390,15 +413,16 @@ function buildPointer(
   index: number,
   angle: number,
   obstacles: RingRect[],
+  indexRect: RingRect,
   dashed = false,
 ): RingPointerGeometry {
   const text = `${key} = ${index}`
   const placement = placePointer(
     angle,
     RING_POINTER_W,
-    RING_POINTER_H,
+    dashed ? RING_POINTER_H : RING_POINTER_CONNECTED_H,
     obstacles,
-    RING_POINTER_GAP,
+    dashed ? RING_POINTER_GAP : RING_POINTER_CONNECTED_GAP,
   )
   return {
     key,
@@ -413,6 +437,7 @@ function buildPointer(
           placement.rect,
           angle,
           [key === 'av' ? 'gold' : 'success'],
+          indexRect,
         ),
   }
 }
@@ -436,10 +461,24 @@ function buildPointers(
   const pointers: RingPointerGeometry[] = []
   if (markers.empty) {
     const top = -Math.PI / 2
-    const first = buildPointer('av', markers.av, top - 22 * DEG, indexRects, true)
+    const first = buildPointer(
+      'av',
+      markers.av,
+      top - 22 * DEG,
+      indexRects,
+      indexRects[0]!,
+      true,
+    )
     pointers.push(first)
     pointers.push(
-      buildPointer('ar', markers.ar, top + 22 * DEG, [...indexRects, first.rect], true),
+      buildPointer(
+        'ar',
+        markers.ar,
+        top + 22 * DEG,
+        [...indexRects, first.rect],
+        indexRects[0]!,
+        true,
+      ),
     )
     return pointers
   }
@@ -452,9 +491,9 @@ function buildPointers(
     const placement = placePointer(
       angle,
       width,
-      RING_POINTER_H,
+      RING_POINTER_CONNECTED_H,
       indexRects,
-      RING_POINTER_GAP,
+      RING_POINTER_CONNECTED_GAP,
     )
     pointers.push({
       key: 'both',
@@ -463,12 +502,23 @@ function buildPointers(
       rect: placement.rect,
       fontSize: 13,
       dashed: false,
-      connectors: pointerConnectors(placement.rect, angle, ['gold', 'success']),
+      connectors: pointerConnectors(
+        placement.rect,
+        angle,
+        ['gold', 'success'],
+        indexRects[index]!,
+      ),
     })
     return pointers
   }
 
-  const first = buildPointer('av', markers.av, slotAngle(markers.av, max), indexRects)
+  const first = buildPointer(
+    'av',
+    markers.av,
+    slotAngle(markers.av, max),
+    indexRects,
+    indexRects[markers.av]!,
+  )
   pointers.push(first)
   pointers.push(
     buildPointer(
@@ -476,6 +526,7 @@ function buildPointers(
       markers.ar,
       slotAngle(markers.ar, max),
       [...indexRects, first.rect],
+      indexRects[markers.ar]!,
     ),
   )
   return pointers

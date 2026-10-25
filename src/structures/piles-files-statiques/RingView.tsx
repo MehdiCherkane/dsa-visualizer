@@ -60,8 +60,8 @@ function direction(from: { x: number; y: number }, to: { x: number; y: number })
 function arrowPoints(
   tip: { x: number; y: number },
   heading: { x: number; y: number },
-  size = 9,
-  half = 4.5,
+  size = 5,
+  half = 3,
 ): string {
   const base = { x: tip.x - heading.x * size, y: tip.y - heading.y * size }
   const perpendicular = { x: -heading.y, y: heading.x }
@@ -96,7 +96,7 @@ function PointerShape({
             />
             <polygon
               className={`ss-ring-connector-arrow is-${connector.tone}`}
-              points={arrowPoints(connector.to, heading, 8, 4)}
+              points={arrowPoints(connector.to, heading, 5, 3)}
             />
           </g>
         )
