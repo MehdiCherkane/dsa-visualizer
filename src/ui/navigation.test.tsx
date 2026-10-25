@@ -161,7 +161,12 @@ describe('raccourcis clavier', () => {
     act(() => {
       help?.click()
     })
-    expect(query('#shortcuts-popover')).not.toBeNull()
+    const popover = query('#shortcuts-popover')
+    expect(popover).not.toBeNull()
+    expect(popover?.textContent).toContain(fr.shortcuts.creditsTitle)
+    expect(popover?.textContent).toContain('Mehdi Cherkane')
+    expect(popover?.textContent).toContain('Omar Moussaid')
+    expect(popover?.textContent).toContain('Hamza')
 
     press('Escape')
     expect(query('#shortcuts-popover')).toBeNull()
