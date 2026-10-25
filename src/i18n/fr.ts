@@ -430,12 +430,12 @@ export const fr = {
       wrap: 'retour à 0',
       memoryEmpty: (max: number) =>
         `File vide : av = ar = −1. La première valeur ira en case 0 sur ${max}.`,
-      memoryFull: (ar: number) =>
-        `File pleine : ar = ${ar}. La prochaine arrivée viserait la case 0, déjà occupée.`,
-      memoryApplied: (from: number, max: number) =>
-        `ar a franchi la fin du tableau : (${from} + 1) % ${max} = 0. La mémoire se lit en anneau.`,
-      memoryUpcoming: (from: number) =>
-        `ar = ${from} : la prochaine arrivée revient en 0 par le modulo.`,
+      memoryFull: (ar: number, target: number) =>
+        `File pleine : ar = ${ar}. La prochaine arrivée viserait la case ${target}, déjà occupée.`,
+      memoryApplied: (pointer: 'av' | 'ar', from: number, max: number) =>
+        `${pointer} a franchi la fin du tableau : (${from} + 1) % ${max} = 0. La mémoire se lit en anneau.`,
+      memoryUpcoming: (pointer: 'av' | 'ar', from: number) =>
+        `${pointer} = ${from} : la prochaine ${pointer === 'av' ? 'sortie' : 'arrivée'} revient en 0 par le modulo.`,
       memoryOne: (index: number) =>
         `av et ar partagent la case ${index} : un seul élément dans la file.`,
       memoryLinear: (av: number, ar: number, last: number) =>

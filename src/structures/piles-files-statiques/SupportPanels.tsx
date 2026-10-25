@@ -66,13 +66,15 @@ export function StaticStructuresSupport({
   const wrapApplied = formula?.wrapped === true && formula.applied
   const wrapUpcoming =
     !wrapApplied && !empty && (circular.ar === max - 1 || formula?.wrapped === true)
+  const wrapPointer = formula?.wrapped === true && formula.kind === 'defiler' ? 'av' : 'ar'
+  const wrapFrom = formula?.wrapped === true ? formula.from : ar
 
   let caption: string
   if (empty) caption = S.memoryEmpty(max)
   else if (one) caption = S.memoryOne(av)
-  else if (wrapApplied && formula) caption = S.memoryApplied(formula.from, max)
-  else if (full) caption = S.memoryFull(ar)
-  else if (wrapUpcoming) caption = S.memoryUpcoming(ar)
+  else if (wrapApplied) caption = S.memoryApplied(wrapPointer, wrapFrom, max)
+  else if (full) caption = S.memoryFull(ar, target)
+  else if (wrapUpcoming) caption = S.memoryUpcoming(wrapPointer, wrapFrom)
   else caption = S.memoryLinear(av, ar, max - 1)
 
   return (

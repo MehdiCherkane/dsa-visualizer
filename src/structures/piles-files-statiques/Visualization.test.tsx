@@ -292,7 +292,7 @@ describe('rendu SVG des piles et files statiques', () => {
     expect(markup).toContain(fr.staticStructures.support.staleTarget(1))
     expect(markup).toContain('ss-calc-verdict is-no')
     expect(markup).toContain(fr.staticStructures.support.wrap)
-    expect(markup).toContain(fr.staticStructures.support.memoryApplied(4, 5))
+    expect(markup).toContain(fr.staticStructures.support.memoryApplied('ar', 4, 5))
     expect(markup).toContain('is-stale')
     expect(markup).toContain('17')
     expect(markup).toContain('71')
@@ -333,5 +333,64 @@ describe('rendu SVG des piles et files statiques', () => {
         ),
       ).toBe('')
     }
+  })
+
+  it('explique un retour par av ou ar et la vraie cible d’une file pleine', () => {
+    const defiler = fileCirculaireOperations.find((operation) => operation.id === 'defiler')
+    const enfiler = fileCirculaireOperations.find((operation) => operation.id === 'enfiler')
+    if (!defiler || !enfiler) throw new Error('Missing circular queue operations')
+    const S = fr.staticStructures.support
+
+    let snapshot = createSnapshot('file-circulaire', [42, 17, 63, 8, 55])
+    for (let count = 0; count < 4; count += 1) {
+      const steps = defiler.run(snapshot, {})
+      snapshot = steps[steps.length - 1]!.snapshot
+    }
+    for (const value of [71, 72]) {
+      const steps = enfiler.run(snapshot, { valeur: value })
+      snapshot = steps[steps.length - 1]!.snapshot
+    }
+
+    const upcomingSteps = defiler.run(snapshot, {})
+    const upcoming = upcomingSteps.find(
+      (step) => step.snapshot.circular?.formula?.wrapped && !step.snapshot.circular.formula.applied,
+    )
+    if (!upcoming) throw new Error('Missing wrapped dequeue preview')
+    const upcomingMarkup = renderToStaticMarkup(
+      <StaticStructuresSupport
+        snapshot={upcoming.snapshot}
+        step={upcoming}
+        presentation={false}
+      />,
+    )
+    expect(upcomingMarkup).toContain(S.memoryUpcoming('av', 4))
+    expect(upcomingMarkup).not.toContain(S.memoryUpcoming('ar', 1))
+
+    const applied = upcomingSteps[upcomingSteps.length - 1]!
+    const appliedMarkup = renderToStaticMarkup(
+      <StaticStructuresSupport
+        snapshot={applied.snapshot}
+        step={applied}
+        presentation={false}
+      />,
+    )
+    expect(appliedMarkup).toContain(S.memoryApplied('av', 4, 5))
+    expect(appliedMarkup).not.toContain(S.memoryApplied('ar', 4, 5))
+
+    let full = createSnapshot('file-circulaire', [42, 17, 63, 8, 55])
+    for (let count = 0; count < 3; count += 1) {
+      const steps = defiler.run(full, {})
+      full = steps[steps.length - 1]!.snapshot
+    }
+    for (const value of [70, 80, 90]) {
+      const steps = enfiler.run(full, { valeur: value })
+      full = steps[steps.length - 1]!.snapshot
+    }
+    expect(full.circular).toMatchObject({ taille: 5, av: 3, ar: 2 })
+    const fullMarkup = renderToStaticMarkup(
+      <StaticStructuresSupport snapshot={full} step={idleStep(full)} presentation={false} />,
+    )
+    expect(fullMarkup).toContain(S.memoryFull(2, 3))
+    expect(fullMarkup).not.toContain(S.memoryFull(2, 0))
   })
 })
