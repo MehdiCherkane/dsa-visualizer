@@ -2950,6 +2950,16 @@ body.is-resizing-horizontal * {
   color: #1f2a5c;
 }
 
+.presentation .brand-home {
+  width: calc(36px * var(--ui-scale));
+  height: calc(36px * var(--ui-scale));
+}
+
+.presentation .brand-home .button-icon {
+  width: calc(17px * var(--ui-scale));
+  height: calc(17px * var(--ui-scale));
+}
+
 .presentation .header-actions {
   gap: calc(8px * var(--ui-scale));
 }
@@ -3794,6 +3804,37 @@ body.is-resizing-horizontal * {
   gap: 12px;
 }
 
+.brand-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--ink-2);
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.brand-home:hover {
+  border-color: var(--line-strong);
+  background: var(--panel-2);
+  color: var(--ink);
+}
+
+.brand-home:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.brand-home .button-icon {
+  width: 17px;
+  height: 17px;
+}
+
 .brand-copy {
   display: flex;
   flex-direction: column;
@@ -3924,25 +3965,6 @@ body.is-resizing-horizontal * {
 
 .header-actions .scenarios-trigger {
   height: 40px;
-}
-
-.header-actions .menu-button {
-  height: 40px;
-  border-radius: 10px;
-  padding: 0 12px;
-  gap: 6px;
-  color: var(--ink-2);
-  font-size: 11.5px;
-}
-
-.header-actions .menu-button:hover {
-  color: var(--ink);
-}
-
-@container header (max-width: 1500px) {
-  .presentation .menu-button-label {
-    display: none;
-  }
 }
 
 .presentation .brand-meta {

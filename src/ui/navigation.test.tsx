@@ -71,7 +71,7 @@ describe('navigation par hash', () => {
     window.location.hash = '#/chapitre-4'
     const markup = renderToStaticMarkup(<App />)
     expect(markup).toContain('ldc-svg')
-    expect(markup).toContain(fr.menu.backLabel)
+    expect(markup).toContain(fr.menu.homeLabel)
     expect(markup).not.toContain(fr.menu.subtitle)
   })
 
@@ -93,9 +93,9 @@ describe('navigation par hash', () => {
     expect(query('.ldc-svg')).toBeNull()
   })
 
-  it('revient au menu avec le bouton ← Menu', () => {
+  it('revient au menu avec le bouton Accueil', () => {
     openDemo()
-    const back = query<HTMLButtonElement>(`button[aria-label="${fr.menu.backAria}"]`)
+    const back = query<HTMLButtonElement>(`button[aria-label="${fr.menu.homeLabel}"]`)
     expect(back).not.toBeNull()
     act(() => {
       back?.click()

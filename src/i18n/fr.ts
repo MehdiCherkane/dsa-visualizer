@@ -43,9 +43,8 @@ export const fr = {
       },
     ],
     footer: 'Tout fonctionne hors ligne : un seul fichier, aucune connexion.',
-    backArrow: '←',
-    backLabel: 'Menu',
-    backAria: 'Revenir au menu principal',
+    homeLabel: 'Accueil',
+    homeAria: 'Revenir au menu principal',
   },
   chapters: {
     lsc: {
