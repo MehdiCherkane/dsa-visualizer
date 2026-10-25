@@ -527,7 +527,7 @@ export default function LdcVisualization({
 
   const strokeWidth = presentation ? 5 : 4
   // Once an operation is committed there are no operation steps left: the
-  // ring is at rest and can use its cleaner concentric `precedent` lane.
+  // ring is at rest and can use its cleaner node-to-node `precedent` arrows.
   const finalForm = !operationSteps || operationSteps.length === 0
   const renderRoute = (
     source: LdcNode,
