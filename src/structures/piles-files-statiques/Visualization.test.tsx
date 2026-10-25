@@ -170,6 +170,20 @@ describe('rendu SVG des piles et files statiques', () => {
     expect(one).toContain('class="ss-ring-centre-icon" x="-11" y="-46" width="22" height="22"')
   })
 
+  it('rend toutes les cases pour les capacités 3 et 8', () => {
+    for (const capacity of [3, 8]) {
+      const values = Array.from({ length: capacity }, (_, index) => index + 1)
+      const markup = render(
+        idleStep(createSnapshot('file-circulaire', values, { capacity })),
+      )
+      expect(markup).toContain(`data-size="${capacity}"`)
+      expect(markup.match(/class="ss-ring-slot-group/g)).toHaveLength(capacity)
+      expect(markup).toContain(`av = 0`)
+      expect(markup).toContain(`ar = ${capacity - 1}`)
+      expect(markup).toContain('class="ss-ring-centre-icon" x="-11" y="-46" width="22" height="22"')
+    }
+  })
+
   it('expose les cases de l’anneau au clavier et coupe le mouvement sur les sauts', () => {
     const step = idleStep(createSnapshot('file-circulaire', [10, 20, 30]))
     const markup = render(step)
