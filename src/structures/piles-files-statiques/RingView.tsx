@@ -264,6 +264,8 @@ export function RingView({
         ))}
       </g>
 
+      {geometry.wrap ? <WrapShape wrap={geometry.wrap} /> : null}
+
       <g className="ss-ring-centre" aria-hidden="true">
         <circle className="ss-ring-hole" r={RING_HOLE_RADIUS} />
         <svg
@@ -357,8 +359,6 @@ export function RingView({
           />
         ))}
       </g>
-
-      {geometry.wrap ? <WrapShape wrap={geometry.wrap} /> : null}
     </g>
   )
 }

@@ -21,7 +21,8 @@ export const RING_POINTER_H = 32
 export const RING_POINTER_START_RADIUS = 194
 export const RING_POINTER_MAX_RADIUS = 324
 export const RING_POINTER_GAP = 4
-export const RING_WRAP_RADIUS = 184
+export const RING_WRAP_RADIUS = RING_INDEX_RADIUS
+export const RING_WRAP_GAP = 3
 export const RING_WRAP_CHIP_H = 26
 export const RING_WRAP_CHIP_MIN_W = 118
 export const RING_CHIP_MAX_RADIUS = 336
@@ -155,6 +156,31 @@ export function rectInside(rect: RingRect, bounds: RingRect): boolean {
   )
 }
 
+function pointInsideRect(point: RingPoint, rect: RingRect): boolean {
+  return (
+    point.x >= rect.x &&
+    point.x <= rect.x + rect.width &&
+    point.y >= rect.y &&
+    point.y <= rect.y + rect.height
+  )
+}
+
+/** Angle where the wrap circle leaves the index pill, keeping a small gap. */
+function wrapEdgeAngle(base: number, direction: 1 | -1, rect: RingRect): number {
+  const padded = expand(rect, RING_WRAP_GAP)
+  let low = 0
+  let high = 20 * DEG
+  for (let step = 0; step < 24; step += 1) {
+    const mid = (low + high) / 2
+    if (pointInsideRect(polar(base + direction * mid, RING_WRAP_RADIUS), padded)) {
+      low = mid
+    } else {
+      high = mid
+    }
+  }
+  return base + direction * high
+}
+
 export function textWidth(text: string, fontSize: number): number {
   return Math.max(fontSize * 0.6, text.length * fontSize * 0.64)
 }
@@ -282,10 +308,14 @@ function buildWrap(
   pointers: RingPointerGeometry[],
   indexRects: RingRect[],
 ): RingWrapGeometry {
-  const gap = (Math.PI * 2) / max
-  const margin = Math.min(15 * DEG, gap * 0.32)
-  const startAngle = slotAngle(max - 1, max) + margin
-  const endAngle = slotAngle(0, max) + Math.PI * 2 - margin
+  const sourceRect = indexRects[max - 1]!
+  const destinationRect = indexRects[0]!
+  const startAngle = wrapEdgeAngle(slotAngle(max - 1, max), 1, sourceRect)
+  const endAngle = wrapEdgeAngle(
+    slotAngle(0, max) + Math.PI * 2,
+    -1,
+    destinationRect,
+  )
   const centerAngle = (startAngle + endAngle) / 2
   const start = polar(startAngle, RING_WRAP_RADIUS)
   const end = polar(endAngle, RING_WRAP_RADIUS)

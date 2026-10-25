@@ -613,6 +613,12 @@ describe('géométrie de l’anneau', () => {
     return boxes
   }
 
+  function pointRectGap(point: { x: number; y: number }, rect: RingRect): number {
+    const dx = Math.max(rect.x - point.x, point.x - (rect.x + rect.width), 0)
+    const dy = Math.max(rect.y - point.y, point.y - (rect.y + rect.height), 0)
+    return Math.hypot(dx, dy)
+  }
+
   function pointInside(point: { x: number; y: number }, rect: RingRect): boolean {
     return (
       point.x > rect.x - 1 &&
@@ -647,6 +653,26 @@ describe('géométrie de l’anneau', () => {
     }
 
     if (ring.wrap) {
+      const source = ring.slots[ring.max - 1]!.indexRect
+      const destination = ring.slots[0]!.indexRect
+      expect(
+        pointRectGap(ring.wrap.start, source),
+        `${label} : l’arc doit partir de la case ${ring.max - 1}`,
+      ).toBeGreaterThanOrEqual(2)
+      expect(pointRectGap(ring.wrap.start, source)).toBeLessThanOrEqual(4.5)
+      expect(
+        pointRectGap(ring.wrap.end, destination),
+        `${label} : l’arc doit arriver sur la case 0`,
+      ).toBeGreaterThanOrEqual(2)
+      expect(pointRectGap(ring.wrap.end, destination)).toBeLessThanOrEqual(4.5)
+
+      const mid = (ring.wrap.startAngle + ring.wrap.endAngle) / 2
+      const chipAngle = Math.atan2(ring.wrap.chipPoint.y, ring.wrap.chipPoint.x)
+      const delta = Math.abs(
+        Math.atan2(Math.sin(chipAngle - mid), Math.cos(chipAngle - mid)),
+      )
+      expect(delta, `${label} : la puce doit rester au milieu de l’arc`).toBeLessThan(1e-6)
+
       for (const point of wrapArcPoints(ring.wrap)) {
         for (const box of boxes) {
           expect(
