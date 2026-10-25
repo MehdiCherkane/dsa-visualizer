@@ -3299,6 +3299,10 @@ body.is-resizing-horizontal * {
   color: var(--ink-2);
 }
 
+.shortcuts-credits-title {
+  font-weight: 700;
+}
+
 .shortcuts-about-title {
   margin-bottom: 2px !important;
   color: var(--ink-2);

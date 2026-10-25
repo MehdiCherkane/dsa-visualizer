@@ -92,7 +92,7 @@ export const fr = {
     title: 'Raccourcis clavier',
     hint: 'Molette : zoom · Glisser : déplacer · Double-clic : ajuster',
     creditsTitle: 'Réalisé par',
-    credits: 'Mehdi Cherkane, Omar Moussaid, Hamza',
+    credits: ['Mehdi Cherkane', 'Omar Moussaid', 'Hamza Agoure'],
     rows: [
       { keys: ['←', '→'], label: 'Pas précédent / pas suivant' },
       { keys: ['Espace'], label: 'Lecture / pause' },
