@@ -44,8 +44,15 @@ describe('menu principal', () => {
     expect(container.textContent).toContain(fr.menu.subtitle)
   })
 
-  it('affiche les crédits dans l’ordre', () => {
-    const credits = container.querySelector('.menu-credits')?.textContent ?? ''
+  it('ouvre les crédits depuis la barre et affiche les noms dans l’ordre', () => {
+    const trigger = container.querySelector<HTMLButtonElement>(
+      `button[aria-label="${fr.credits.title}"]`,
+    )
+    expect(trigger).not.toBeNull()
+    act(() => {
+      trigger?.click()
+    })
+    const credits = container.querySelector('#credits-popover')?.textContent ?? ''
     expect(credits).toContain(fr.credits.title)
     for (const name of fr.credits.names) expect(credits).toContain(name)
     expect(credits.indexOf('Mehdi Cherkane')).toBeLessThan(credits.indexOf('Omar Moussaid'))

@@ -456,6 +456,67 @@ select:focus-visible,
   font-size: 10.5px;
 }
 
+/* credits popover */
+
+.credits-menu {
+  position: relative;
+}
+
+.credits-trigger {
+  height: 40px;
+  border-radius: 10px;
+  padding: 0 12px;
+  gap: 7px;
+  font-size: 11.5px;
+}
+
+.credits-trigger.active {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+  color: var(--ink);
+}
+
+.credits-caret {
+  display: inline-block;
+  color: currentColor;
+  font-size: 10px;
+  line-height: 1;
+  transition: transform 150ms ease;
+}
+
+.credits-caret.open {
+  transform: rotate(180deg);
+}
+
+.credits-popover {
+  position: absolute;
+  z-index: 70;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 10px 12px;
+}
+
+.credits-popover-title {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.credits-name {
+  margin: 0;
+  padding: 3px 0;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
 /* ---------------- workspace ---------------- */
 
 .workspace {
