@@ -1,10 +1,9 @@
 /*
- * Chapter 5: the zellige frieze from the site backdrop, reused inside the
- * circular visualization. It is faded out towards the middle so the ring,
- * arrows and labels stay perfectly readable.
+ * Zellige frieze reused inside every visualization. It is faded out towards
+ * the middle so the nodes, arrows and labels stay perfectly readable.
  */
 
-.ldc-zellige {
+.viz-zellige {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -32,7 +31,7 @@
   );
 }
 
-.ldc-zellige-tile {
+.viz-zellige-tile {
   position: absolute;
   inset: 0;
   background-color: var(--gold);
@@ -45,6 +44,6 @@
   mask-repeat: repeat;
 }
 
-[data-theme='dark'] .ldc-zellige-tile {
+[data-theme='dark'] .viz-zellige-tile {
   opacity: 0.18;
 }
