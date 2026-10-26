@@ -1,0 +1,50 @@
+/*
+ * Chapter 5: the zellige frieze from the site backdrop, reused inside the
+ * circular visualization. It is faded out towards the middle so the ring,
+ * arrows and labels stay perfectly readable.
+ */
+
+.ldc-zellige {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    #000 0,
+    #000 5%,
+    rgba(0, 0, 0, 0.55) 10%,
+    transparent 22%,
+    transparent 78%,
+    rgba(0, 0, 0, 0.55) 90%,
+    #000 95%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    #000 0,
+    #000 5%,
+    rgba(0, 0, 0, 0.55) 10%,
+    transparent 22%,
+    transparent 78%,
+    rgba(0, 0, 0, 0.55) 90%,
+    #000 95%,
+    #000 100%
+  );
+}
+
+.ldc-zellige-tile {
+  position: absolute;
+  inset: 0;
+  background-color: var(--gold);
+  opacity: 0.14;
+  -webkit-mask-image: var(--zl-pattern);
+  mask-image: var(--zl-pattern);
+  -webkit-mask-size: 240px 240px;
+  mask-size: 240px 240px;
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
+[data-theme='dark'] .ldc-zellige-tile {
+  opacity: 0.18;
+}

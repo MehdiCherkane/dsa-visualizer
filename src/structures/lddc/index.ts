@@ -30,6 +30,8 @@ export const lddcPlugin: StructurePlugin<LdcSnapshot> = {
       scenarios: intScenarios,
       code: intCode,
       typesCode: intTypes,
+      defaultOperationId: 'afficherListe',
+      defaultScenarioId: 'vide',
       emptyInsertOperationId: 'insererEnTete',
     },
     {
@@ -41,6 +43,7 @@ export const lddcPlugin: StructurePlugin<LdcSnapshot> = {
       scenarios: studentScenarios,
       code: studentCode,
       typesCode: studentTypes,
+      defaultOperationId: 'inscrireEtudiant',
       emptyInsertOperationId: 'inscrireEtudiant',
     },
   ],

@@ -1189,6 +1189,16 @@ export const fr = {
         complexity: 'O(1)',
         note: 'Le dernier nœud est accessible via debut->precedent : ajout en temps constant.',
       },
+      insererApresValeur: {
+        label: 'Insérer après une valeur',
+        complexity: 'O(n)',
+        note: 'Parcours circulaire jusqu’à la valeur, puis raccord du nouveau nœud entre courant et courant->suivant.',
+      },
+      insererAvantValeur: {
+        label: 'Insérer avant une valeur',
+        complexity: 'O(n)',
+        note: 'Parcours circulaire jusqu’à la valeur, puis raccord via courant->precedent ; la tête est mise à jour si nécessaire.',
+      },
       supprimerEnTete: {
         label: 'Supprimer en tête',
         complexity: 'O(1)',
@@ -1213,6 +1223,11 @@ export const fr = {
         label: 'Détruire la liste',
         complexity: 'O(n)',
         note: 'Suppressions en tête successives jusqu’à debut == NULL.',
+      },
+      inverserListe: {
+        label: 'Inverser la liste',
+        complexity: 'O(n)',
+        note: 'Un tour de cercle : chaque nœud échange suivant et precedent, puis le dernier devient debut.',
       },
       inscrireEtudiant: {
         label: 'Inscrire un étudiant',
@@ -1241,12 +1256,37 @@ export const fr = {
       reasonHeadCircular:
         '`courant` pointe sur `debut` : il faut déplacer `debut` avant de libérer.',
       reasonNotHeadCircular: '`courant` ne pointe pas sur `debut` : `debut` reste inchangé.',
+      insertedAfter:
+        '`nouveau` est inséré après `courant` : les deux voisins sont raccordés, le cercle reste fermé.',
+      insertedBefore:
+        '`nouveau` est inséré avant `courant` : le raccord passe par `courant->precedent`, le cercle reste fermé.',
+      reasonHeadInsert: '`courant` est `debut` : le nouveau nœud devient la tête du cercle.',
+      reasonNotHeadInsert: '`courant` n’est pas `debut` : `debut` reste inchangé.',
+      notFoundInsert:
+        'Le parcours est revenu sur `debut` sans trouver la valeur : aucun nœud inséré.',
+      reverseStop:
+        'On est revenu à `debut` : chaque nœud a été inversé, le dernier devient la nouvelle tête.',
     },
     scenarios: {
+      vide: {
+        title: 'Liste vide',
+        description:
+          'Etat initial : debut == NULL, aucun nœud, aucun NULL à l’intérieur d’un cercle.',
+      },
       cours: {
         title: 'Le cours : le cercle 9 → 2 → 5',
         description:
           'Charge la LDC circulaire du cours : le dernier nœud (5) pointe vers debut (9).',
+      },
+      deux: {
+        title: 'Deux nœuds : deux arcs extérieurs',
+        description:
+          'Les deux nœuds se font face ; chaque côté porte une paire d’arcs parallèles suivant/precedent.',
+      },
+      quatre: {
+        title: 'Quatre nœuds : le carré',
+        description:
+          'Les nœuds occupent les quatre coins ; chaque côté du carré porte une paire de flèches parallèles.',
       },
       tour: {
         title: 'Tour de passage des exposés',
@@ -1262,6 +1302,26 @@ export const fr = {
         title: 'Insertion en fin O(1)',
         description:
           'Insérer 7 en fin grâce à debut->precedent, puis vérifier que le nouveau dernier pointe vers debut.',
+      },
+      apres: {
+        title: 'Insérer après une valeur',
+        description:
+          'Insérer 7 après le nœud 2 : le nouveau nœud se raccorde entre 2 et 5, sans casser le cercle.',
+      },
+      avant: {
+        title: 'Insérer avant la tête',
+        description:
+          'Insérer 7 avant le nœud 9 : le nouveau nœud devient debut et le dernier pointe vers lui.',
+      },
+      supprimerTete: {
+        title: 'Supprimer la tête',
+        description:
+          'Supprimer le nœud 9 : debut avance sur 2 et le dernier nœud 5 se raccorde au nouveau debut.',
+      },
+      supprimerFin: {
+        title: 'Supprimer le dernier nœud',
+        description:
+          'Supprimer le nœud 5 : 2 devient le dernier et son suivant revient directement sur debut.',
       },
       suppression: {
         title: 'Supprimer une valeur',
@@ -1287,6 +1347,11 @@ export const fr = {
         title: 'Détruire la liste',
         description:
           'Détruire 9 → 2 → 5 nœud par nœud et vérifier que debut devient NULL.',
+      },
+      inverser: {
+        title: 'Inverser le cercle',
+        description:
+          'Parcourir un tour en échangeant suivant et precedent, puis replacer debut sur l’ancien dernier nœud.',
       },
       registre: {
         title: 'Registre circulaire',
