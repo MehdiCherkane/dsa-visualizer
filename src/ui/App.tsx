@@ -128,6 +128,7 @@ export function DemoApp<S extends BaseSnapshot>({
   )
   const [presentation, setPresentation] = useState(false)
   const [courseOpen, setCourseOpen] = useState(false)
+  const [courseWidth, setCourseWidth] = useState(720)
   const closeCourse = useCallback(() => setCourseOpen(false), [])
   const [simulationFullscreen, setSimulationFullscreen] = useState(false)
   const [cameraResetKey, setCameraResetKey] = useState(0)
@@ -763,7 +764,14 @@ export function DemoApp<S extends BaseSnapshot>({
         onLayoutChange={updateLayout}
       />
 
-      {courseOpen ? <CourseDrawer chapter={plugin.chapter} onClose={closeCourse} /> : null}
+      {courseOpen ? (
+        <CourseDrawer
+          chapter={plugin.chapter}
+          initialWidth={courseWidth}
+          onWidthChange={setCourseWidth}
+          onClose={closeCourse}
+        />
+      ) : null}
     </div>
   )
 }

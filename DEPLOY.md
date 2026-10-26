@@ -8,7 +8,7 @@ DS Visualizer is a static single-page app: no backend, no Functions, no database
 - **Output directory:** `dist`
 - **Artifact:** `dist/index.html` (~1.0 MB, ~300 kB gzip), two small SVGs, and one optional PDF per chapter under `dist/cours/`; the largest file is far below the 25 MiB limit.
 
-`dist/` is gitignored on purpose: it is rebuilt from source on every deploy. The current branch builds with **317 tests passing**.
+`dist/` is gitignored on purpose: it is rebuilt from source on every deploy. The current branch builds with **319 tests passing**.
 
 **Before you start:** push the commit you want to deploy to `origin/main`. Cloudflare builds from GitHub, never from your working tree.
 
@@ -91,7 +91,7 @@ Run through this once on the production URL:
 2. **Routes:** open `#/chapitre-1` … `#/chapitre-6` directly, refresh each one, then use browser back/forward.
 3. **Navigation:** `← Menu` and `Échap` return to the menu.
 4. **Chapter 1:** each of the four profiles loads (pile, file ordinaire, file décalage, file circulaire).
-5. **Course PDF:** the document button opens the matching chapter PDF in a right-side drawer; player shortcuts are suspended while it is open, and `Échap` closes it.
+5. **Course PDF:** the document button opens the matching chapter PDF in a right-side drawer; player shortcuts are suspended while it is open, the left edge resizes it, and `Échap` closes it.
 6. **File 3 · circulaire:** run the trace, the reuse scenario, and a full state; check the `(av + 1) % 5` / `(ar + 1) % 5` card, the memory cell colours, and hover/keyboard focus linking.
 7. **Playback:** play, step forward/back, speed, reset, scenario picker.
 8. **Theme and presentation:** toggle dark theme and `P` presentation mode; code stays readable.

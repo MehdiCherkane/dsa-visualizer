@@ -8,7 +8,7 @@ A single-page, fully offline French teaching platform for data structures in C (
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (317 tests)
+npm test      # vitest suite (319 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
@@ -22,7 +22,7 @@ Navigation is hash-based so it also works from `file://`: `#/` (main menu, the e
 
 ### Course PDFs
 
-The six course handouts ship as `public/cours/chapitre-<n>.pdf` (`chapitre-1.pdf` … `chapitre-6.pdf`, ~5.4 MB total). The document button in the header opens the matching PDF in a right-side drawer, with a direct **Ouvrir dans un nouvel onglet** fallback. The PDFs are copied to `dist/cours/`; they are never inlined, so the HTML stays around 1 MB whatever their size. Missing files do not break the app or the build, but the drawer has nothing to display for that chapter. Some browsers refuse to embed PDFs from `file://`; the new-tab link still opens the document.
+The six course handouts ship as `public/cours/chapitre-<n>.pdf` (`chapitre-1.pdf` … `chapitre-6.pdf`, ~5.4 MB total). The document button in the header opens the matching PDF in a right-side drawer, with a direct **Ouvrir dans un nouvel onglet** fallback. Drag the drawer's left edge (or focus it and use `←`/`→`) to widen or narrow it; double-click resets the width, which is kept while the app stays open. The PDFs are copied to `dist/cours/`; they are never inlined, so the HTML stays around 1 MB whatever their size. Missing files do not break the app or the build, but the drawer has nothing to display for that chapter. Some browsers refuse to embed PDFs from `file://`; the new-tab link still opens the document.
 
 ## Chapters
 
@@ -69,7 +69,7 @@ For the list, stack, and queue chapters, the demo shows:
 - a mutable SVG layout: `precedent` / `valeur` / `suivant` cells, forward (solid blue) and backward (dashed orange) arrows, `NULL` terminators, fake heap addresses, freed-node hatching, and pointer pins (`debut`, `sommet`, `fin`, `courant`, `nouveau`, `temp`, `dernier`, …);
 - pointer rewrites animated red (old, dashed) → green (new);
 - a step-by-step player with French captions, condition evaluations, badges (`cas-particulier`, `debut-modifie`), live printf console, watch panel (globals + locals), and a call journal;
-- a header document button that opens the current chapter's course PDF in a right-side drawer;
+- a header document button that opens the current chapter's course PDF in a resizable right-side drawer;
 - 10 ready-made scenarios for the static structures, 8 for the doubly linked list, 18 for the circular list (15 integer + 3 student), and 4 for the binary tree, loadable from the header.
 
 One step = one executed C statement (including every condition/loop evaluation). Snapshots are fully frozen; stepping backwards is exact.

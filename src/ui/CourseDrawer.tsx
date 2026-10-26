@@ -1,17 +1,43 @@
-import { useEffect, useRef } from 'react'
-import type { JSX } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { CSSProperties, JSX } from 'react'
 import { fr } from '../i18n/fr'
+import { SplitHandle } from './SplitHandle'
+
+const MIN_WIDTH = 380
+const DEFAULT_WIDTH = 720
+const CLOSE_ANIMATION_MS = 220
 
 interface CourseDrawerProps {
   chapter: number
+  initialWidth: number
+  onWidthChange: (width: number) => void
   onClose: () => void
 }
 
-export function CourseDrawer({ chapter, onClose }: CourseDrawerProps): JSX.Element {
+function maxWidth(): number {
+  return Math.max(MIN_WIDTH, Math.round(window.innerWidth * 0.94))
+}
+
+function clampWidth(value: number): number {
+  return Math.round(Math.min(Math.max(value, MIN_WIDTH), maxWidth()))
+}
+
+export function CourseDrawer({
+  chapter,
+  initialWidth,
+  onWidthChange,
+  onClose,
+}: CourseDrawerProps): JSX.Element {
   const dialogRef = useRef<HTMLDialogElement | null>(null)
   const returnFocusRef = useRef<HTMLElement | null>(null)
+  const dragStartWidth = useRef(initialWidth)
+  const widthRef = useRef(initialWidth)
+  const [width, setWidth] = useState(initialWidth)
+  const [closing, setClosing] = useState(false)
   const src = `./cours/chapitre-${chapter}.pdf`
   const title = `${fr.coursePdf.title} · ${fr.menu.chapterLabel(chapter)}`
+
+  const requestClose = useCallback(() => setClosing(true), [])
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -30,24 +56,55 @@ export function CourseDrawer({ chapter, onClose }: CourseDrawerProps): JSX.Eleme
       if (event.key !== 'Escape') return
       event.preventDefault()
       event.stopPropagation()
-      onClose()
+      requestClose()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [requestClose])
+
+  // Fallback in case the close animation never fires (reduced motion, hidden tab).
+  useEffect(() => {
+    if (!closing) return
+    const timer = window.setTimeout(onClose, CLOSE_ANIMATION_MS + 80)
+    return () => window.clearTimeout(timer)
+  }, [closing, onClose])
+
+  useEffect(() => {
+    if (!closing) return
+    const dialog = dialogRef.current
+    if (!dialog) return
+    const onEnd = (event: AnimationEvent): void => {
+      if (event.target === dialog) onClose()
+    }
+    dialog.addEventListener('animationend', onEnd)
+    return () => dialog.removeEventListener('animationend', onEnd)
+  }, [closing, onClose])
+
+  const resize = (delta: number): void => {
+    const next = clampWidth(dragStartWidth.current - delta)
+    widthRef.current = next
+    setWidth(next)
+  }
+
+  const resetWidth = (): void => {
+    widthRef.current = DEFAULT_WIDTH
+    setWidth(DEFAULT_WIDTH)
+    onWidthChange(DEFAULT_WIDTH)
+  }
 
   return (
     <dialog
       ref={dialogRef}
-      className="course-drawer"
+      className={closing ? 'course-drawer is-closing' : 'course-drawer'}
+      style={{ '--course-width': `${width}px` } as CSSProperties}
       role="dialog"
       aria-label={title}
       onCancel={(event) => {
         event.preventDefault()
-        onClose()
+        requestClose()
       }}
       onClick={(event) => {
-        if (event.target === event.currentTarget) onClose()
+        if (event.target === event.currentTarget) requestClose()
       }}
     >
       <header className="course-drawer-header">
@@ -58,7 +115,7 @@ export function CourseDrawer({ chapter, onClose }: CourseDrawerProps): JSX.Eleme
         <button
           type="button"
           className="ghost-button small"
-          onClick={onClose}
+          onClick={requestClose}
           aria-label={fr.coursePdf.closeAria}
         >
           {fr.coursePdf.close}
@@ -73,6 +130,21 @@ export function CourseDrawer({ chapter, onClose }: CourseDrawerProps): JSX.Eleme
           {fr.coursePdf.openInTab}
         </a>
       </footer>
+      <SplitHandle
+        orientation="vertical"
+        className="course-drawer-resizer"
+        label={fr.coursePdf.resize}
+        value={width}
+        min={MIN_WIDTH}
+        max={maxWidth()}
+        valueText={fr.coursePdf.pixelValue(width)}
+        onDragStart={() => {
+          dragStartWidth.current = widthRef.current
+        }}
+        onDrag={resize}
+        onDragEnd={() => onWidthChange(widthRef.current)}
+        onReset={resetWidth}
+      />
     </dialog>
   )
 }
