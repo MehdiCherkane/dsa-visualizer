@@ -311,6 +311,7 @@ export const fr = {
     maxNodes: (maximum: number) => `Maximum de ${maximum} nœuds atteint : les allocations sont désactivées.`,
     notFound: 'Opération introuvable.',
     inProgress: 'Opération en cours',
+    paused: 'Opération en pause',
     targetHint: 'Cliquez sur un nœud du schéma pour remplir ce champ',
     completed: 'Opération terminée',
     nextScenario: 'Opération suivante',

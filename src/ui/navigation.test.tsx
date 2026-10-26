@@ -127,15 +127,41 @@ describe('navigation par hash', () => {
     act(() => {
       execute?.click()
     })
-    expect(query('.in-progress')).not.toBeNull()
+    expect(query('.operation-status')).not.toBeNull()
 
     press('Escape')
     goTo(window.location.hash)
     expect(query('.menu-app')).not.toBeNull()
 
     goTo('#/chapitre-4')
-    expect(query('.in-progress')).toBeNull()
+    expect(query('.operation-status')).toBeNull()
     expect(query('.journal-panel')?.textContent).toContain(fr.journal.empty)
+  })
+
+  it('passe l’état de l’opération du vert au jaune à la pause', () => {
+    openDemo()
+    const execute = [...container.querySelectorAll('button')].find(
+      (button) => button.textContent === fr.operation.execute,
+    )
+    act(() => {
+      execute?.click()
+    })
+
+    const running = query('.operation-status')
+    expect(running).not.toBeNull()
+    expect(running?.classList.contains('is-running')).toBe(true)
+    expect(running?.textContent).toContain(fr.operation.inProgress)
+
+    const pause = query<HTMLButtonElement>(`button[aria-label="${fr.controls.pause}"]`)
+    expect(pause).not.toBeNull()
+    act(() => {
+      pause?.click()
+    })
+
+    const paused = query('.operation-status')
+    expect(paused).not.toBeNull()
+    expect(paused?.classList.contains('is-paused')).toBe(true)
+    expect(paused?.textContent).toContain(fr.operation.paused)
   })
 })
 

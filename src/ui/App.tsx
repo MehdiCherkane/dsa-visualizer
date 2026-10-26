@@ -624,6 +624,14 @@ export function DemoApp<S extends BaseSnapshot>({
       <main ref={workspaceRef} className="workspace" style={workspaceStyle}>
         <div className="left-column" id="workspace-main">
           <section className="panel viz-card">
+            {operationActive ? (
+              <span
+                className={`operation-status ${playerState.playing ? 'is-running' : 'is-paused'}`}
+                role="status"
+              >
+                {playerState.playing ? fr.operation.inProgress : fr.operation.paused}
+              </span>
+            ) : null}
             <plugin.Visualization
               snapshot={currentStep.snapshot}
               step={currentStep}
