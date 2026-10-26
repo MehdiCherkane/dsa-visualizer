@@ -214,6 +214,17 @@ export const fr = {
     shortcutsButton: 'Raccourcis',
     shortcutsHelp: 'Raccourcis clavier',
   },
+  coursePdf: {
+    title: 'Cours PDF',
+    open: 'Ouvrir le cours PDF',
+    openFor: (chapter: number) => `Ouvrir le cours PDF du chapitre ${chapter}`,
+    close: 'Fermer',
+    closeAria: 'Fermer le cours PDF',
+    resize: 'Redimensionner le cours PDF',
+    pixelValue: (value: number) => `${Math.round(value)} px`,
+    openInTab: 'Ouvrir dans un nouvel onglet',
+    hint: 'Si le PDF ne s’affiche pas, ouvrez-le dans un nouvel onglet.',
+  },
   shortcuts: {
     title: 'Raccourcis clavier',
     hint: 'Molette : zoom · Glisser : déplacer · Double-clic : ajuster',
