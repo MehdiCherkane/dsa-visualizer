@@ -238,10 +238,10 @@ export function layoutNodes(
           CIRCLE_HEAP_GAP -
           heapBandOverhang -
           NODE_W
-        // With two nodes the ring is a tall vertical pair. Keeping the heap
+        // From two nodes upwards the ring is a tall shape. Keeping the heap
         // centred would leave it floating halfway down the list; anchor it to
         // the top of the list band instead so it reads as the top-left corner.
-        top = row.length === 2 ? minRowY : CIRCLE_CY - stackHeight / 2
+        top = row.length >= 2 ? minRowY : CIRCLE_CY - stackHeight / 2
       } else {
         // While the list is still empty, anchor the heap band left of the
         // fixed empty-list band instead of centering it under the ring.

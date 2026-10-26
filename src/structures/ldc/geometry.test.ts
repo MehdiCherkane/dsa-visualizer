@@ -361,9 +361,9 @@ describe('géométrie circulaire du chapitre 5', () => {
       const listBand = circleBand(nodes)!
 
       expect(point.x + NODE_W).toBeLessThan(listBand.x)
-      if (count === 2) {
-        // The two-node ring is a tall vertical pair: the heap sits at the
-        // top-left corner of the list band rather than halfway down.
+      if (count >= 2) {
+        // From two nodes upwards the heap sits at the top-left corner of the
+        // list band rather than halfway down.
         expect(band.y).toBeCloseTo(listBand.y, 6)
       } else {
         expect(point.y + NODE_H / 2).toBeCloseTo(CIRCLE_CY, 6)
