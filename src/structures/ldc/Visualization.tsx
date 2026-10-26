@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import type {
+  CSSProperties,
   JSX,
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
@@ -9,6 +10,8 @@ import type {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerValue, VisualizationProps } from '../../core/types'
 import { fr } from '../../i18n/fr'
+import zelligePatternUrl from '../../ui/zellige-pattern.webp?inline'
+import './Visualization.css'
 import {
   BAND_PAD,
   CELL_W,
@@ -616,6 +619,14 @@ export default function LdcVisualization({
       className={`viz-stage${panning ? ' panning' : ''}${nodes.length === 0 ? ' is-empty' : ''}`}
       ref={stageRef}
     >
+      {layoutMode === 'circle' ? (
+        <div className="ldc-zellige" aria-hidden="true">
+          <div
+            className="ldc-zellige-tile"
+            style={{ '--zl-pattern': `url("${zelligePatternUrl}")` } as CSSProperties}
+          />
+        </div>
+      ) : null}
       <svg
         className="ldc-svg"
         viewBox={`0 0 ${stageW} ${stageH}`}
