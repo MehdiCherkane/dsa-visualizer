@@ -1,6 +1,6 @@
 # DS Visualizer — Structures de données en C
 
-A single-page, fully offline French teaching platform for data structures in C (`Structures de données`), built with Vite + React + TypeScript. Each chapter is an independent plugin behind one shared player, visualization shell, and chapter menu. The project replaces the professor's static course PDFs with interactive, step-by-step demos.
+A single-page, fully offline French teaching platform for data structures in C (`Structures de données`), built with Vite + React + TypeScript. Each chapter is an independent plugin behind one shared player, visualization shell, and chapter menu. The project turns the professor's static course PDFs into interactive, step-by-step demos, with the handouts one click away in a side drawer.
 
 **All six chapters are available:** static stacks and queues (`piles-files-statiques`), singly linked lists (`lsc`), dynamic stacks and queues (`pile` / `file`), doubly linked lists (`ldc`), circular doubly linked lists (`lddc`), and binary trees (`trees`).
 
@@ -8,15 +8,21 @@ A single-page, fully offline French teaching platform for data structures in C (
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (314 tests)
+npm test      # vitest suite (317 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
 ```
 
-`npm run build` produces **one self-contained `dist/index.html`** (`vite-plugin-singlefile`). Open it by double-click: no server and no network access are required — no CDNs, no external fonts or images.
+`npm run build` produces **one self-contained `dist/index.html`** (`vite-plugin-singlefile`). Open it by double-click: no server and no network access are required — no CDNs, no external fonts or images. The optional course PDFs are the only sibling assets (see below).
+
+To publish it, follow [DEPLOY.md](DEPLOY.md): Cloudflare Pages, free plan, static, no backend.
 
 Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point) and `#/chapitre-1` through `#/chapitre-6` for the six chapters. Unknown hashes fall back to the menu, and `Échap` or the `← Menu` header button leaves the demo.
+
+### Course PDFs
+
+Each chapter can ship its course handout as `public/cours/chapitre-<n>.pdf` (`chapitre-1.pdf` … `chapitre-6.pdf`). The document button in the header opens the matching PDF in a right-side drawer, with a direct **Ouvrir dans un nouvel onglet** fallback. The PDFs are copied to `dist/cours/`; they are never inlined, so the HTML stays around 1 MB whatever their size. Missing files do not break the app or the build, but the drawer has nothing to display for that chapter. Some browsers refuse to embed PDFs from `file://`; the new-tab link still opens the document.
 
 ## Chapters
 
@@ -63,6 +69,7 @@ For the list, stack, and queue chapters, the demo shows:
 - a mutable SVG layout: `precedent` / `valeur` / `suivant` cells, forward (solid blue) and backward (dashed orange) arrows, `NULL` terminators, fake heap addresses, freed-node hatching, and pointer pins (`debut`, `sommet`, `fin`, `courant`, `nouveau`, `temp`, `dernier`, …);
 - pointer rewrites animated red (old, dashed) → green (new);
 - a step-by-step player with French captions, condition evaluations, badges (`cas-particulier`, `debut-modifie`), live printf console, watch panel (globals + locals), and a call journal;
+- a header document button that opens the current chapter's course PDF in a right-side drawer;
 - 10 ready-made scenarios for the static structures, 8 for the doubly linked list, 18 for the circular list (15 integer + 3 student), and 4 for the binary tree, loadable from the header.
 
 One step = one executed C statement (including every condition/loop evaluation). Snapshots are fully frozen; stepping backwards is exact.

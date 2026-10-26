@@ -14,6 +14,7 @@ import { CaptionPanel } from './CaptionPanel'
 import { CallStackPanel } from './CallStackPanel'
 import type { CallStackFocus } from './CallStackPanel'
 import { CodePanel } from './CodePanel'
+import { CourseDrawer } from './CourseDrawer'
 import { BottomDock } from './BottomDock'
 import { Controls } from './Controls'
 import { Header } from './Header'
@@ -126,6 +127,8 @@ export function DemoApp<S extends BaseSnapshot>({
       : null,
   )
   const [presentation, setPresentation] = useState(false)
+  const [courseOpen, setCourseOpen] = useState(false)
+  const closeCourse = useCallback(() => setCourseOpen(false), [])
   const [simulationFullscreen, setSimulationFullscreen] = useState(false)
   const [cameraResetKey, setCameraResetKey] = useState(0)
   const [callStackFocus, setCallStackFocus] = useState<CallStackFocus | null>(null)
@@ -514,6 +517,7 @@ export function DemoApp<S extends BaseSnapshot>({
 
   useEffect(() => {
     const handler = (event: KeyboardEvent): void => {
+      if (courseOpen) return
       const target = event.target as HTMLElement | null
       if (target) {
         const tag = target.tagName
@@ -593,7 +597,7 @@ export function DemoApp<S extends BaseSnapshot>({
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [finishOperation, firstStep, nextStep, stepBack, resetAll, simulationFullscreen, onMenu, togglePlayback])
+  }, [courseOpen, finishOperation, firstStep, nextStep, stepBack, resetAll, simulationFullscreen, onMenu, togglePlayback])
 
   const appClassName = [
     'app',
@@ -612,6 +616,8 @@ export function DemoApp<S extends BaseSnapshot>({
         theme={theme}
         onTheme={onTheme}
         onMenu={onMenu}
+        onCourse={() => setCourseOpen(true)}
+        courseOpen={courseOpen}
         presentation={presentation}
         onPresentation={() => setPresentation((value) => !value)}
         scenarios={allScenarios}
@@ -756,6 +762,8 @@ export function DemoApp<S extends BaseSnapshot>({
         onReset={resetAll}
         onLayoutChange={updateLayout}
       />
+
+      {courseOpen ? <CourseDrawer chapter={plugin.chapter} onClose={closeCourse} /> : null}
     </div>
   )
 }
