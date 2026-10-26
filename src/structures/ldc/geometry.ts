@@ -199,6 +199,7 @@ export function layoutNodes(
       .sort((a, b) => a.slot - b.slot)
     const ring = circleGeometry(nodes)
     let minRowX = Number.POSITIVE_INFINITY
+    let minRowY = Number.POSITIVE_INFINITY
     row.forEach((node, index) => {
       const angle =
         row.length === 1
@@ -210,8 +211,10 @@ export function layoutNodes(
       const cx = CIRCLE_CX + Math.cos(angle) * rx
       const cy = CIRCLE_CY + Math.sin(angle) * ry
       const x = cx - NODE_W / 2
+      const y = cy - NODE_H / 2
       minRowX = Math.min(minRowX, x)
-      layout.set(node.id, { x, y: cy - NODE_H / 2 })
+      minRowY = Math.min(minRowY, y)
+      layout.set(node.id, { x, y })
     })
     const heap = nodes
       .filter((node) => node.lane === 'heap')
@@ -235,7 +238,10 @@ export function layoutNodes(
           CIRCLE_HEAP_GAP -
           heapBandOverhang -
           NODE_W
-        top = CIRCLE_CY - stackHeight / 2
+        // With two nodes the ring is a tall vertical pair. Keeping the heap
+        // centred would leave it floating halfway down the list; anchor it to
+        // the top of the list band instead so it reads as the top-left corner.
+        top = row.length === 2 ? minRowY : CIRCLE_CY - stackHeight / 2
       } else {
         // While the list is still empty, anchor the heap band left of the
         // fixed empty-list band instead of centering it under the ring.
