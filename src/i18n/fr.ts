@@ -782,6 +782,16 @@ export const fr = {
         description:
           'Charge la LDC circulaire du cours : le dernier nœud (5) pointe vers debut (9).',
       },
+      deux: {
+        title: 'Deux nœuds : deux arcs extérieurs',
+        description:
+          'Les deux nœuds se font face ; chaque côté porte une paire d’arcs parallèles suivant/precedent.',
+      },
+      quatre: {
+        title: 'Quatre nœuds : le carré',
+        description:
+          'Les nœuds occupent les quatre coins ; chaque côté du carré porte une paire de flèches parallèles.',
+      },
       tour: {
         title: 'Tour de passage des exposés',
         description:

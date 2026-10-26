@@ -2,15 +2,16 @@ import { describe, expect, it } from 'vitest'
 import type { OperationDef, ScenarioDef, Step } from '../../core/types'
 import type { ArrowRoute, Point, Rect } from '../ldc/geometry'
 import {
+  NODE_H,
+  NODE_W,
   circleGeometry,
   circleNodeRect,
   isRowFlipped,
   layoutNodes,
   pointerAnchor,
   routeArrow,
-  PRECEDENT_LANE,
 } from '../ldc/geometry'
-import type { PointerField } from '../ldc/memory'
+import type { LdcNode, PointerField } from '../ldc/memory'
 import type { LdcSnapshot } from './memory'
 import { intOperations, studentOperations } from './operations'
 import { intScenarios, studentScenarios } from './scenarios'
@@ -287,6 +288,101 @@ function routeChanges(
   return issues
 }
 
+/** Ring nodes in circular order. */
+function ringRow(snapshot: LdcSnapshot): LdcNode[] {
+  return snapshot.nodes
+    .filter((node) => !node.freed && node.lane === 'row')
+    .slice()
+    .sort((first, second) => first.slot - second.slot)
+}
+
+function pairRoutes(
+  nodes: LdcNode[],
+  layout: Map<number, Point>,
+  index: number,
+): { suivant: ArrowRoute; precedent: ArrowRoute } {
+  const current = nodes[index]!
+  const next = nodes[(index + 1) % nodes.length]!
+  const suivant = routeArrow(
+    current,
+    'suivant',
+    next,
+    layout,
+    'circle',
+    nodes,
+  )
+  const precedent = routeArrow(
+    next,
+    'precedent',
+    current,
+    layout,
+    'circle',
+    nodes,
+  )
+  if (!suivant || !precedent) {
+    throw new Error(`missing pair routes for ${current.id}->${next.id}`)
+  }
+  return { suivant, precedent }
+}
+
+function minPathDistance(first: Point[], second: Point[]): number {
+  let closest = Number.POSITIVE_INFINITY
+  for (const point of first) {
+    for (const other of second) {
+      closest = Math.min(closest, distance(point, other))
+    }
+  }
+  return closest
+}
+
+function pairIssues(
+  label: string,
+  nodes: LdcNode[],
+  layout: Map<number, Point>,
+  index: number,
+): string[] {
+  const issues: string[] = []
+  const current = nodes[index]!
+  const next = nodes[(index + 1) % nodes.length]!
+  const { suivant, precedent } = pairRoutes(nodes, layout, index)
+  const following = samplePath(suivant.path, 80)
+  const previous = samplePath(precedent.path, 80)
+
+  if (pathsCross(following, previous)) {
+    issues.push(`${label}: ${current.id}.suivant croise ${next.id}.precedent`)
+  }
+  const gap = minPathDistance(following, previous)
+  if (gap < 27.5) {
+    issues.push(
+      `${label}: paire ${current.id}->${next.id} à seulement ${gap.toFixed(1)} px`,
+    )
+  }
+
+  for (const node of nodes) {
+    if (node.id === current.id || node.id === next.id) continue
+    const rect = circleNodeRect(layout.get(node.id)!)
+    if (following.some((point) => inside(point, rect))) {
+      issues.push(`${label}: ${current.id}.suivant traverse le nœud ${node.id}`)
+    }
+    if (previous.some((point) => inside(point, rect))) {
+      issues.push(`${label}: ${next.id}.precedent traverse le nœud ${node.id}`)
+    }
+  }
+
+  const anchors = [suivant.tail, precedent.tail, suivant.tip, precedent.tip]
+  for (let first = 0; first < anchors.length; first += 1) {
+    for (let second = first + 1; second < anchors.length; second += 1) {
+      if (distance(anchors[first]!, anchors[second]!) < 1) {
+        issues.push(
+          `${label}: paire ${current.id}->${next.id} partage une ancre`,
+        )
+      }
+    }
+  }
+
+  return issues
+}
+
 describe('routage des flèches du chapitre 5', () => {
   it('ne traverse aucun nœud et ne superpose pas deux flèches dans les scénarios', () => {
     const issues: string[] = []
@@ -354,149 +450,109 @@ describe('routage des flèches du chapitre 5', () => {
     expect(issues, issues.join('\n')).toEqual([])
   })
 
-  it('enveloppe les flèches precedent finales de deux nœuds avec une courbe douce', () => {
+  it('enveloppe les deux nœuds avec deux paires d’arcs extérieurs', () => {
     const snapshot = growingFinalSnapshots()[1]!
-    const nodes = snapshot.nodes.filter((node) => !node.freed)
+    const nodes = ringRow(snapshot)
+    expect(nodes).toHaveLength(2)
     const layout = layoutNodes(nodes, 'circle')
-    const routes = nodes.flatMap((node) => {
-      const pointer = node.precedent
-      if (pointer.kind !== 'node') return []
-      const target = nodes.find((candidate) => candidate.id === pointer.id)
-      if (!target) return []
-      const route = routeArrow(
-        node,
-        'precedent',
-        target,
-        layout,
-        'circle',
-        nodes,
-        { finalForm: true },
-      )
-      return route ? [route] : []
-    })
+    const firstPoint = layout.get(nodes[0]!.id)!
+    const secondPoint = layout.get(nodes[1]!.id)!
+    // The two nodes face each other vertically, as in the reference drawing.
+    expect(firstPoint.x).toBeCloseTo(secondPoint.x, 6)
+    expect(firstPoint.y + NODE_H).toBeLessThan(secondPoint.y)
 
-    expect(routes).toHaveLength(2)
-    const details = routes.map((route) => {
-      const [tail, first, second, tip] = route.points
-      if (!tail || !first || !second || !tip) {
-        throw new Error('missing cubic control points')
+    const pairs = [0, 1].map((index) => pairRoutes(nodes, layout, index))
+    for (const pair of pairs) {
+      expect(pair.suivant.kind).toBe('curve')
+      expect(pair.precedent.kind).toBe('curve')
+      const following = samplePath(pair.suivant.path, 80)
+      const previous = samplePath(pair.precedent.path, 80)
+      expect(pathsCross(following, previous)).toBe(false)
+      expect(minPathDistance(following, previous)).toBeGreaterThanOrEqual(27.5)
+    }
+
+    // One pair wraps around the left side, the other around the right side.
+    const nodeRight = Math.max(firstPoint.x, secondPoint.x) + NODE_W
+    const sides = pairs.map((pair) => {
+      const xs = samplePath(pair.suivant.path, 40).map((point) => point.x)
+      return Math.max(...xs) > nodeRight + 1 ? 'right' : 'left'
+    })
+    expect(sides.sort()).toEqual(['left', 'right'])
+
+    // No arrow crosses the gap between the two facing nodes.
+    const gap: Rect = {
+      x: firstPoint.x,
+      y: firstPoint.y + NODE_H,
+      width: NODE_W,
+      height: secondPoint.y - (firstPoint.y + NODE_H),
+    }
+    for (const pair of pairs) {
+      for (const route of [pair.suivant, pair.precedent]) {
+        expect(samplePath(route.path, 60).some((point) => inside(point, gap))).toBe(false)
       }
-      const midpointX = (tail.x + 3 * first.x + 3 * second.x + tip.x) / 8
-      const centerline = (tail.x + tip.x) / 2
-      const entryAngle = Math.atan2(
-        Math.abs(tip.x - second.x),
-        Math.abs(tip.y - second.y),
-      )
-      return { bulge: Math.abs(midpointX - centerline), entryAngle }
-    })
-
-    for (const detail of details) {
-      // The resting link wraps around the outside of the node pair and enters
-      // the lateral border horizontally, as in the reference sketch.
-      expect(detail.bulge).toBeGreaterThan(80)
-      expect(detail.entryAngle).toBeGreaterThan(Math.PI / 3)
     }
   })
 
-  it('trace les liens suivant du cercle à trois nœuds sans coude', () => {
+  it('trace le triangle à trois nœuds avec une paire droite et deux arcs extérieurs', () => {
     const snapshot = intScenarios.find((scenario) => scenario.id === 'cours')!
       .state
-    const nodes = snapshot.nodes.filter((node) => !node.freed)
+    const nodes = ringRow(snapshot)
+    expect(nodes).toHaveLength(3)
     const layout = layoutNodes(nodes, 'circle')
-    const ring = circleGeometry(nodes)!
+    const centers = nodes.map((node) => {
+      const point = layout.get(node.id)!
+      return { x: point.x + NODE_W / 2, y: point.y + NODE_H / 2 }
+    })
+    // One node on top, two nodes facing each other on the bottom.
+    expect(centers[0]!.y).toBeLessThan(centers[1]!.y)
+    expect(centers[1]!.y).toBeCloseTo(centers[2]!.y, 6)
+
+    const pairs = [0, 1, 2].map((index) => pairRoutes(nodes, layout, index))
+    // The bottom pair is the short, nearly straight facing pair.
+    expect(pairs[1]!.suivant.kind).toBe('straight')
+    expect(pairs[1]!.precedent.kind).toBe('straight')
+    // The top node reaches each bottom node through an outer arc.
+    expect(pairs[0]!.suivant.kind).toBe('curve')
+    expect(pairs[0]!.precedent.kind).toBe('curve')
+    expect(pairs[2]!.suivant.kind).toBe('curve')
+    expect(pairs[2]!.precedent.kind).toBe('curve')
+
     const issues: string[] = []
-    for (const node of nodes) {
-      const pointer = node.suivant
-      if (pointer.kind !== 'node') continue
-      const target = nodes.find((candidate) => candidate.id === pointer.id)
-      if (!target) continue
-      const route = routeArrow(node, 'suivant', target, layout, 'circle', nodes)
-      if (!route) {
-        issues.push(`${node.id}: aucun tracé`)
-        continue
-      }
-      // The dot-to-border approach and the ring arc must be a single cubic:
-      // a straight line followed by a quadratic leaves a visible elbow where
-      // the two tangents disagree.
-      const commands = route.path.match(/[MLQC]/gi) ?? []
-      if (commands.some((command) => command !== 'M' && command !== 'C')) {
-        issues.push(`${node.id}: segments droits ou quadratiques (${route.path})`)
-      }
-      const samples = samplePath(route.path, 160)
-      let sharpest = 0
-      let farthest = 0
-      for (let index = 1; index < samples.length - 1; index += 1) {
-        const before = samples[index - 1]!
-        const current = samples[index]!
-        const after = samples[index + 1]!
-        farthest = Math.max(
-          farthest,
-          Math.hypot(current.x - ring.cx, current.y - ring.cy),
-        )
-        const incoming = Math.atan2(
-          current.y - before.y,
-          current.x - before.x,
-        )
-        const outgoing = Math.atan2(after.y - current.y, after.x - current.x)
-        let turn = Math.abs(outgoing - incoming)
-        if (turn > Math.PI) turn = Math.PI * 2 - turn
-        sharpest = Math.max(sharpest, turn)
-      }
-      if (sharpest > (12 * Math.PI) / 180) {
-        issues.push(
-          `${node.id}: coude de ${((sharpest * 180) / Math.PI).toFixed(1)}°`,
-        )
-      }
-      // The link must bow around the ring, not cut straight from one node to
-      // the next: the curve reaches well beyond the node centres.
-      if (farthest < ring.radius + 70) {
-        issues.push(
-          `${node.id}: courbe trop plate (${farthest.toFixed(1)} < ${ring.radius + 70})`,
-        )
+    for (let index = 0; index < pairs.length; index += 1) {
+      issues.push(...pairIssues('triangle', nodes, layout, index))
+    }
+    // The two wrap-around links are curved; the bottom facing pair is straight.
+    for (const index of [0, 2]) {
+      for (const route of [pairs[index]!.suivant, pairs[index]!.precedent]) {
+        const commands = pathCommands(route.path)
+        if (!commands.includes('Q') && !commands.includes('C')) {
+          issues.push(`${nodes[index]!.id}: paire extérieure sans courbe (${commands.join('')})`)
+        }
       }
     }
     expect(issues, issues.join('\n')).toEqual([])
   })
 
-  it('utilise le routage de repos pour les liens precedent de deux à huit nœuds', () => {
+  it('garde le même tracé pendant l’animation et au repos de deux à huit nœuds', () => {
     const finals = growingFinalSnapshots()
     const issues: string[] = []
     for (let count = 2; count <= 8; count += 1) {
       const snapshot = finals[count - 1]!
-      const nodes = snapshot.nodes.filter((node) => !node.freed)
-      const layout = layoutNodes(nodes, 'circle')
-      const changed = nodes.some((node) => {
-        const pointer = node.precedent
-        if (pointer.kind !== 'node') return false
-        const target = nodes.find((candidate) => candidate.id === pointer.id)
-        if (!target) return false
-        const animated = routeArrow(
-          node,
-          'precedent',
-          target,
-          layout,
-          'circle',
-          nodes,
-        )
-        const resting = routeArrow(
-          node,
-          'precedent',
-          target,
-          layout,
-          'circle',
-          nodes,
-          { finalForm: true },
-        )
-        return animated?.path !== resting?.path
-      })
-      if (!changed) {
-        issues.push(`${count} nœuds: aucun lien precedent ne change de tracé`)
-      }
+      issues.push(
+        ...routeChanges(`forme finale ${count}`, snapshot, 'suivant', {
+          finalForm: true,
+        }),
+      )
+      issues.push(
+        ...routeChanges(`forme finale ${count}`, snapshot, 'precedent', {
+          finalForm: true,
+        }),
+      )
     }
     expect(issues, issues.join('\n')).toEqual([])
   })
 
-  it('part du point ou du bord extérieur et arrive sur la voie precedent', () => {
+  it('part du point de chaque pointeur et arrive sur la bordure de la cible', () => {
     const finals = growingFinalSnapshots()
     const issues: string[] = []
     for (let count = 2; count <= 8; count += 1) {
@@ -505,45 +561,42 @@ describe('routage des flèches du chapitre 5', () => {
       const layout = layoutNodes(nodes, 'circle')
       const ring = circleGeometry(nodes)!
       for (const node of nodes) {
-        const pointer = node.precedent
-        if (pointer.kind !== 'node') continue
-        const target = nodes.find((candidate) => candidate.id === pointer.id)
-        if (!target) continue
-        const route = routeArrow(
-          node,
-          'precedent',
-          target,
-          layout,
-          'circle',
-          nodes,
-          { finalForm: true },
-        )
-        if (!route) continue
         const point = layout.get(node.id)!
-        const sourceRect = circleNodeRect(point)
-        const targetRect = circleNodeRect(layout.get(target.id)!)
-        const dot = pointerAnchor(
-          node,
-          point,
-          'precedent',
-          isRowFlipped(node, point, ring),
-        )
-        if (
-          distance(route.tail, dot) > 1e-6 &&
-          !onBorder(route.tail, sourceRect)
-        ) {
-          issues.push(
-            `${count} nœuds: queue de ${node.id} ni sur le point ni sur le bord`,
+        for (const field of ['suivant', 'precedent'] as const) {
+          const pointer = node[field]
+          if (pointer.kind !== 'node') continue
+          const target = nodes.find((candidate) => candidate.id === pointer.id)
+          if (!target) continue
+          const route = routeArrow(
+            node,
+            field,
+            target,
+            layout,
+            'circle',
+            nodes,
+            { finalForm: true },
           )
-        }
-        const lateral =
-          Math.abs(route.tip.x - targetRect.x) < 1e-6 ||
-          Math.abs(route.tip.x - (targetRect.x + targetRect.width)) < 1e-6
-        const lane = targetRect.y + targetRect.height * PRECEDENT_LANE
-        if (!lateral || Math.abs(route.tip.y - lane) > 1e-6) {
-          issues.push(
-            `${count} nœuds: pointe vers ${target.id} hors de la voie precedent`,
+          if (!route) {
+            issues.push(`${count} nœuds: ${node.id}.${field} sans tracé`)
+            continue
+          }
+          const dot = pointerAnchor(
+            node,
+            point,
+            field,
+            isRowFlipped(node, point, ring),
           )
+          if (distance(route.tail, dot) > 1e-6) {
+            issues.push(
+              `${count} nœuds: ${node.id}.${field} ne part pas de son point`,
+            )
+          }
+          const targetRect = circleNodeRect(layout.get(target.id)!)
+          if (!onBorder(route.tip, targetRect)) {
+            issues.push(
+              `${count} nœuds: ${node.id}.${field} n’arrive pas sur la bordure de ${target.id}`,
+            )
+          }
         }
       }
     }
@@ -595,104 +648,148 @@ describe('routage des flèches du chapitre 5', () => {
     expect(issues, issues.join('\n')).toEqual([])
   })
 
-  it('dessine chaque lien precedent final comme une seule courbe, sans croisement', () => {
+  it('dessine chaque paire adjacente sans croisement ni chevauchement', () => {
     const finals = growingFinalSnapshots()
     const issues: string[] = []
     for (let count = 2; count <= 8; count += 1) {
       const snapshot = finals[count - 1]!
-      const nodes = snapshot.nodes.filter((node) => !node.freed)
+      const nodes = ringRow(snapshot)
       const layout = layoutNodes(nodes, 'circle')
-      const routes: Array<{
-        label: string
-        sourceId: number
-        targetId: number
-        route: ArrowRoute
-        samples: Point[]
-      }> = []
-      for (const node of nodes) {
-        const pointer = node.precedent
-        if (pointer.kind !== 'node') continue
-        const target = nodes.find((candidate) => candidate.id === pointer.id)
-        if (!target) continue
-        const route = routeArrow(
-          node,
-          'precedent',
-          target,
-          layout,
-          'circle',
-          nodes,
-          { finalForm: true },
+      for (let index = 0; index < nodes.length; index += 1) {
+        issues.push(
+          ...pairIssues(`${count} nœuds`, nodes, layout, index),
         )
-        if (!route) continue
-        const commands = pathCommands(route.path)
-        if (commands.length !== 2 || commands[0] !== 'M' || commands[1] !== 'C') {
+      }
+    }
+    expect(issues, issues.join('\n')).toEqual([])
+  })
+
+  it('place les nœuds dans l’ordre du cercle sans chevauchement de un à huit', () => {
+    const finals = growingFinalSnapshots()
+    for (let count = 1; count <= 8; count += 1) {
+      const snapshot = finals[count - 1]!
+      const nodes = ringRow(snapshot)
+      expect(nodes).toHaveLength(count)
+      const layout = layoutNodes(nodes, 'circle')
+      const ring = circleGeometry(nodes)!
+      const centers = nodes.map((node) => {
+        const point = layout.get(node.id)!
+        return { x: point.x + NODE_W / 2, y: point.y + NODE_H / 2 }
+      })
+
+      for (let first = 0; first < nodes.length; first += 1) {
+        for (let second = first + 1; second < nodes.length; second += 1) {
+          const a = circleNodeRect(layout.get(nodes[first]!.id)!)
+          const b = circleNodeRect(layout.get(nodes[second]!.id)!)
+          const overlapX =
+            Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x)
+          const overlapY =
+            Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y)
+          expect(
+            overlapX > 0 && overlapY > 0,
+            `${count} nœuds: ${nodes[first]!.id} et ${nodes[second]!.id} se chevauchent`,
+          ).toBe(false)
+        }
+      }
+
+      if (count >= 3) {
+        const angles = centers.map((point) =>
+          Math.atan2((point.y - ring.cy) / ring.ry, (point.x - ring.cx) / ring.rx),
+        )
+        for (let index = 0; index < count; index += 1) {
+          const next = (index + 1) % count
+          const step =
+            (angles[next]! - angles[index]! + Math.PI * 2) % (Math.PI * 2)
+          expect(step).toBeCloseTo((Math.PI * 2) / count, 6)
+        }
+      } else if (count === 2) {
+        expect(centers[0]!.x).toBeCloseTo(centers[1]!.x, 6)
+        expect(centers[0]!.y).not.toBeCloseTo(centers[1]!.y, 6)
+      }
+    }
+  })
+
+  it('dessine les deux auto-liens du nœud unique sur des côtés opposés', () => {
+    const snapshot = growingFinalSnapshots()[0]!
+    const nodes = ringRow(snapshot)
+    expect(nodes).toHaveLength(1)
+    const node = nodes[0]!
+    const layout = layoutNodes(nodes, 'circle')
+    const point = layout.get(node.id)!
+    const suivant = routeArrow(node, 'suivant', node, layout, 'circle', nodes)
+    const precedent = routeArrow(node, 'precedent', node, layout, 'circle', nodes)
+    expect(suivant).not.toBeNull()
+    expect(precedent).not.toBeNull()
+
+    const following = samplePath(suivant!.path, 80)
+    const previous = samplePath(precedent!.path, 80)
+    expect(pathsCross(following, previous)).toBe(false)
+    expect(minPathDistance(following, previous)).toBeGreaterThanOrEqual(27.5)
+    // `suivant` loops above the node, `precedent` below it.
+    expect(suivant!.tip.y).toBeLessThanOrEqual(point.y)
+    expect(precedent!.tip.y).toBeGreaterThanOrEqual(point.y + NODE_H)
+  })
+
+  it('ferme le carré à quatre nœuds avec quatre paires droites', () => {
+    const snapshot = growingFinalSnapshots()[3]!
+    const nodes = ringRow(snapshot)
+    expect(nodes).toHaveLength(4)
+    const layout = layoutNodes(nodes, 'circle')
+    const centers = nodes.map((node) => {
+      const point = layout.get(node.id)!
+      return { x: point.x + NODE_W / 2, y: point.y + NODE_H / 2 }
+    })
+    expect(centers[0]!.y).toBeCloseTo(centers[1]!.y, 6)
+    expect(centers[2]!.y).toBeCloseTo(centers[3]!.y, 6)
+    expect(centers[0]!.x).toBeCloseTo(centers[3]!.x, 6)
+    expect(centers[1]!.x).toBeCloseTo(centers[2]!.x, 6)
+
+    const issues: string[] = []
+    for (let index = 0; index < nodes.length; index += 1) {
+      const pair = pairRoutes(nodes, layout, index)
+      issues.push(...pairIssues('carré', nodes, layout, index))
+      if (index === 0 || index === 2) {
+        // Top and bottom sides face each other: two straight arrows.
+        if (pair.suivant.kind !== 'straight' || pair.precedent.kind !== 'straight') {
           issues.push(
-            `${count} nœuds: ${node.id}.precedent n'est pas une seule courbe (${commands.join('')})`,
+            `${nodes[index]!.id}->${nodes[(index + 1) % nodes.length]!.id}: paire non droite`,
           )
         }
-        const samples = samplePath(route.path)
-        // The resting link may start at the pointer dot inside its own node,
-        // so only flag a re-entry after the curve has left the source.
-        const sourceRect = circleNodeRect(layout.get(node.id)!)
-        let exited = false
-        for (const sample of samples) {
-          if (!exited) {
-            if (!inside(sample, sourceRect, 1)) exited = true
-            continue
-          }
-          if (inside(sample, sourceRect, 1)) {
-            issues.push(
-              `${count} nœuds: ${node.id}.precedent rentre dans son nœud`,
+      } else {
+        // Left and right sides wrap around the outside with a long straight
+        // vertical run and short stubs at the pointer dots.
+        for (const route of [pair.suivant, pair.precedent]) {
+          const vertical = route.points.some((point, pointIndex) => {
+            if (pointIndex === 0) return false
+            const previous = route.points[pointIndex - 1]!
+            return (
+              Math.abs(point.x - previous.x) < 1e-6 &&
+              Math.abs(point.y - previous.y) > NODE_H
             )
-            break
-          }
-        }
-        for (const other of nodes) {
-          if (other.id === node.id) continue
-          const rect = circleNodeRect(layout.get(other.id)!)
-          if (samples.some((sample) => inside(sample, rect, 1))) {
+          })
+          if (!vertical) {
             issues.push(
-              `${count} nœuds: ${node.id}.precedent entre dans le nœud ${other.id}`,
+              `${nodes[index]!.id}->${nodes[(index + 1) % nodes.length]!.id}: côté sans segment vertical`,
             )
-          }
-        }
-        routes.push({
-          label: `${node.id}.precedent->${target.id}`,
-          sourceId: node.id,
-          targetId: target.id,
-          route,
-          samples,
-        })
-      }
-
-      for (let first = 0; first < routes.length; first += 1) {
-        for (let second = first + 1; second < routes.length; second += 1) {
-          const a = routes[first]!
-          const b = routes[second]!
-          if (pathsCross(a.samples, b.samples)) {
-            issues.push(`${count} nœuds: ${a.label} croise ${b.label}`)
-          }
-        }
-      }
-
-      for (const node of nodes) {
-        const anchors = routes.flatMap((entry) => {
-          const result: Point[] = []
-          if (entry.sourceId === node.id) result.push(entry.route.tail)
-          if (entry.targetId === node.id) result.push(entry.route.tip)
-          return result
-        })
-        for (let first = 0; first < anchors.length; first += 1) {
-          for (let second = first + 1; second < anchors.length; second += 1) {
-            if (distance(anchors[first]!, anchors[second]!) < 1) {
-              issues.push(
-                `${count} nœuds: deux flèches precedent partagent une ancre sur ${node.id}`,
-              )
-            }
           }
         }
       }
     }
     expect(issues, issues.join('\n')).toEqual([])
+  })
+
+  it('garde des paires droites et des arcs extérieurs de cinq à huit nœuds', () => {
+    const finals = growingFinalSnapshots()
+    for (let count = 5; count <= 8; count += 1) {
+      const nodes = ringRow(finals[count - 1]!)
+      const layout = layoutNodes(nodes, 'circle')
+      const kinds = nodes.map((_, index) => pairRoutes(nodes, layout, index))
+      const suivantKinds = kinds.map((pair) => pair.suivant.kind)
+      expect(suivantKinds).toContain('straight')
+      expect(suivantKinds).toContain('curve')
+      for (const pair of kinds) {
+        expect(pair.suivant.kind).toBe(pair.precedent.kind)
+      }
+    }
   })
 })

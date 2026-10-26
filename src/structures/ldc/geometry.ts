@@ -73,29 +73,114 @@ export const CIRCLE_CX = 640
 export const CIRCLE_CY = 560
 /** A three-node ring needs more room than the compact formula below gives it. */
 export const CIRCLE_MIN_RADIUS = 200
+/** Minimum breathing room between two ring nodes. */
+export const RING_NODE_GAP = 46
+/** Horizontal/vertical padding of the decorative band around the ring. */
+export const RING_BAND_PAD_X = 68
+export const RING_BAND_PAD_Y = 44
+/** Distance between the two parallel arrows of one neighbour pair. */
+export const RING_PAIR_GAP = 30
+/** Distance between the outer node border and the first arrow lane. */
+export const RING_OUTER_PAD = 28
+/** Corner radius of the outer side routes for four or more nodes. */
+export const RING_ROUTE_RADIUS = 20
 
 export interface CircleGeometry {
   cx: number
   cy: number
+  /** Horizontal and vertical radii of the ellipse through the node centres. */
+  rx: number
+  ry: number
+  /** Largest radius, kept for the transient wrap-around fallback. */
   radius: number
   count: number
+  startAngle: number
+  step: number
 }
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
 
+/**
+ * Even rings start on a flat top edge (four nodes form the square of the
+ * reference drawing); odd rings keep a single node at the top.
+ */
+export function circleStartAngle(count: number): number {
+  if (count === 4) return (-3 * Math.PI) / 4
+  if (count === 6) return (-2 * Math.PI) / 3
+  if (count === 8) return (-5 * Math.PI) / 8
+  return -Math.PI / 2
+}
+
+function ringPoints(
+  count: number,
+  rx: number,
+  ry: number,
+  startAngle: number,
+): Point[] {
+  return Array.from({ length: count }, (_, index) => {
+    const angle = startAngle + (index * Math.PI * 2) / count
+    return { x: Math.cos(angle) * rx, y: Math.sin(angle) * ry }
+  })
+}
+
+function ringRectsClear(
+  count: number,
+  rx: number,
+  ry: number,
+  startAngle: number,
+): boolean {
+  const points = ringPoints(count, rx, ry, startAngle)
+  for (let first = 0; first < points.length; first += 1) {
+    for (let second = first + 1; second < points.length; second += 1) {
+      const dx = Math.abs(points[first]!.x - points[second]!.x)
+      const dy = Math.abs(points[first]!.y - points[second]!.y)
+      if (dx < NODE_W + RING_NODE_GAP && dy < NODE_H + RING_NODE_GAP) {
+        return false
+      }
+    }
+  }
+  return true
+}
+
 export function circleGeometry(nodes: LdcNode[]): CircleGeometry | null {
   const count = nodes.filter((node) => node.lane === 'row').length
   if (count === 0) return null
-  const radius =
-    count === 1
-      ? 0
-      : Math.max(
-          count >= 3 ? CIRCLE_MIN_RADIUS : 160,
-          (NODE_W / 2 + 26) / Math.sin(Math.PI / count),
-        )
-  return { cx: CIRCLE_CX, cy: CIRCLE_CY, radius, count }
+  const startAngle = circleStartAngle(count)
+  const step = count === 1 ? 0 : (Math.PI * 2) / count
+  if (count === 1) {
+    return {
+      cx: CIRCLE_CX,
+      cy: CIRCLE_CY,
+      rx: 0,
+      ry: 0,
+      radius: 0,
+      count,
+      startAngle,
+      step,
+    }
+  }
+
+  // Grow the ellipse until every pair of node rectangles is separated by at
+  // least one axis. Wide rectangles need more room than the old chord formula
+  // gave them, especially near the top of a pointy ring.
+  let rx = count === 2 ? 0 : CIRCLE_MIN_RADIUS + 50
+  let ry = count === 2 ? 180 : rx * 0.8
+  while (rx < 900 && !ringRectsClear(count, rx, ry, startAngle)) {
+    rx += 8
+    ry = rx * 0.8
+  }
+  return {
+    cx: CIRCLE_CX,
+    cy: CIRCLE_CY,
+    rx,
+    ry,
+    radius: Math.max(rx, ry),
+    count,
+    startAngle,
+    step,
+  }
 }
 
 export function layoutNodes(
@@ -112,10 +197,14 @@ export function layoutNodes(
     const ring = circleGeometry(nodes)
     row.forEach((node, index) => {
       const angle =
-        row.length === 1 ? 0 : -Math.PI / 2 + (index * Math.PI * 2) / row.length
-      const radius = ring?.radius ?? 0
-      const cx = CIRCLE_CX + Math.cos(angle) * radius
-      const cy = CIRCLE_CY + Math.sin(angle) * radius
+        row.length === 1
+          ? 0
+          : (ring?.startAngle ?? -Math.PI / 2) +
+            (index * Math.PI * 2) / row.length
+      const rx = ring?.rx ?? 0
+      const ry = ring?.ry ?? 0
+      const cx = CIRCLE_CX + Math.cos(angle) * rx
+      const cy = CIRCLE_CY + Math.sin(angle) * ry
       layout.set(node.id, { x: cx - NODE_W / 2, y: cy - NODE_H / 2 })
     })
     const heap = nodes
@@ -128,7 +217,7 @@ export function layoutNodes(
       let x: number
       let top: number
       if (ring) {
-        const ringLeft = CIRCLE_CX - (ring.radius + NODE_W / 2 + 26)
+        const ringLeft = CIRCLE_CX - (ring.rx + NODE_W / 2 + 26)
         x = ringLeft - CIRCLE_HEAP_GAP - NODE_W
         top = CIRCLE_CY - stackHeight / 2
       } else {
@@ -178,6 +267,25 @@ export function circleHeapBand(nodes: LdcNode[]): Rect | null {
     y: content.y - CIRCLE_HEAP_HEADER,
     width: content.width + BAND_PAD * 2,
     height: content.height + CIRCLE_HEAP_HEADER + CIRCLE_HEAP_FOOTER,
+  }
+}
+
+/** Rounded band drawn around the chapter 5 ring. */
+export function circleBand(nodes: LdcNode[]): Rect | null {
+  const row = nodes.filter((node) => node.lane === 'row')
+  if (row.length === 0) return null
+  const layout = layoutNodes(nodes, 'circle')
+  const nodeRects = row.flatMap((node) => {
+    const point = layout.get(node.id)
+    return point ? [nodeBounds(point)] : []
+  })
+  if (nodeRects.length === 0) return null
+  const content = unionBounds(nodeRects)
+  return {
+    x: content.x - RING_BAND_PAD_X,
+    y: content.y - RING_BAND_PAD_Y,
+    width: content.width + RING_BAND_PAD_X * 2,
+    height: content.height + RING_BAND_PAD_Y * 2,
   }
 }
 
@@ -627,124 +735,8 @@ function normalizeAngle(angle: number): number {
 
 const ROW_ROW_SOURCE_WRAP = 0.55
 const ROW_ROW_TARGET_WRAP = 0.25
-/**
- * Resting `precedent` links share the outside of the ring with `suivant`
- * links. A small extra radius keeps the two arrows parallel instead of
- * stacking them on the same curve.
- */
-const FINAL_PRECEDENT_LANE = 20
-/**
- * When the pointer dot faces the ring centre, the resting link starts on the
- * outer border. Offset that artificial anchor toward the outgoing direction so
- * it does not land on the incoming link of the same node or cross it.
- */
-const FINAL_PRECEDENT_BORDER_LANE_RIGHT = 0.58
-const FINAL_PRECEDENT_BORDER_LANE_LEFT = 0.86
 /** Gap between a two-node lateral border and its outer `suivant` lane. */
 const TWO_NODE_SUIVANT_LANE = 50
-
-/**
- * Side of a node that faces the outside of the ring for a given link. When the
- * gap is almost vertical, use the other node's side instead so the two nodes
- * still connect through their facing borders.
- */
-function outerSide(
-  gap: Point,
-  nodePoint: Point,
-  otherCenter: Point,
-): 'left' | 'right' {
-  const center = nodeCenter(nodePoint)
-  const threshold = 8
-  if (gap.x < center.x - threshold) return 'left'
-  if (gap.x > center.x + threshold) return 'right'
-  return otherCenter.x < center.x ? 'left' : 'right'
-}
-
-/**
- * Resting `precedent` link. Both endpoints sit on the outside of the ring and
- * the curve leaves and enters horizontally, so it wraps around the node group
- * like the reference sketch. When the pointer dot faces the ring centre, the
- * link starts on the outer border instead of crossing the node.
- */
-function finalPrecedentRoute(
-  tail: Point,
-  sourcePoint: Point,
-  targetPoint: Point,
-  ring: CircleGeometry,
-): ArrowRoute {
-  const sourceCenter = nodeCenter(sourcePoint)
-  const targetCenter = nodeCenter(targetPoint)
-  const sourceRect = circleNodeRect(sourcePoint)
-  const targetRect = circleNodeRect(targetPoint)
-  const sourceAngle = Math.atan2(
-    sourceCenter.y - ring.cy,
-    sourceCenter.x - ring.cx,
-  )
-  const targetAngle = Math.atan2(
-    targetCenter.y - ring.cy,
-    targetCenter.x - ring.cx,
-  )
-  const clockwise = normalizeAngle(targetAngle - sourceAngle)
-  let delta = clockwise > Math.PI ? clockwise - Math.PI * 2 : clockwise
-  if (ring.count === 2) {
-    const plusMidpoint = sourceAngle + Math.PI / 2
-    const dotRight = tail.x >= sourceCenter.x
-    const plusRight = Math.cos(plusMidpoint) >= 0
-    delta = dotRight === plusRight ? Math.PI : -Math.PI
-  }
-  const midpoint = sourceAngle + delta / 2
-  const outer =
-    ring.count === 2
-      ? Math.max(90, ring.radius - 30)
-      : ring.radius + NODE_W / 2 + 26
-  const gapRadius = outer + FINAL_PRECEDENT_LANE
-  const gap = {
-    x: ring.cx + Math.cos(midpoint) * gapRadius,
-    y: ring.cy + Math.sin(midpoint) * gapRadius,
-  }
-
-  const sourceSide = outerSide(gap, sourcePoint, targetCenter)
-  const targetSide = outerSide(gap, targetPoint, sourceCenter)
-  const dotSide = tail.x < sourceCenter.x ? 'left' : 'right'
-  const anchor =
-    dotSide === sourceSide
-      ? tail
-      : {
-          x:
-            sourceSide === 'left'
-              ? sourceRect.x
-              : sourceRect.x + sourceRect.width,
-          y:
-            sourceRect.y +
-            sourceRect.height *
-              (sourceSide === 'right'
-                ? FINAL_PRECEDENT_BORDER_LANE_RIGHT
-                : FINAL_PRECEDENT_BORDER_LANE_LEFT),
-        }
-  const entry = {
-    x:
-      targetSide === 'left'
-        ? targetRect.x
-        : targetRect.x + targetRect.width,
-    y: targetRect.y + targetRect.height * PRECEDENT_LANE,
-  }
-
-  const chord = Math.hypot(entry.x - anchor.x, entry.y - anchor.y)
-  const control = clamp(chord * 0.45, 70, 160)
-  const sourceOutward = sourceSide === 'left' ? -1 : 1
-  const targetOutward = targetSide === 'left' ? -1 : 1
-  const startControl = { x: anchor.x + sourceOutward * control, y: anchor.y }
-  const endControl = { x: entry.x + targetOutward * control, y: entry.y }
-  const points = [anchor, startControl, endControl, entry]
-  return {
-    kind: 'curve',
-    path: `M ${anchor.x} ${anchor.y} C ${startControl.x} ${startControl.y}, ${endControl.x} ${endControl.y}, ${entry.x} ${entry.y}`,
-    tail: anchor,
-    tip: entry,
-    bounds: boundsOfPoints(points, 2),
-    points,
-  }
-}
 
 /** Move an entry on a vertical node border onto the pointer's own lane. */
 function entryAtFieldLane(
@@ -1250,6 +1242,210 @@ export interface RouteArrowOptions {
   finalForm?: boolean
 }
 
+interface CirclePairRoutes {
+  suivant: ArrowRoute
+  precedent: ArrowRoute
+}
+
+function circleRowOrder(nodes: LdcNode[]): LdcNode[] {
+  return nodes
+    .filter((node) => node.lane === 'row')
+    .slice()
+    .sort((first, second) => first.slot - second.slot)
+}
+
+function onRectBorder(point: Point, rect: Rect, epsilon = 0.75): boolean {
+  const insideX =
+    point.x >= rect.x - epsilon && point.x <= rect.x + rect.width + epsilon
+  const insideY =
+    point.y >= rect.y - epsilon && point.y <= rect.y + rect.height + epsilon
+  const onVertical =
+    Math.abs(point.x - rect.x) <= epsilon ||
+    Math.abs(point.x - (rect.x + rect.width)) <= epsilon
+  const onHorizontal =
+    Math.abs(point.y - rect.y) <= epsilon ||
+    Math.abs(point.y - (rect.y + rect.height)) <= epsilon
+  return insideX && insideY && (onVertical || onHorizontal)
+}
+
+function straightArrow(tail: Point, tip: Point): ArrowRoute {
+  return {
+    kind: 'straight',
+    path: `M ${tail.x} ${tail.y} L ${tip.x} ${tip.y}`,
+    tail,
+    tip,
+    bounds: boundsOfPoints([tail, tip], 2),
+    points: [tail, tip],
+  }
+}
+
+/**
+ * Two straight arrows across the gap between facing nodes. The direction is
+ * the dot-to-dot direction rotated just enough that the two parallel lines are
+ * `RING_PAIR_GAP` apart. This keeps the pair tight without ever overlapping.
+ */
+function facingPairRoutes(
+  sourcePoint: Point,
+  targetPoint: Point,
+  tailS: Point,
+  tailP: Point,
+): CirclePairRoutes | null {
+  const sourceRect = circleNodeRect(sourcePoint)
+  const targetRect = circleNodeRect(targetPoint)
+  const sourceCenter = nodeCenter(sourcePoint)
+  const targetCenter = nodeCenter(targetPoint)
+  const dx = tailP.x - tailS.x
+  const dy = tailP.y - tailS.y
+  const length = Math.hypot(dx, dy)
+  const alpha = Math.asin(
+    clamp(RING_PAIR_GAP / Math.max(length, RING_PAIR_GAP), 0, 0.9),
+  )
+  const base = Math.atan2(dy, dx)
+  const chordX = targetCenter.x - sourceCenter.x
+  const chordY = targetCenter.y - sourceCenter.y
+  let angle = base
+  let best = Number.NEGATIVE_INFINITY
+  for (const candidate of [base - alpha, base + alpha]) {
+    const dot = Math.cos(candidate) * chordX + Math.sin(candidate) * chordY
+    if (dot > best) {
+      best = dot
+      angle = candidate
+    }
+  }
+  const direction = { x: Math.cos(angle), y: Math.sin(angle) }
+  const probe = 100000
+  const tipS = borderPoint(
+    tailS,
+    { x: tailS.x + direction.x * probe, y: tailS.y + direction.y * probe },
+    targetRect,
+  )
+  const tipP = borderPoint(
+    tailP,
+    { x: tailP.x - direction.x * probe, y: tailP.y - direction.y * probe },
+    sourceRect,
+  )
+  if (!onRectBorder(tipS, targetRect) || !onRectBorder(tipP, sourceRect)) {
+    return null
+  }
+  return {
+    suivant: straightArrow(tailS, tipS),
+    precedent: straightArrow(tailP, tipP),
+  }
+}
+
+/**
+ * Two nested outer routes on the same side of a pair of nodes. Both arrows
+ * enter the target at the lower end of its outer border; the arrow travelling
+ * downwards takes the outer lane and the arrow travelling upwards takes the
+ * inner lane. That is the same nested arrangement as the reference drawing:
+ * the horizontal stubs of one arrow sit above/below the vertical run of the
+ * other, so the pair never crosses or overlaps.
+ */
+function outerPairRoutes(
+  sourcePoint: Point,
+  targetPoint: Point,
+  tailS: Point,
+  tailP: Point,
+  side: 'left' | 'right',
+  count: number,
+): CirclePairRoutes {
+  const sourceRect = circleNodeRect(sourcePoint)
+  const targetRect = circleNodeRect(targetPoint)
+  const sign = side === 'right' ? 1 : -1
+  const sourceBorderX =
+    side === 'right' ? sourceRect.x + sourceRect.width : sourceRect.x
+  const targetBorderX =
+    side === 'right' ? targetRect.x + targetRect.width : targetRect.x
+  const outerEdge =
+    side === 'right'
+      ? Math.max(sourceBorderX, targetBorderX)
+      : Math.min(sourceBorderX, targetBorderX)
+  const innerLaneX = outerEdge + sign * RING_OUTER_PAD
+  const outerLaneX = innerLaneX + sign * RING_PAIR_GAP
+  // Entering at the lower corner of the outer border keeps the entry stub
+  // clear of the other arrow's vertical lane on both the near and far side.
+  const entryInset = 0
+  const suivEntryY = targetRect.y + targetRect.height - entryInset
+  const precEntryY = sourceRect.y + sourceRect.height - entryInset
+  const suivDown = targetPoint.y >= sourcePoint.y
+  const suivLaneX = suivDown ? outerLaneX : innerLaneX
+  const precLaneX = suivDown ? innerLaneX : outerLaneX
+
+  const suivPoints = [
+    tailS,
+    { x: sourceBorderX, y: tailS.y },
+    { x: suivLaneX, y: tailS.y },
+    { x: suivLaneX, y: suivEntryY },
+    { x: targetBorderX, y: suivEntryY },
+  ]
+  const precPoints = [
+    tailP,
+    { x: targetBorderX, y: tailP.y },
+    { x: precLaneX, y: tailP.y },
+    { x: precLaneX, y: precEntryY },
+    { x: sourceBorderX, y: precEntryY },
+  ]
+  const suivTip = suivPoints[suivPoints.length - 1]!
+  const precTip = precPoints[precPoints.length - 1]!
+  // Two- and three-node rings get a wider corner radius so the wrap-around
+  // reads as a smooth arc. From four nodes on, the side pair is mostly a
+  // straight vertical run with short corners.
+  const radius = count <= 3 ? 40 : RING_ROUTE_RADIUS
+  const suivant = routeFromPoints('curve', suivPoints, tailS, suivTip, radius)
+  const precedent = routeFromPoints('curve', precPoints, tailP, precTip, radius)
+  return { suivant, precedent }
+}
+
+function circlePairRoutes(
+  source: LdcNode,
+  target: LdcNode,
+  layout: Map<number, Point>,
+  ring: CircleGeometry,
+): CirclePairRoutes | null {
+  const sourcePoint = layout.get(source.id)
+  const targetPoint = layout.get(target.id)
+  if (!sourcePoint || !targetPoint) return null
+  const sourceFlipped = isRowFlipped(source, sourcePoint, ring)
+  const targetFlipped = isRowFlipped(target, targetPoint, ring)
+  const tailS = pointerAnchor(source, sourcePoint, 'suivant', sourceFlipped)
+  const tailP = pointerAnchor(target, targetPoint, 'precedent', targetFlipped)
+  const sourceSide = pointerSide('suivant', sourceFlipped)
+  const targetSide = pointerSide('precedent', targetFlipped)
+  if (sourceSide !== targetSide) {
+    return facingPairRoutes(sourcePoint, targetPoint, tailS, tailP)
+  }
+  return outerPairRoutes(
+    sourcePoint,
+    targetPoint,
+    tailS,
+    tailP,
+    sourceSide,
+    ring.count,
+  )
+}
+
+/** Resting route for the pointer of `source` when `target` is its ring neighbour. */
+function circleAdjacentRoute(
+  source: LdcNode,
+  field: PointerField,
+  target: LdcNode,
+  layout: Map<number, Point>,
+  nodes: LdcNode[],
+  ring: CircleGeometry,
+): ArrowRoute | null {
+  const row = circleRowOrder(nodes)
+  if (row.length < 2) return null
+  const sourceIndex = row.findIndex((node) => node.id === source.id)
+  const targetIndex = row.findIndex((node) => node.id === target.id)
+  if (sourceIndex < 0 || targetIndex < 0) return null
+  if (field === 'suivant') {
+    if (targetIndex !== (sourceIndex + 1) % row.length) return null
+    return circlePairRoutes(source, target, layout, ring)?.suivant ?? null
+  }
+  if (targetIndex !== (sourceIndex - 1 + row.length) % row.length) return null
+  return circlePairRoutes(target, source, layout, ring)?.precedent ?? null
+}
+
 export function routeArrow(
   source: LdcNode,
   field: PointerField,
@@ -1261,6 +1457,9 @@ export function routeArrow(
 ): ArrowRoute | null {
   const sourcePoint = layout.get(source.id)
   if (!sourcePoint) return null
+  // Chapter 5 uses the same clean neighbour routing while an operation runs
+  // and after it settles; the option remains for API compatibility.
+  void options
   const ring = mode === 'circle' ? circleGeometry(nodes) : null
   const tail = pointerAnchor(
     source,
@@ -1298,13 +1497,16 @@ export function routeArrow(
   }
 
   if (mode === 'circle' && ring) {
-    if (source.lane === 'row' && target.lane === 'row' && ring.radius > 0) {
-      const resting =
-        options.finalForm === true &&
-        nodes.every((node) => node.freed || node.lane === 'row')
-      if (resting && field === 'precedent') {
-        return finalPrecedentRoute(tail, sourcePoint, targetPoint, ring)
-      }
+    if (source.lane === 'row' && target.lane === 'row' && ring.count > 1) {
+      const adjacent = circleAdjacentRoute(
+        source,
+        field,
+        target,
+        layout,
+        nodes,
+        ring,
+      )
+      if (adjacent) return adjacent
       return rowRowGapRoute(field, tail, sourcePoint, targetPoint, ring)
     }
     if (source.lane !== target.lane) {
@@ -1720,13 +1922,8 @@ export function snapshotBounds(
   const rects: Rect[] = []
   const ring = mode === 'circle' ? circleGeometry(nodes) : null
   if (ring) {
-    const radius = ring.radius + NODE_W / 2 + 26
-    rects.push({
-      x: ring.cx - radius,
-      y: ring.cy - radius,
-      width: radius * 2,
-      height: radius * 2,
-    })
+    const band = circleBand(nodes)
+    if (band) rects.push(band)
   }
   const debutGeometry = debutCellGeometry(nodes, mode)
   rects.push(debutGeometry.cell)

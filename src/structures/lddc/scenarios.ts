@@ -13,6 +13,8 @@ const E2: StudentValue = { numero: 102, nom: 'BBB', prenom: 'bbb' }
 const E3: StudentValue = { numero: 103, nom: 'CCC', prenom: 'ccc' }
 
 const base925 = createCircularSnapshot('int', intItems([9, 2, 5]))
+const pair = createCircularSnapshot('int', intItems([9, 2]))
+const square = createCircularSnapshot('int', intItems([9, 2, 5, 7]))
 const unique = createCircularSnapshot('int', intItems([9]))
 const registry = createCircularSnapshot('etudiant', studentItems([E1, E2, E3]))
 const empty = createCircularSnapshot('int', [])
@@ -35,6 +37,22 @@ export const intScenarios: ScenarioDef<LdcSnapshot>[] = [
     description: S.cours.description,
     profileId: 'int',
     state: base925,
+    steps: [],
+  },
+  {
+    id: 'deux',
+    title: S.deux.title,
+    description: S.deux.description,
+    profileId: 'int',
+    state: pair,
+    steps: [],
+  },
+  {
+    id: 'quatre',
+    title: S.quatre.title,
+    description: S.quatre.description,
+    profileId: 'int',
+    state: square,
     steps: [],
   },
   {

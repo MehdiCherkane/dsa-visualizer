@@ -56,6 +56,20 @@ function contains(outer: Rect, inner: Rect): boolean {
   )
 }
 
+function onBorder(point: Point, rect: Rect, epsilon = 0.75): boolean {
+  const insideX =
+    point.x >= rect.x - epsilon && point.x <= rect.x + rect.width + epsilon
+  const insideY =
+    point.y >= rect.y - epsilon && point.y <= rect.y + rect.height + epsilon
+  const onVertical =
+    Math.abs(point.x - rect.x) <= epsilon ||
+    Math.abs(point.x - (rect.x + rect.width)) <= epsilon
+  const onHorizontal =
+    Math.abs(point.y - rect.y) <= epsilon ||
+    Math.abs(point.y - (rect.y + rect.height)) <= epsilon
+  return insideX && insideY && (onVertical || onHorizontal)
+}
+
 describe('caméra et géométrie du canvas', () => {
   it('garde le point du monde sous le curseur pendant le zoom', () => {
     const camera: Camera = { x: 120, y: -40, k: 0.8 }
@@ -288,21 +302,31 @@ describe('géométrie circulaire du chapitre 5', () => {
     expect(ring).not.toBeNull()
     expect(ring!.cx).toBe(CIRCLE_CX)
     expect(ring!.cy).toBe(CIRCLE_CY)
+    expect(ring!.count).toBe(4)
 
     const layout = layoutNodes(snapshot.nodes, 'circle')
     for (const node of snapshot.nodes) {
       const point = layout.get(node.id)!
-      const nodeCenter = { x: point.x + 110, y: point.y + 50 }
-      expect(
-        Math.hypot(nodeCenter.x - ring!.cx, nodeCenter.y - ring!.cy),
-      ).toBeCloseTo(ring!.radius, 6)
+      const nodeCenter = { x: point.x + NODE_W / 2, y: point.y + NODE_H / 2 }
+      const ellipse =
+        ((nodeCenter.x - ring!.cx) / ring!.rx) ** 2 +
+        ((nodeCenter.y - ring!.cy) / ring!.ry) ** 2
+      expect(ellipse).toBeCloseTo(1, 6)
     }
+
+    // Four nodes form the square of the reference drawing: two flat top
+    // nodes and two flat bottom nodes, with a pair on each side.
+    const centers = snapshot.nodes.map((node) => {
+      const point = layout.get(node.id)!
+      return { x: point.x + NODE_W / 2, y: point.y + NODE_H / 2 }
+    })
+    expect(centers[0]!.y).toBeCloseTo(centers[1]!.y, 6)
+    expect(centers[2]!.y).toBeCloseTo(centers[3]!.y, 6)
+    expect(centers[0]!.x).toBeLessThan(centers[1]!.x)
+    expect(centers[3]!.x).toBeLessThan(centers[2]!.x)
 
     const first = snapshot.nodes[0]!
     const firstPoint = layout.get(first.id)!
-    expect(firstPoint.x + 110).toBeCloseTo(CIRCLE_CX, 6)
-    expect(firstPoint.y + 50).toBeLessThan(CIRCLE_CY)
-
     const rowPoint = layoutNodes(snapshot.nodes).get(first.id)!
     expect(rowPoint.y).toBe(ROW_Y)
     expect(rowPoint.x).not.toBe(firstPoint.x)
@@ -371,23 +395,35 @@ describe('géométrie circulaire du chapitre 5', () => {
     )
   })
 
-  it('route suivant à l’extérieur et precedent à l’intérieur du cercle', () => {
+  it('trace les paires adjacentes en lignes droites ou en arcs extérieurs', () => {
     const snapshot = circular()
     const [first, second, , fourth] = snapshot.nodes
     if (!first || !second || !fourth) throw new Error('missing nodes')
     const layout = layoutNodes(snapshot.nodes, 'circle')
-    const ring = circleGeometry(snapshot.nodes)!
-    const distance = (point: Point): number =>
-      Math.hypot(point.x - ring.cx, point.y - ring.cy)
 
     const next = routeArrow(first, 'suivant', second, layout, 'circle', snapshot.nodes)
     const previous = routeArrow(first, 'precedent', fourth, layout, 'circle', snapshot.nodes)
     expect(next).not.toBeNull()
     expect(previous).not.toBeNull()
-    expect(next!.kind).toBe('curve')
+
+    // The top pair faces across the ring: two straight parallel arrows.
+    expect(next!.kind).toBe('straight')
+    // The left pair wraps around the outside: two nested arcs.
     expect(previous!.kind).toBe('curve')
-    expect(distance(next!.tail)).toBeGreaterThan(ring.radius)
-    expect(distance(previous!.tail)).toBeLessThan(ring.radius)
+
+    expect(next!.tail.x).toBeCloseTo(
+      pointerAnchor(first, layout.get(first.id)!, 'suivant', false).x,
+      6,
+    )
+    expect(previous!.tail.x).toBeCloseTo(
+      pointerAnchor(first, layout.get(first.id)!, 'precedent', false).x,
+      6,
+    )
+
+    const secondRect = circleNodeRect(layout.get(second.id)!)
+    const fourthRect = circleNodeRect(layout.get(fourth.id)!)
+    expect(onBorder(next!.tip, secondRect)).toBe(true)
+    expect(onBorder(previous!.tip, fourthRect)).toBe(true)
   })
 
   it('agrandit l’anneau à partir de trois nœuds', () => {

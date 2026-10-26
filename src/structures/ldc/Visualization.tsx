@@ -25,6 +25,7 @@ import {
   ROW_BAND_BOTTOM,
   ROW_BAND_TOP,
   cameraAtOne,
+  circleBand,
   circleGeometry,
   circleHeapBand,
   clamp,
@@ -189,6 +190,10 @@ export default function LdcVisualization({
   const pins = useMemo(() => collectPins(snapshot), [snapshot])
   const ring = useMemo(
     () => (layoutMode === 'circle' ? circleGeometry(nodes) : null),
+    [nodes, layoutMode],
+  )
+  const ringBand = useMemo(
+    () => (layoutMode === 'circle' ? circleBand(nodes) : null),
     [nodes, layoutMode],
   )
   const circleHeap = useMemo(
@@ -674,12 +679,14 @@ export default function LdcVisualization({
         <rect width={stageW} height={stageH} fill="url(#camera-grid)" />
 
         <g transform={`translate(${camera.x} ${camera.y}) scale(${camera.k})`}>
-          {ring ? (
-            <circle
+          {ringBand ? (
+            <rect
               className="lane-band lane-band-circle"
-              cx={ring.cx}
-              cy={ring.cy}
-              r={ring.radius + NODE_W / 2 + 26}
+              x={ringBand.x}
+              y={ringBand.y}
+              width={ringBand.width}
+              height={ringBand.height}
+              rx="28"
             />
           ) : null}
           {showHeapBand ? (
@@ -715,13 +722,13 @@ export default function LdcVisualization({
           ) : null}
           <text
             x={
-              ring
-                ? ring.cx - (ring.radius + NODE_W / 2 + 26) + 18
+              ringBand
+                ? ringBand.x + 18
                 : bandX + (emptyRowBand ? 8 : 14)
             }
             y={
-              ring
-                ? ring.cy - (ring.radius + NODE_W / 2 + 26) + 24
+              ringBand
+                ? ringBand.y + 24
                 : (emptyRowBand ? emptyBandTop : ROW_BAND_TOP) + 22
             }
             className="lane-band-label"
