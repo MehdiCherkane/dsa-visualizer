@@ -25,6 +25,7 @@ export const fr = {
     contact: 'Contact',
     email: 'stdprojectestbm@gmail.com',
     emailAria: (email: string) => `Envoyer un e-mail à ${email}`,
+    credit: 'Créé par EST BM GI étudiant',
   },
   menu: {
     title: 'Structures de données',

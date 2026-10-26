@@ -36,6 +36,7 @@ describe('coquille de l’application', () => {
     expect(markup).toContain('class="site-footer"')
     expect(markup).toContain(fr.footer.email)
     expect(markup).toContain(`href="mailto:${fr.footer.email}"`)
+    expect(markup).toContain(fr.footer.credit)
   })
 
   it('affiche les paramètres de l’opération par défaut', () => {
@@ -73,6 +74,7 @@ describe('coquille de l’application', () => {
       expect(markup).toContain('class="site-footer"')
       expect(markup).toContain(fr.footer.email)
       expect(markup).toContain(`href="mailto:${fr.footer.email}"`)
+      expect(markup).toContain(fr.footer.credit)
     } finally {
       window.location.hash = previousHash
     }

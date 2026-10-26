@@ -18,6 +18,7 @@ export function SiteFooter(): JSX.Element {
           {email}
         </a>
       </span>
+      <span className="site-footer-authors">{fr.footer.credit}</span>
     </footer>
   )
 }

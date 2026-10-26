@@ -1,4 +1,4 @@
-/* Shared footer: credits on the left, contact centred. */
+/* Shared footer: credits on the left, contact centred, authors on the right. */
 
 .site-footer {
   display: grid;
@@ -34,6 +34,11 @@
 
 .site-footer-contact a:hover {
   text-decoration: underline;
+}
+
+.site-footer-authors {
+  color: var(--ink-2);
+  text-align: right;
 }
 
 @media (max-width: 760px) {
