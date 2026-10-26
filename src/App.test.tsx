@@ -37,6 +37,8 @@ describe('coquille de l’application', () => {
     expect(markup).toContain(fr.footer.email)
     expect(markup).toContain(`href="mailto:${fr.footer.email}"`)
     expect(markup).toContain(fr.footer.credit)
+    expect(markup).toContain('site-footer-logo')
+    expect(markup).toContain(fr.footer.logoAlt)
     expect(markup).not.toContain('DUT GI S3')
   })
 
@@ -76,6 +78,8 @@ describe('coquille de l’application', () => {
       expect(markup).toContain(fr.footer.email)
       expect(markup).toContain(`href="mailto:${fr.footer.email}"`)
       expect(markup).toContain(fr.footer.credit)
+      expect(markup).toContain('site-footer-logo')
+      expect(markup).toContain(fr.footer.logoAlt)
       expect(markup).not.toContain('DUT GI S3')
     } finally {
       window.location.hash = previousHash

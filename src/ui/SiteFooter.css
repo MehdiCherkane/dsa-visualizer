@@ -13,6 +13,23 @@
   line-height: 1.35;
 }
 
+.site-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.site-footer-logo {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--line);
+  object-fit: contain;
+}
+
 .site-footer-credit {
   color: var(--ink-2);
 }

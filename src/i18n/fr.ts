@@ -25,6 +25,7 @@ export const fr = {
     email: 'stdprojectestbm@gmail.com',
     emailAria: (email: string) => `Envoyer un e-mail à ${email}`,
     credit: 'Créé par Génie informatique étudiants',
+    logoAlt: 'Logo EST Béni Mellal',
   },
   menu: {
     title: 'Structures de données',
