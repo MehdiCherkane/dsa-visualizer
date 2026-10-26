@@ -1291,11 +1291,21 @@
   justify-content: center;
 }
 
-@container (max-width: 620px) {
+@container (max-width: 760px) {
   .viz-stage.is-ring .ss-empty-banner {
-    top: 144px;
+    top: auto;
     right: 8px;
-    width: min(250px, calc(100% - 16px));
+    bottom: 8px;
+    width: max-content;
+    max-width: calc(100% - 16px);
+  }
+
+  .viz-stage.is-ring .ss-empty-text {
+    display: none;
+  }
+
+  .viz-stage.is-ring .ss-empty-button {
+    width: auto;
   }
 }
 
