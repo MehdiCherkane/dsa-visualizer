@@ -18,7 +18,6 @@ export function SiteFooter(): JSX.Element {
           {email}
         </a>
       </span>
-      <span className="site-footer-offline">{fr.footer.offline}</span>
     </footer>
   )
 }

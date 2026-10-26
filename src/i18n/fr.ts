@@ -25,7 +25,6 @@ export const fr = {
     contact: 'Contact',
     email: 'stdprojectestbm@gmail.com',
     emailAria: (email: string) => `Envoyer un e-mail à ${email}`,
-    offline: 'Tout fonctionne hors ligne : un seul fichier, aucune connexion.',
   },
   menu: {
     title: 'Structures de données',
@@ -38,7 +37,7 @@ export const fr = {
     open: 'Ouvrir',
     openAria: (title: string) => `Ouvrir « ${title} »`,
     chapterLabel: (chapter: number) => `Chapitre ${chapter}`,
-    cardHint: 'Démonstration pas à pas, utilisable hors ligne',
+    cardHint: 'Démonstration pas à pas',
     soon: 'Bientôt disponible',
     soonAria: (title: string) => `« ${title} » : bientôt disponible`,
     soonItems: [] as Array<{ chapter: number; title: string; description: string }>,
