@@ -3,7 +3,7 @@ import { fr } from './i18n/fr'
 import { pluginForChapter, plugins } from './registry'
 import { DemoApp } from './ui/App'
 import { MainMenu } from './ui/MainMenu'
-import { SiteBackdrop } from './ui/SiteBackdrop'
+import { SiteBackdrop, ZelligeBackdrop } from './ui/SiteBackdrop'
 import { MENU_HASH, navigate, useHashRoute } from './ui/useHashRoute'
 
 export default function App() {
@@ -34,12 +34,15 @@ export default function App() {
   }
 
   return (
-    <DemoApp
-      key={plugin.id}
-      plugin={plugin}
-      theme={theme}
-      onTheme={toggleTheme}
-      onMenu={() => navigate(MENU_HASH)}
-    />
+    <>
+      {plugin.chapter === 5 ? <ZelligeBackdrop /> : null}
+      <DemoApp
+        key={plugin.id}
+        plugin={plugin}
+        theme={theme}
+        onTheme={toggleTheme}
+        onMenu={() => navigate(MENU_HASH)}
+      />
+    </>
   )
 }

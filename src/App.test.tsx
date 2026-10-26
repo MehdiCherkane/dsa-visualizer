@@ -28,6 +28,7 @@ describe('coquille de l’application', () => {
     expect(markup).toContain(fr.scenarios.title)
     expect(markup).toContain('ldc-svg')
     expect(markup).not.toContain('ldc-zellige')
+    expect(markup).not.toContain('site-backdrop')
     expect(markup).toContain('la liste est vide')
     expect(markup).toContain(fr.viz.emptyInsert)
     expect(markup).toContain(defaultPlugin.id === 'ldc' ? 'Chapitre 4' : 'Chapitre 4')
@@ -60,6 +61,7 @@ describe('coquille de l’application', () => {
       const markup = renderToStaticMarkup(<App />)
       expect(markup).toContain('ldc-zellige')
       expect(markup).toContain('ldc-zellige-tile')
+      expect(markup).toContain('site-backdrop-zellige')
       expect(markup).toContain('--zl-pattern')
     } finally {
       window.location.hash = previousHash
