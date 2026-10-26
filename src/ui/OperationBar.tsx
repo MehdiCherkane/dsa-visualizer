@@ -116,9 +116,6 @@ export function OperationBar<S extends BaseSnapshot>({
             {selectedOp.complexity}
           </span>
         ) : null}
-        {operationActive ? (
-          <span className="in-progress">{fr.operation.inProgress}</span>
-        ) : null}
         {showLimit ? (
           <span className="limit-message" role="status">
             <svg viewBox="0 0 16 16" aria-hidden="true">

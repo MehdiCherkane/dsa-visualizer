@@ -199,27 +199,6 @@
   white-space: nowrap;
 }
 
-.menu-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-top: 1px solid var(--line);
-  padding: 9px 8px 0;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.35;
-}
-
-.menu-footer-source {
-  color: var(--ink-2);
-}
-
-.menu-footer-offline {
-  color: var(--ink-2);
-  text-align: right;
-}
-
 @media (max-width: 760px) {
   .chapter-grid {
     grid-template-columns: 1fr;
@@ -229,10 +208,6 @@
   .menu-section {
     padding-left: 10px;
     padding-right: 10px;
-  }
-
-  .menu-footer {
-    flex-wrap: wrap;
   }
 }
 

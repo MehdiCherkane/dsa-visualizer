@@ -2,7 +2,6 @@
 
 export const config = {
   course: fr.app.course,
-  school: fr.app.school,
   institutionName: fr.app.institutionName,
   institution: fr.app.institution,
   source: fr.app.source,

@@ -32,6 +32,14 @@ describe('coquille de l’application', () => {
     expect(markup).toContain('la liste est vide')
     expect(markup).toContain(fr.viz.emptyInsert)
     expect(markup).toContain(defaultPlugin.id === 'ldc' ? 'Chapitre 4' : 'Chapitre 4')
+    expect(markup).toContain('class="app has-footer"')
+    expect(markup).toContain('class="site-footer"')
+    expect(markup).toContain(fr.footer.email)
+    expect(markup).toContain(`href="mailto:${fr.footer.email}"`)
+    expect(markup).toContain(fr.footer.credit)
+    expect(markup).toContain('site-footer-logo')
+    expect(markup).toContain(fr.footer.logoAlt)
+    expect(markup).not.toContain('DUT GI S3')
   })
 
   it('affiche les paramètres de l’opération par défaut', () => {
@@ -66,6 +74,13 @@ describe('coquille de l’application', () => {
       expect(markup).toContain('class="site-backdrop"')
       expect(markup).toContain('site-backdrop-zellige')
       expect(markup).toContain(fr.menu.title)
+      expect(markup).toContain('class="site-footer"')
+      expect(markup).toContain(fr.footer.email)
+      expect(markup).toContain(`href="mailto:${fr.footer.email}"`)
+      expect(markup).toContain(fr.footer.credit)
+      expect(markup).toContain('site-footer-logo')
+      expect(markup).toContain(fr.footer.logoAlt)
+      expect(markup).not.toContain('DUT GI S3')
     } finally {
       window.location.hash = previousHash
     }
