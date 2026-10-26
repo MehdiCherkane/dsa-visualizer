@@ -4,6 +4,7 @@ import {
   CELL_W,
   CIRCLE_CX,
   CIRCLE_CY,
+  CIRCLE_HEAP_GAP,
   CIRCLE_MIN_RADIUS,
   DEBUT_CELL_GAP,
   DEBUT_CELL_H,
@@ -17,6 +18,7 @@ import {
   ROW_Y,
   borderPoint,
   cameraAtOne,
+  circleBand,
   circleGeometry,
   circleHeapBand,
   circleNodeRect,
@@ -333,31 +335,45 @@ describe('géométrie circulaire du chapitre 5', () => {
   })
 
   it('place le tas à gauche de l’anneau, pas au-dessus', () => {
-    const snapshot = circular()
-    const heapNode: LdcNode = {
-      id: 99,
-      address: '0x1AB8',
-      payload: { kind: 'uninit' },
-      suivant: { kind: 'uninit' },
-      precedent: { kind: 'uninit' },
-      freed: false,
-      slot: snapshot.nodes.length,
-      lane: 'heap',
+    // Check every ring size from 1 to 8: the heap band must stay clear of the
+    // list band whatever the ellipse proportions, with a constant visible gap.
+    for (let count = 1; count <= 8; count += 1) {
+      const snapshot = createCircularSnapshot(
+        'int',
+        Array.from({ length: count }, (_, index) => ({
+          kind: 'int' as const,
+          value: index + 1,
+        })),
+      )
+      const heapNode: LdcNode = {
+        id: 99,
+        address: '0x1AB8',
+        payload: { kind: 'uninit' },
+        suivant: { kind: 'uninit' },
+        precedent: { kind: 'uninit' },
+        freed: false,
+        slot: snapshot.nodes.length,
+        lane: 'heap',
+      }
+      const nodes = [...snapshot.nodes, heapNode]
+      const point = layoutNodes(nodes, 'circle').get(heapNode.id)!
+      const band = circleHeapBand(nodes)!
+      const listBand = circleBand(nodes)!
+
+      expect(point.x + NODE_W).toBeLessThan(listBand.x)
+      expect(point.y + NODE_H / 2).toBeCloseTo(CIRCLE_CY, 6)
+      expect(band.x).toBeLessThan(point.x)
+      // The heap band must stay clear of the decorative list band, not just of
+      // the node border: the band is wider than the ring itself.
+      expect(band.x + band.width).toBeLessThan(listBand.x)
+      expect(listBand.x - (band.x + band.width)).toBeCloseTo(
+        CIRCLE_HEAP_GAP,
+        6,
+      )
+      expect(
+        snapshotBounds(nodes, [], { kind: 'null' }, 'circle').x,
+      ).toBeLessThanOrEqual(band.x + 0.001)
     }
-    const nodes = [...snapshot.nodes, heapNode]
-    const ring = circleGeometry(nodes)!
-    const point = layoutNodes(nodes, 'circle').get(heapNode.id)!
-    const ringLeft = ring.cx - ring.radius - NODE_W / 2
-
-    expect(point.x + NODE_W).toBeLessThan(ringLeft)
-    expect(point.y + NODE_H / 2).toBeCloseTo(CIRCLE_CY, 6)
-
-    const band = circleHeapBand(nodes)!
-    expect(band.x).toBeLessThan(point.x)
-    expect(band.x + band.width).toBeLessThan(ringLeft)
-    expect(
-      snapshotBounds(nodes, [], { kind: 'null' }, 'circle').x,
-    ).toBeLessThanOrEqual(band.x + 0.001)
   })
 
   it('place le tas à gauche de la bande vide sans chevauchement', () => {
@@ -376,6 +392,10 @@ describe('géométrie circulaire du chapitre 5', () => {
     const listBand = emptyListBand()
     const heapBand = circleHeapBand(heapOnly)!
     expect(heapBand.x + heapBand.width).toBeLessThan(listBand.x)
+    expect(listBand.x - (heapBand.x + heapBand.width)).toBeCloseTo(
+      CIRCLE_HEAP_GAP,
+      6,
+    )
 
     const overlap =
       heapBand.x < listBand.x + listBand.width &&

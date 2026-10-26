@@ -221,7 +221,26 @@ export default function LdcVisualization({
       ),
     )
   }, [operationSteps, layoutMode])
-  const fitBounds = operationBounds ?? contentBounds
+  // The first insertion starts from an empty list: the operation bounds also
+  // cover the empty band and the heap, which would keep the new ring far to
+  // the right. Once the first row node exists, focus the camera on the ring
+  // so the insertion itself is centred.
+  const firstInsertion = useMemo(() => {
+    if (layoutMode !== 'circle' || !operationSteps || operationSteps.length === 0) {
+      return false
+    }
+    const countRowNodes = (stepNodes: LdcNode[]): number =>
+      stepNodes.filter((node) => !node.freed && node.lane === 'row').length
+    return (
+      countRowNodes(operationSteps[0]!.snapshot.nodes) === 0 &&
+      countRowNodes(operationSteps[operationSteps.length - 1]!.snapshot.nodes) === 1
+    )
+  }, [layoutMode, operationSteps])
+  const hasRowNode = nodes.some((node) => !node.freed && node.lane === 'row')
+  const fitBounds =
+    firstInsertion && hasRowNode
+      ? contentBounds
+      : operationBounds ?? contentBounds
   const hasHeap =
     nodes.some((node) => node.lane === 'heap') ||
     Boolean(operationSteps?.some((operationStep) =>

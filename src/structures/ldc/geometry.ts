@@ -51,11 +51,14 @@ export const ROW_BAND_TOP = 246
 export const ROW_BAND_BOTTOM = ROW_Y + NODE_H + 46
 export const HEAP_BAND_TOP = 8
 export const HEAP_BAND_BOTTOM = HEAP_Y + NODE_H + 46
+/** Gap between the heap band and the list band in the circular layout. */
 export const CIRCLE_HEAP_GAP = 56
 export const CIRCLE_HEAP_STACK_GAP = 24
 export const CIRCLE_HEAP_HEADER = 44
 export const CIRCLE_HEAP_FOOTER = 20
 export const BAND_PAD = 28
+/** Horizontal padding of the node bounds around the node rectangle. */
+export const NODE_BOUNDS_SIDE_PAD = 4
 export const EMPTY_BAND_TOP = 200
 export const EMPTY_BAND_HEIGHT = 146
 export const EMPTY_BAND_EXTRA = 36
@@ -195,6 +198,7 @@ export function layoutNodes(
       .slice()
       .sort((a, b) => a.slot - b.slot)
     const ring = circleGeometry(nodes)
+    let minRowX = Number.POSITIVE_INFINITY
     row.forEach((node, index) => {
       const angle =
         row.length === 1
@@ -205,7 +209,9 @@ export function layoutNodes(
       const ry = ring?.ry ?? 0
       const cx = CIRCLE_CX + Math.cos(angle) * rx
       const cy = CIRCLE_CY + Math.sin(angle) * ry
-      layout.set(node.id, { x: cx - NODE_W / 2, y: cy - NODE_H / 2 })
+      const x = cx - NODE_W / 2
+      minRowX = Math.min(minRowX, x)
+      layout.set(node.id, { x, y: cy - NODE_H / 2 })
     })
     const heap = nodes
       .filter((node) => node.lane === 'heap')
@@ -216,17 +222,28 @@ export function layoutNodes(
         heap.length * NODE_H + (heap.length - 1) * CIRCLE_HEAP_STACK_GAP
       let x: number
       let top: number
+      const heapBandOverhang = BAND_PAD + NODE_BOUNDS_SIDE_PAD
       if (ring) {
-        const ringLeft = CIRCLE_CX - (ring.rx + NODE_W / 2 + 26)
-        x = ringLeft - CIRCLE_HEAP_GAP - NODE_W
+        // Use the actual left edge of the rendered list band: node bounds
+        // extend NODE_BOUNDS_SIDE_PAD past each node, and the band extends
+        // RING_BAND_PAD_X further left. The ellipse radius alone underestimates
+        // that edge because the ring's corners reach past its horizontal axis.
+        const ringBandLeft =
+          minRowX - NODE_BOUNDS_SIDE_PAD - RING_BAND_PAD_X
+        x =
+          ringBandLeft -
+          CIRCLE_HEAP_GAP -
+          heapBandOverhang -
+          NODE_W
         top = CIRCLE_CY - stackHeight / 2
       } else {
         // While the list is still empty, anchor the heap band left of the
         // fixed empty-list band instead of centering it under the ring.
         const band = emptyListBand()
-        const heapBandWidth = NODE_W + 8 + BAND_PAD * 2
-        const heapBandX = band.x - BAND_PAD - heapBandWidth
-        x = heapBandX + BAND_PAD
+        const heapBandWidth =
+          NODE_W + NODE_BOUNDS_SIDE_PAD * 2 + BAND_PAD * 2
+        const heapBandX = band.x - CIRCLE_HEAP_GAP - heapBandWidth
+        x = heapBandX + heapBandOverhang
         const heapBandHeight =
           stackHeight + 34 + CIRCLE_HEAP_HEADER + CIRCLE_HEAP_FOOTER
         const heapBandTop = band.y + (band.height - heapBandHeight) / 2
@@ -1869,7 +1886,12 @@ export function layoutPins(
 }
 
 export function nodeBounds(point: Point): Rect {
-  return { x: point.x - 4, y: point.y - 30, width: NODE_W + 8, height: NODE_H + 34 }
+  return {
+    x: point.x - NODE_BOUNDS_SIDE_PAD,
+    y: point.y - 30,
+    width: NODE_W + NODE_BOUNDS_SIDE_PAD * 2,
+    height: NODE_H + 34,
+  }
 }
 
 export function boundsOfPoints(points: Point[], padding = 0): Rect {
