@@ -2,6 +2,15 @@ import type { OperationDef, ParamDef } from '../../core/types'
 import { fr } from '../../i18n/fr'
 import type { LscSnapshot } from './memory'
 import {
+  runCircularAfficherListe,
+  runCircularDetruireListe,
+  runCircularInsererEnFin,
+  runCircularInsererEnTete,
+  runCircularRechercher,
+  runCircularSupprimerEnTete,
+  runCircularSupprimerValeur,
+} from './ops/circularOps'
+import {
   runAfficherListe,
   runDetruireListe,
   runInsererEnFin,
@@ -10,12 +19,6 @@ import {
   runSupprimerEnTete,
   runSupprimerValeur,
 } from './ops/intOps'
-import {
-  runInscrireEtudiant,
-  runRadierEtudiant,
-  runStudentAfficherListe,
-  runStudentDetruireListe,
-} from './ops/studentOps'
 
 const numberParam = (
   name: string,
@@ -30,121 +33,137 @@ const numberParam = (
   ...(target ? { target: true } : {}),
 })
 
-const textParam = (name: string, label: string, defaultValue: string): ParamDef => ({
-  name,
-  kind: 'text',
-  label,
-  defaultValue,
-})
+const linearOps = fr.lsc.ops
+const circularOps = fr.lsc.circularOps
 
-const intOps = fr.lsc.ops
-const studentOps = fr.lsc.ops
-
-export const intOperations: OperationDef<LscSnapshot>[] = [
+export const linearOperations: OperationDef<LscSnapshot>[] = [
   {
     id: 'afficherListe',
-    label: intOps.afficherListe.label,
+    label: linearOps.afficherListe.label,
     params: [],
-    complexity: intOps.afficherListe.complexity,
-    complexityNote: intOps.afficherListe.note,
+    complexity: linearOps.afficherListe.complexity,
+    complexityNote: linearOps.afficherListe.note,
     inserts: false,
     run: runAfficherListe,
   },
   {
     id: 'insererEnTete',
-    label: intOps.insererEnTete.label,
+    label: linearOps.insererEnTete.label,
     params: [numberParam('valeur', fr.params.valeur, 9)],
-    complexity: intOps.insererEnTete.complexity,
-    complexityNote: intOps.insererEnTete.note,
+    complexity: linearOps.insererEnTete.complexity,
+    complexityNote: linearOps.insererEnTete.note,
     inserts: true,
     run: runInsererEnTete,
   },
   {
     id: 'insererEnFin',
-    label: intOps.insererEnFin.label,
+    label: linearOps.insererEnFin.label,
     params: [numberParam('valeur', fr.params.valeur, 7)],
-    complexity: intOps.insererEnFin.complexity,
-    complexityNote: intOps.insererEnFin.note,
+    complexity: linearOps.insererEnFin.complexity,
+    complexityNote: linearOps.insererEnFin.note,
     inserts: true,
     run: runInsererEnFin,
   },
   {
     id: 'supprimerEnTete',
-    label: intOps.supprimerEnTete.label,
+    label: linearOps.supprimerEnTete.label,
     params: [],
-    complexity: intOps.supprimerEnTete.complexity,
-    complexityNote: intOps.supprimerEnTete.note,
+    complexity: linearOps.supprimerEnTete.complexity,
+    complexityNote: linearOps.supprimerEnTete.note,
     inserts: false,
     run: runSupprimerEnTete,
   },
   {
     id: 'supprimerValeur',
-    label: intOps.supprimerValeur.label,
+    label: linearOps.supprimerValeur.label,
     params: [numberParam('valeur', fr.params.valeur, 2, true)],
-    complexity: intOps.supprimerValeur.complexity,
-    complexityNote: intOps.supprimerValeur.note,
+    complexity: linearOps.supprimerValeur.complexity,
+    complexityNote: linearOps.supprimerValeur.note,
     inserts: false,
     run: runSupprimerValeur,
   },
   {
     id: 'rechercher',
-    label: intOps.rechercher.label,
+    label: linearOps.rechercher.label,
     params: [numberParam('valeur', fr.params.valeur, 5, true)],
-    complexity: intOps.rechercher.complexity,
-    complexityNote: intOps.rechercher.note,
+    complexity: linearOps.rechercher.complexity,
+    complexityNote: linearOps.rechercher.note,
     inserts: false,
     run: runRechercher,
   },
   {
     id: 'detruireListe',
-    label: intOps.detruireListe.label,
+    label: linearOps.detruireListe.label,
     params: [],
-    complexity: intOps.detruireListe.complexity,
-    complexityNote: intOps.detruireListe.note,
+    complexity: linearOps.detruireListe.complexity,
+    complexityNote: linearOps.detruireListe.note,
     inserts: false,
     run: runDetruireListe,
   },
 ]
 
-export const studentOperations: OperationDef<LscSnapshot>[] = [
+export const circularOperations: OperationDef<LscSnapshot>[] = [
   {
     id: 'afficherListe',
-    label: studentOps.afficherListe.label,
+    label: circularOps.afficherListe.label,
     params: [],
-    complexity: studentOps.afficherListe.complexity,
-    complexityNote: studentOps.afficherListe.note,
+    complexity: circularOps.afficherListe.complexity,
+    complexityNote: circularOps.afficherListe.note,
     inserts: false,
-    run: runStudentAfficherListe,
+    run: runCircularAfficherListe,
   },
   {
-    id: 'inscrireEtudiant',
-    label: studentOps.inscrireEtudiant.label,
-    params: [
-      numberParam('numero', fr.params.numero, 101),
-      textParam('nom', fr.params.nom, 'AAA'),
-      textParam('prenom', fr.params.prenom, 'aaa'),
-    ],
-    complexity: studentOps.inscrireEtudiant.complexity,
-    complexityNote: studentOps.inscrireEtudiant.note,
+    id: 'insererEnTete',
+    label: circularOps.insererEnTete.label,
+    params: [numberParam('valeur', fr.params.valeur, 9)],
+    complexity: circularOps.insererEnTete.complexity,
+    complexityNote: circularOps.insererEnTete.note,
     inserts: true,
-    run: runInscrireEtudiant,
+    run: runCircularInsererEnTete,
   },
   {
-    id: 'radierEtudiant',
-    label: studentOps.radierEtudiant.label,
-    params: [numberParam('numero', fr.params.numero, 102, true)],
-    complexity: studentOps.radierEtudiant.complexity,
-    complexityNote: studentOps.radierEtudiant.note,
+    id: 'insererEnFin',
+    label: circularOps.insererEnFin.label,
+    params: [numberParam('valeur', fr.params.valeur, 7)],
+    complexity: circularOps.insererEnFin.complexity,
+    complexityNote: circularOps.insererEnFin.note,
+    inserts: true,
+    run: runCircularInsererEnFin,
+  },
+  {
+    id: 'supprimerEnTete',
+    label: circularOps.supprimerEnTete.label,
+    params: [],
+    complexity: circularOps.supprimerEnTete.complexity,
+    complexityNote: circularOps.supprimerEnTete.note,
     inserts: false,
-    run: runRadierEtudiant,
+    run: runCircularSupprimerEnTete,
+  },
+  {
+    id: 'supprimerValeur',
+    label: circularOps.supprimerValeur.label,
+    params: [numberParam('valeur', fr.params.valeur, 2, true)],
+    complexity: circularOps.supprimerValeur.complexity,
+    complexityNote: circularOps.supprimerValeur.note,
+    inserts: false,
+    run: runCircularSupprimerValeur,
+  },
+  {
+    id: 'rechercher',
+    label: circularOps.rechercher.label,
+    params: [numberParam('valeur', fr.params.valeur, 5, true)],
+    complexity: circularOps.rechercher.complexity,
+    complexityNote: circularOps.rechercher.note,
+    inserts: false,
+    run: runCircularRechercher,
   },
   {
     id: 'detruireListe',
-    label: studentOps.detruireListe.label,
+    label: circularOps.detruireListe.label,
     params: [],
-    complexity: studentOps.detruireListe.complexity,
-    complexityNote: studentOps.detruireListe.note,
+    complexity: circularOps.detruireListe.complexity,
+    complexityNote: circularOps.detruireListe.note,
     inserts: false,
-    run: runStudentDetruireListe,
+    run: runCircularDetruireListe,
   },
 ]

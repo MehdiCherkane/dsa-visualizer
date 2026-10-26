@@ -1,7 +1,7 @@
 import type { BaseSnapshot, PointerValue, StudentValue, VarValue } from '../../core/types'
 import { fr } from '../../i18n/fr'
 
-export type LscProfileId = 'int' | 'etudiant'
+export type LscProfileId = 'lineaire' | 'circulaire'
 export type NodeLane = 'row' | 'heap'
 
 export interface LscStudent {
@@ -122,7 +122,14 @@ export function createSnapshot(profile: LscProfileId, items: LscItem[]): LscSnap
   for (let index = 0; index < nodes.length; index += 1) {
     const node = nodes[index]
     const next = nodes[index + 1]
-    if (node) node.suivant = next ? { kind: 'node', id: next.id } : { kind: 'null' }
+    if (!node) continue
+    if (next) {
+      node.suivant = { kind: 'node', id: next.id }
+    } else if (profile === 'circulaire' && nodes[0]) {
+      node.suivant = { kind: 'node', id: nodes[0].id }
+    } else {
+      node.suivant = { kind: 'null' }
+    }
   }
 
   return {
@@ -262,6 +269,8 @@ export function heapNodes(snapshot: LscSnapshot): LscNode[] {
 }
 
 export function checkInvariants(snapshot: LscSnapshot): string[] {
+  if (snapshot.profile === 'circulaire') return checkCircularInvariants(snapshot)
+
   const errors: string[] = []
   const debut = snapshot.globals.debut
 
@@ -309,6 +318,77 @@ export function checkInvariants(snapshot: LscSnapshot): string[] {
     if (!node.freed && node.lane === 'row' && !seen.has(node.id)) {
       errors.push(`row node ${node.id} is unreachable`)
     }
+  }
+
+  return errors
+}
+
+/**
+ * A circular singly linked list must form exactly one closed walk that comes
+ * back to `debut`. Every non-freed row node must be on that walk, and no link
+ * may be NULL or uninitialized. An empty ring still has `debut == NULL`.
+ */
+export function checkCircularInvariants(snapshot: LscSnapshot): string[] {
+  const errors: string[] = []
+  const debut = snapshot.globals.debut
+  const liveRow = snapshot.nodes.filter((node) => !node.freed && node.lane === 'row')
+
+  if (!debut) {
+    errors.push('debut missing')
+    return errors
+  }
+
+  if (debut.kind === 'null') {
+    if (liveRow.length > 0) errors.push('debut is NULL but live nodes remain')
+    return errors
+  }
+
+  if (debut.kind !== 'node') {
+    errors.push('debut is uninitialized')
+    return errors
+  }
+
+  const order: LscNode[] = []
+  const seen = new Set<number>()
+  let pointer: PointerValue = debut
+
+  for (;;) {
+    if (pointer.kind !== 'node') {
+      errors.push('reachable link is not a node')
+      break
+    }
+    if (seen.has(pointer.id)) {
+      if (pointer.id !== debut.id) {
+        errors.push(`cycle stops at node ${pointer.id}, not at debut`)
+      }
+      break
+    }
+    seen.add(pointer.id)
+    const node = getNode(snapshot, pointer.id)
+    if (!node) {
+      errors.push(`pointer targets missing node ${pointer.id}`)
+      break
+    }
+    if (node.freed) errors.push(`reachable node ${node.id} is freed`)
+    order.push(node)
+    pointer = node.suivant
+  }
+
+  for (const node of order) {
+    if (node.suivant.kind === 'uninit') errors.push(`node ${node.id} suivant is uninitialized`)
+    if (node.suivant.kind === 'node') {
+      const next = getNode(snapshot, node.suivant.id)
+      if (!next) errors.push(`node ${node.id} suivant targets missing node ${node.suivant.id}`)
+      else if (next.freed) errors.push(`node ${node.id} suivant targets freed node ${next.id}`)
+    }
+  }
+
+  for (const node of liveRow) {
+    if (!seen.has(node.id)) errors.push(`row node ${node.id} is unreachable`)
+  }
+
+  if (order.length !== liveRow.length) {
+    errors.push('some live nodes are not reachable from debut')
   }
 
   return errors

@@ -65,6 +65,24 @@ describe('coquille de l’application', () => {
     }
   })
 
+  it('ouvre le chapitre 2 sur les profils linéaire et circulaire', () => {
+    const previousHash = window.location.hash
+    window.location.hash = '#/chapitre-2'
+
+    try {
+      const markup = renderToStaticMarkup(<App />)
+      expect(markup).toContain(fr.chapters.lsc.title)
+      expect(markup).toContain(fr.profiles.structureLabel)
+      expect(markup).toContain(fr.profiles.lineaire)
+      expect(markup).toContain(fr.profiles.circulaire)
+      expect(markup).not.toContain(fr.profiles.etudiant)
+      expect(markup).toContain('supprimerValeur(int valeur)')
+      expect(markup).toContain(fr.viz.emptyLsc)
+    } finally {
+      window.location.hash = previousHash
+    }
+  })
+
   it('ajoute la décoration de fond au menu principal', () => {
     const previousHash = window.location.hash
     window.location.hash = MENU_HASH

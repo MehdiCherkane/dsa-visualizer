@@ -870,6 +870,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
       model.orientation,
       Boolean(target && target.lane === source.lane),
       target ? target.slot - source.slot : 0,
+      Boolean(model.circular),
     )
   }
 

@@ -343,16 +343,14 @@ export function DemoApp<S extends BaseSnapshot>({
   )
 
   const insertFromEmpty = useCallback(() => {
-    const operationId =
-      profile.emptyInsertOperationId ??
-      (profile.id === 'etudiant' ? 'inscrireEtudiant' : 'insererEnTete')
+    const operationId = profile.emptyInsertOperationId ?? 'insererEnTete'
     const operation = profile.operations.find((candidate) => candidate.id === operationId)
     if (!operation) return
     selectOperation(operation.id)
     requestAnimationFrame(() => {
       document.querySelector<HTMLInputElement>('.operation-bar input')?.focus()
     })
-  }, [profile.emptyInsertOperationId, profile.id, profile.operations, selectOperation])
+  }, [profile.emptyInsertOperationId, profile.operations, selectOperation])
 
   const changeParam = useCallback((name: string, value: string) => {
     setParamValues((current) => ({ ...current, [name]: value }))

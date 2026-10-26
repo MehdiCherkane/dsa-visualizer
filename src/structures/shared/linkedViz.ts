@@ -40,6 +40,8 @@ export interface LinkedModel<S extends BaseSnapshot> {
   field: VizField
   fieldLabel: string
   rowLabel: string
+  /** When true, the last `suivant` wraps back to the head and is drawn above the row. */
+  circular?: boolean
   emptyText: string
   emptyInsert: string
   ariaLabel: string
@@ -323,6 +325,7 @@ export function routeField(
   orientation: VizOrientation,
   sameLane: boolean,
   slotDelta: number,
+  circular = false,
 ): { path: string; tail: Point; tip: Point; nullStub?: NullStub } {
   const tail = pointerAnchor(sourcePoint, field, orientation)
   if (!target || !targetPoint) {
@@ -353,6 +356,23 @@ export function routeField(
         label: { x: end.x, y: end.y + 27 },
         orientation: 'vertical',
       },
+    }
+  }
+
+  // A circular list closes above the row: the last node points back to the
+  // first, and a single node loops over itself. Both use a cubic arc so the
+  // arrow lands on the target from above instead of crossing the nodes.
+  if (circular && sameLane && orientation === 'horizontal' && slotDelta <= 0) {
+    const self = slotDelta === 0
+    const tip = self
+      ? fieldTarget(targetPoint, field, orientation)
+      : { x: targetPoint.x + NODE_W / 2, y: targetPoint.y }
+    const lift = 180
+    const spread = self ? 92 : 64
+    return {
+      path: `M ${tail.x} ${tail.y} C ${tail.x + spread} ${tail.y - lift}, ${tip.x - spread} ${tip.y - lift}, ${tip.x} ${tip.y}`,
+      tail,
+      tip,
     }
   }
 
