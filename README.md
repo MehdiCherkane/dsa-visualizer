@@ -22,7 +22,7 @@ Navigation is hash-based so it also works from `file://`: `#/` (main menu, the e
 
 ### Course PDFs
 
-Each chapter can ship its course handout as `public/cours/chapitre-<n>.pdf` (`chapitre-1.pdf` … `chapitre-6.pdf`). The document button in the header opens the matching PDF in a right-side drawer, with a direct **Ouvrir dans un nouvel onglet** fallback. The PDFs are copied to `dist/cours/`; they are never inlined, so the HTML stays around 1 MB whatever their size. Missing files do not break the app or the build, but the drawer has nothing to display for that chapter. Some browsers refuse to embed PDFs from `file://`; the new-tab link still opens the document.
+The six course handouts ship as `public/cours/chapitre-<n>.pdf` (`chapitre-1.pdf` … `chapitre-6.pdf`, ~5.4 MB total). The document button in the header opens the matching PDF in a right-side drawer, with a direct **Ouvrir dans un nouvel onglet** fallback. The PDFs are copied to `dist/cours/`; they are never inlined, so the HTML stays around 1 MB whatever their size. Missing files do not break the app or the build, but the drawer has nothing to display for that chapter. Some browsers refuse to embed PDFs from `file://`; the new-tab link still opens the document.
 
 ## Chapters
 
