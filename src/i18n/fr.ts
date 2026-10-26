@@ -12,20 +12,19 @@ export const fr = {
   app: {
     title: 'Listes doublement chaînées',
     course: 'Structures de données',
-    school: 'DUT GI S3',
     institutionName: 'EST Béni Mellal',
-    institution: 'DUT GI S3 · EST Béni Mellal',
+    institution: 'EST Béni Mellal',
     source: 'd’après le cours du Pr. M. OUTANOUTE',
     creditPrefix: 'd’après le cours du',
     professor: 'Pr. M. OUTANOUTE',
-    subtitle: 'EST Béni Mellal · DUT GI S3 · d’après le cours du Pr. M. OUTANOUTE',
+    subtitle: 'EST Béni Mellal · d’après le cours du Pr. M. OUTANOUTE',
     ready: 'Prêt pour la démonstration',
   },
   footer: {
     contact: 'Contact',
     email: 'stdprojectestbm@gmail.com',
     emailAria: (email: string) => `Envoyer un e-mail à ${email}`,
-    credit: 'Créé par EST BM GI étudiant',
+    credit: 'Créé par Génie informatique étudiants',
   },
   menu: {
     title: 'Structures de données',

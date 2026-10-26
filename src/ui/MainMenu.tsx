@@ -46,7 +46,7 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
           </span>
           <div className="brand-copy">
             <div className="brand-meta menu-brand-meta">
-              {config.course} · {config.school} · {config.institutionName}
+              {config.course} · {config.institutionName}
             </div>
           </div>
         </div>

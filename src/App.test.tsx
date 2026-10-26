@@ -37,6 +37,7 @@ describe('coquille de l’application', () => {
     expect(markup).toContain(fr.footer.email)
     expect(markup).toContain(`href="mailto:${fr.footer.email}"`)
     expect(markup).toContain(fr.footer.credit)
+    expect(markup).not.toContain('DUT GI S3')
   })
 
   it('affiche les paramètres de l’opération par défaut', () => {
@@ -75,6 +76,7 @@ describe('coquille de l’application', () => {
       expect(markup).toContain(fr.footer.email)
       expect(markup).toContain(`href="mailto:${fr.footer.email}"`)
       expect(markup).toContain(fr.footer.credit)
+      expect(markup).not.toContain('DUT GI S3')
     } finally {
       window.location.hash = previousHash
     }
