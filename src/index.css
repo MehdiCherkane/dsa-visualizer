@@ -812,6 +812,15 @@ body.is-resizing-horizontal * {
   stroke-dasharray: 6 10;
 }
 
+.ring-guide {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 10;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 .lane-band-heap {
   fill: var(--band-heap);
 }

@@ -6,8 +6,13 @@ import {
   NODE_W,
   contentBounds,
   emptyBounds,
+  emptyRingBand,
+  isRingNodeFlipped,
   layoutGlobals,
   layoutNodes,
+  ringBand,
+  ringGeometry,
+  routeRingField,
 } from './linkedViz'
 import type { VizGlobal, VizNode } from './linkedViz'
 
@@ -110,5 +115,116 @@ describe('géométrie partagée des listes', () => {
     expect(sommet?.placement).toBe('top')
     expect(sommet!.rect.x).toBeGreaterThanOrEqual(HEAP_STACK_X)
     expect(sommet!.rect.y).toBeLessThan(layout.get(1)!.y)
+  })
+})
+
+describe('anneau partagé des listes circulaires', () => {
+  const ringNodes = [
+    node(1, 0, { kind: 'node', id: 2 }),
+    node(2, 1, { kind: 'node', id: 3 }),
+    node(3, 2, { kind: 'node', id: 1 }),
+  ]
+
+  it('place les nœuds sur une ellipse sans chevauchement', () => {
+    const ring = ringGeometry(ringNodes)!
+    const layout = layoutNodes(ringNodes, 'horizontal', 'ring')
+
+    expect(ring.count).toBe(3)
+    expect(ring.rx).toBeGreaterThan(0)
+    expect(ring.ry).toBeGreaterThan(0)
+    for (const candidate of ringNodes) {
+      const point = layout.get(candidate.id)!
+      const cx = point.x + NODE_W / 2
+      const cy = point.y + NODE_H / 2
+      const onEllipse =
+        ((cx - ring.cx) / ring.rx) ** 2 + ((cy - ring.cy) / ring.ry) ** 2
+      expect(onEllipse).toBeCloseTo(1, 6)
+    }
+    for (let first = 0; first < ringNodes.length; first += 1) {
+      for (let second = first + 1; second < ringNodes.length; second += 1) {
+        const a = layout.get(ringNodes[first]!.id)!
+        const b = layout.get(ringNodes[second]!.id)!
+        expect(
+          Math.abs(a.x - b.x) >= NODE_W || Math.abs(a.y - b.y) >= NODE_H,
+        ).toBe(true)
+      }
+    }
+  })
+
+  it('grandit assez pour huit nœuds', () => {
+    const eight = Array.from({ length: 8 }, (_, index) =>
+      node(index + 1, index, { kind: 'node', id: ((index + 1) % 8) + 1 }),
+    )
+    const ring = ringGeometry(eight)!
+    const layout = layoutNodes(eight, 'horizontal', 'ring')
+
+    expect(ring.count).toBe(8)
+    for (let first = 0; first < eight.length; first += 1) {
+      for (let second = first + 1; second < eight.length; second += 1) {
+        const a = layout.get(eight[first]!.id)!
+        const b = layout.get(eight[second]!.id)!
+        expect(
+          Math.abs(a.x - b.x) >= NODE_W || Math.abs(a.y - b.y) >= NODE_H,
+        ).toBe(true)
+      }
+    }
+  })
+
+  it('bascule le champ suivant sur la moitié gauche ou basse de l’anneau', () => {
+    const ring = ringGeometry(ringNodes)!
+    const layout = layoutNodes(ringNodes, 'horizontal', 'ring')
+
+    expect(isRingNodeFlipped(layout.get(1)!, ring)).toBe(false)
+    expect(isRingNodeFlipped(layout.get(2)!, ring)).toBe(true)
+    expect(isRingNodeFlipped(layout.get(3)!, ring)).toBe(true)
+  })
+
+  it('trace les liens autour de l’anneau et une boucle pour un nœud unique', () => {
+    const ring = ringGeometry(ringNodes)!
+    const layout = layoutNodes(ringNodes, 'horizontal', 'ring')
+    const route = routeRingField(
+      ringNodes[0]!,
+      ringNodes[1]!,
+      layout.get(1)!,
+      layout.get(2)!,
+      'suivant',
+      ring,
+    )
+
+    expect(route.path).toContain('C')
+    expect(route.tip.y).toBeGreaterThanOrEqual(layout.get(2)!.y)
+    expect(route.tip.y).toBeLessThanOrEqual(layout.get(2)!.y + NODE_H)
+
+    const single = [node(1, 0, { kind: 'node', id: 1 })]
+    const singleRing = ringGeometry(single)!
+    const singleLayout = layoutNodes(single, 'horizontal', 'ring')
+    const loop = routeRingField(
+      single[0]!,
+      single[0]!,
+      singleLayout.get(1)!,
+      singleLayout.get(1)!,
+      'suivant',
+      singleRing,
+    )
+
+    expect(loop.path).toContain('C')
+    expect(loop.nullStub).toBeUndefined()
+    expect(loop.tip.y).toBe(singleLayout.get(1)!.y)
+  })
+
+  it('englobe tous les nœuds dans la bande circulaire', () => {
+    const ring = ringGeometry(ringNodes)!
+    const band = ringBand(ring)
+    const layout = layoutNodes(ringNodes, 'horizontal', 'ring')
+
+    for (const candidate of ringNodes) {
+      const point = layout.get(candidate.id)!
+      expect(point.x).toBeGreaterThanOrEqual(band.rect.x)
+      expect(point.y).toBeGreaterThanOrEqual(band.rect.y)
+      expect(point.x + NODE_W).toBeLessThanOrEqual(band.rect.x + band.rect.width)
+      expect(point.y + NODE_H).toBeLessThanOrEqual(band.rect.y + band.rect.height)
+    }
+    expect(emptyRingBand().rx).toBeGreaterThan(0)
+    expect(emptyRingBand().ry).toBeGreaterThan(0)
   })
 })

@@ -1,6 +1,7 @@
 import type { BaseSnapshot, PointerValue } from '../../core/types'
 
 export type VizOrientation = 'horizontal' | 'vertical'
+export type VizLayoutMode = 'row' | 'ring'
 export type VizField = 'suivant' | 'precedent'
 export type VizLane = 'row' | 'heap'
 export type GlobalPlacement = 'left' | 'top' | 'bottom' | 'row'
@@ -40,7 +41,7 @@ export interface LinkedModel<S extends BaseSnapshot> {
   field: VizField
   fieldLabel: string
   rowLabel: string
-  /** When true, the last `suivant` wraps back to the head and is drawn above the row. */
+  /** When true, the last `suivant` wraps back to the head and the nodes form a ring. */
   circular?: boolean
   emptyText: string
   emptyInsert: string
@@ -79,6 +80,7 @@ export interface NullStub {
   end: Point
   path: string
   label: Point
+  labelAnchor?: 'start' | 'end' | 'middle'
   orientation: 'horizontal' | 'vertical'
 }
 
@@ -110,12 +112,207 @@ export const MAX_AUTO_K = 1.25
 export const MIN_K = 0.25
 export const MAX_K = 4
 
+export const RING_CX = 640
+export const RING_CY = 520
+export const RING_MIN_RADIUS = 250
+/** Minimum breathing room between two ring nodes. */
+export const RING_NODE_GAP = 46
+/** Horizontal/vertical padding of the decorative band around the ring. */
+export const RING_BAND_PAD_X = 68
+export const RING_BAND_PAD_Y = 44
+/** Distance between the outer node border and the first arrow lane. */
+export const RING_OUTER_PAD = 38
+
+export interface RingGeometry {
+  cx: number
+  cy: number
+  /** Horizontal and vertical radii of the ellipse through the node centres. */
+  rx: number
+  ry: number
+  /** Largest radius, kept for arrow routing and bounds checks. */
+  radius: number
+  count: number
+  startAngle: number
+  step: number
+}
+
+export interface RingBandGeometry {
+  cx: number
+  cy: number
+  rx: number
+  ry: number
+  rect: Rect
+}
+
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
 
-export function layoutNodes(nodes: VizNode[], orientation: VizOrientation): Map<number, Point> {
+/**
+ * Rings of four, six or eight start on a flat top edge (four nodes form the
+ * square of the reference drawing); other rings keep a single node at the top.
+ */
+export function ringStartAngle(count: number): number {
+  if (count === 4) return (-3 * Math.PI) / 4
+  if (count === 6) return (-2 * Math.PI) / 3
+  if (count === 8) return (-5 * Math.PI) / 8
+  return -Math.PI / 2
+}
+
+function ringPoints(
+  count: number,
+  rx: number,
+  ry: number,
+  startAngle: number,
+): Point[] {
+  return Array.from({ length: count }, (_, index) => {
+    const angle = startAngle + (index * Math.PI * 2) / count
+    return { x: Math.cos(angle) * rx, y: Math.sin(angle) * ry }
+  })
+}
+
+function ringRectsClear(
+  count: number,
+  rx: number,
+  ry: number,
+  startAngle: number,
+): boolean {
+  const points = ringPoints(count, rx, ry, startAngle)
+  for (let first = 0; first < points.length; first += 1) {
+    for (let second = first + 1; second < points.length; second += 1) {
+      const dx = Math.abs(points[first]!.x - points[second]!.x)
+      const dy = Math.abs(points[first]!.y - points[second]!.y)
+      if (dx < NODE_W + RING_NODE_GAP && dy < NODE_H + RING_NODE_GAP) {
+        return false
+      }
+    }
+  }
+  return true
+}
+
+export function ringGeometry(nodes: VizNode[]): RingGeometry | null {
+  const count = nodes.filter((node) => node.lane === 'row').length
+  if (count === 0) return null
+  const startAngle = ringStartAngle(count)
+  const step = count === 1 ? 0 : (Math.PI * 2) / count
+  if (count === 1) {
+    return {
+      cx: RING_CX,
+      cy: RING_CY,
+      rx: 0,
+      ry: 0,
+      radius: 0,
+      count,
+      startAngle,
+      step,
+    }
+  }
+
+  // Grow the ellipse until every pair of node rectangles is separated by at
+  // least one axis. Wide cards need more room than a simple chord formula
+  // gives them, especially near the top of a pointy ring.
+  let rx = count === 2 ? 0 : RING_MIN_RADIUS
+  let ry = count === 2 ? 190 : rx * 0.8
+  while (count > 2 && rx < 900 && !ringRectsClear(count, rx, ry, startAngle)) {
+    rx += 8
+    ry = rx * 0.8
+  }
+  return {
+    cx: RING_CX,
+    cy: RING_CY,
+    rx,
+    ry,
+    radius: Math.max(rx, ry),
+    count,
+    startAngle,
+    step,
+  }
+}
+
+export function ringBand(ring: RingGeometry): RingBandGeometry {
+  const rx = ring.rx + NODE_W / 2 + RING_BAND_PAD_X
+  const ry = ring.ry + NODE_H / 2 + RING_BAND_PAD_Y
+  return {
+    cx: ring.cx,
+    cy: ring.cy,
+    rx,
+    ry,
+    rect: {
+      x: ring.cx - rx,
+      y: ring.cy - ry,
+      width: rx * 2,
+      height: ry * 2,
+    },
+  }
+}
+
+/** Fixed elliptical band used when the circular list is empty. */
+export function emptyRingBand(): RingBandGeometry {
+  const rect: Rect = { x: 150, y: 300, width: 600, height: 220 }
+  return {
+    cx: rect.x + rect.width / 2,
+    cy: rect.y + rect.height / 2,
+    rx: rect.width / 2,
+    ry: rect.height / 2,
+    rect,
+  }
+}
+
+/**
+ * Ring nodes keep their cards axis-aligned. The field cell is flipped on the
+ * left half and on the lower half so reciprocal links leave on opposite sides.
+ */
+export function isRingNodeFlipped(point: Point, ring: RingGeometry | null): boolean {
+  if (!ring) return false
+  const center = nodeCenter(point)
+  return center.x < ring.cx - 0.5 || center.y > ring.cy + 0.5
+}
+
+export function layoutNodes(
+  nodes: VizNode[],
+  orientation: VizOrientation,
+  mode: VizLayoutMode = 'row',
+): Map<number, Point> {
   const layout = new Map<number, Point>()
+  if (orientation === 'horizontal' && mode === 'ring') {
+    const row = nodes
+      .filter((node) => node.lane === 'row')
+      .slice()
+      .sort((first, second) => first.slot - second.slot)
+    const ring = ringGeometry(nodes)
+    if (ring) {
+      row.forEach((node, index) => {
+        const angle =
+          row.length === 1
+            ? 0
+            : ring.startAngle + (index * Math.PI * 2) / row.length
+        const cx = ring.cx + Math.cos(angle) * ring.rx
+        const cy = ring.cy + Math.sin(angle) * ring.ry
+        layout.set(node.id, { x: cx - NODE_W / 2, y: cy - NODE_H / 2 })
+      })
+
+      const heap = nodes
+        .filter((node) => node.lane === 'heap')
+        .slice()
+        .sort((first, second) => first.id - second.id)
+      if (heap.length > 0) {
+        const rowXs = row
+          .map((node) => layout.get(node.id)?.x)
+          .filter((x): x is number => x !== undefined)
+        const left = rowXs.length > 0 ? Math.min(...rowXs) : RING_CX
+        const stackHeight = heap.length * NODE_H + (heap.length - 1) * 24
+        const top = ring.cy - stackHeight / 2
+        heap.forEach((node, index) => {
+          layout.set(node.id, {
+            x: left - RING_BAND_PAD_X - 56 - NODE_W,
+            y: top + index * (NODE_H + 24),
+          })
+        })
+      }
+      return layout
+    }
+  }
+
   for (const node of nodes) {
     if (orientation === 'horizontal') {
       layout.set(node.id, {
@@ -164,6 +361,7 @@ export function layoutGlobals(
   nodes: VizNode[],
   layout: Map<number, Point>,
   orientation: VizOrientation,
+  ring: RingGeometry | null = null,
 ): Map<string, GlobalCellPlacement> {
   const result = new Map<string, GlobalCellPlacement>()
   const row = nodes
@@ -242,11 +440,15 @@ export function layoutGlobals(
         rect: {
           x:
             orientation === 'horizontal'
-              ? firstPoint.x - GLOBAL_W - 12
+              ? ring
+                ? firstPoint.x + (NODE_W - GLOBAL_W) / 2
+                : firstPoint.x - GLOBAL_W - 12
               : firstPoint.x + (NODE_W - GLOBAL_W) / 2,
           y:
             orientation === 'horizontal'
-              ? ROW_Y - 84 - GLOBAL_H - 14
+              ? ring
+                ? firstPoint.y - GLOBAL_H - 28
+                : ROW_Y - 84 - GLOBAL_H - 14
               : firstPoint.y - GLOBAL_H - 28,
           width: GLOBAL_W,
           height: GLOBAL_H,
@@ -293,9 +495,13 @@ export function pointerAnchor(
   point: Point,
   _field: VizField,
   orientation: VizOrientation,
+  flipped = false,
 ): Point {
   if (orientation === 'horizontal') {
-    return { x: point.x + NODE_W, y: point.y + NODE_H / 2 }
+    return {
+      x: flipped ? point.x + FIELD_W / 2 : point.x + VALUE_W + FIELD_W / 2,
+      y: point.y + NODE_H / 2,
+    }
   }
   return {
     x: point.x + VALUE_W + FIELD_W / 2,
@@ -392,6 +598,139 @@ export function routeField(
     path: `M ${tail.x} ${tail.y} C ${tail.x + side * 52} ${midY}, ${tip.x + side * 52} ${midY}, ${tip.x} ${tip.y}`,
     tail,
     tip,
+  }
+}
+
+export function exactNodeRect(point: Point): Rect {
+  return { x: point.x, y: point.y, width: NODE_W, height: NODE_H }
+}
+
+/**
+ * First border crossed by the ray `from -> toward`. `from` may be inside the
+ * rectangle (source exit) or outside it (target entry).
+ */
+export function borderPoint(from: Point, toward: Point, rect: Rect): Point {
+  const dx = toward.x - from.x
+  const dy = toward.y - from.y
+  const axis = (
+    start: number,
+    delta: number,
+    min: number,
+    max: number,
+  ): [number, number] | null => {
+    if (Math.abs(delta) < 1e-9) {
+      return start < min || start > max ? null : [-Infinity, Infinity]
+    }
+    const first = (min - start) / delta
+    const second = (max - start) / delta
+    return [Math.min(first, second), Math.max(first, second)]
+  }
+  const xAxis = axis(from.x, dx, rect.x, rect.x + rect.width)
+  const yAxis = axis(from.y, dy, rect.y, rect.y + rect.height)
+  if (!xAxis || !yAxis) return { ...from }
+  const enter = Math.max(xAxis[0], yAxis[0])
+  const exit = Math.min(xAxis[1], yAxis[1])
+  if (enter > exit) return { ...from }
+  const t = enter >= 0 ? enter : exit
+  if (!Number.isFinite(t)) return { ...from }
+  return { x: from.x + dx * t, y: from.y + dy * t }
+}
+
+function normalizeAngle(angle: number): number {
+  return ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
+}
+
+/**
+ * Route a `suivant` arrow around the outside of the ring. Both endpoint
+ * tangents leave/enter the cards from the ring side, so the arrow reads as a
+ * segment of the circle instead of a chord crossing its middle.
+ */
+export function routeRingField(
+  source: VizNode,
+  target: VizNode | null,
+  sourcePoint: Point,
+  targetPoint: Point | null,
+  field: VizField,
+  ring: RingGeometry,
+  sourceFlipped = false,
+): { path: string; tail: Point; tip: Point; nullStub?: NullStub } {
+  const tail = pointerAnchor(sourcePoint, field, 'horizontal', sourceFlipped)
+  if (!target || !targetPoint) {
+    const direction = sourceFlipped ? -1 : 1
+    const end = { x: tail.x + direction * NULL_STUB, y: tail.y }
+    return {
+      path: `M ${tail.x} ${tail.y} L ${end.x} ${end.y}`,
+      tail,
+      tip: end,
+      nullStub: {
+        start: tail,
+        end,
+        path: `M ${tail.x} ${tail.y} L ${end.x} ${end.y}`,
+        label: { x: end.x + direction * 20, y: end.y + 27 },
+        labelAnchor: direction > 0 ? 'start' : 'end',
+        orientation: 'horizontal',
+      },
+    }
+  }
+
+  // A single-node ring points to itself. Loop around the outside of the card
+  // instead of above it, leaving the space above free for the `debut` cell.
+  if (source.id === target.id || ring.count === 1) {
+    const direction = sourceFlipped ? -1 : 1
+    const borderX = sourceFlipped ? sourcePoint.x : sourcePoint.x + NODE_W
+    const tip = { x: borderX - direction * 18, y: sourcePoint.y }
+    const first = { x: tail.x + direction * 104, y: tail.y - 16 }
+    const second = { x: tip.x + direction * 104, y: tip.y - 26 }
+    return {
+      path: `M ${tail.x} ${tail.y} C ${first.x} ${first.y}, ${second.x} ${second.y}, ${tip.x} ${tip.y}`,
+      tail,
+      tip,
+    }
+  }
+
+  const sourceCenter = nodeCenter(sourcePoint)
+  const targetCenter = nodeCenter(targetPoint)
+  const sourceAngle = Math.atan2(
+    sourceCenter.y - ring.cy,
+    sourceCenter.x - ring.cx,
+  )
+  const targetAngle = Math.atan2(
+    targetCenter.y - ring.cy,
+    targetCenter.x - ring.cx,
+  )
+  const clockwise = normalizeAngle(targetAngle - sourceAngle)
+  let delta = clockwise > Math.PI ? clockwise - Math.PI * 2 : clockwise
+  if (ring.count === 2) {
+    // The two nodes are a vertical pair; pick the side of the source dot so
+    // the two reciprocal links wrap around opposite sides of the ring.
+    const tailRight = tail.x >= sourceCenter.x
+    const plusMidpoint = sourceAngle + Math.PI / 2
+    const plusRight = Math.cos(plusMidpoint) >= 0
+    delta = tailRight === plusRight ? Math.PI : -Math.PI
+  }
+  const midpoint = sourceAngle + delta / 2
+  const gap = {
+    x:
+      ring.cx +
+      Math.cos(midpoint) * (ring.rx + NODE_W / 2 + RING_OUTER_PAD),
+    y:
+      ring.cy +
+      Math.sin(midpoint) * (ring.ry + NODE_H / 2 + RING_OUTER_PAD),
+  }
+  const exit = borderPoint(sourceCenter, gap, exactNodeRect(sourcePoint))
+  const entry = borderPoint(gap, targetCenter, exactNodeRect(targetPoint))
+  const startControl = {
+    x: exit.x + (gap.x - exit.x) * 0.55,
+    y: exit.y + (gap.y - exit.y) * 0.55,
+  }
+  const endControl = {
+    x: gap.x + (gap.x - entry.x) * 0.25,
+    y: gap.y + (gap.y - entry.y) * 0.25,
+  }
+  return {
+    path: `M ${tail.x} ${tail.y} C ${startControl.x} ${startControl.y}, ${endControl.x} ${endControl.y}, ${entry.x} ${entry.y}`,
+    tail,
+    tip: entry,
   }
 }
 
@@ -549,21 +888,32 @@ export function contentBounds(
   globals: VizGlobal[],
   pins: VizPin[],
   orientation: VizOrientation,
+  ring: RingGeometry | null = null,
 ): Rect {
-  const layout = layoutNodes(nodes, orientation)
+  const layout = layoutNodes(nodes, orientation, ring ? 'ring' : 'row')
   const rects: Rect[] = [emptyBounds(orientation)]
+  if (ring) rects.push(ringBand(ring).rect)
   for (const node of nodes) {
     const point = layout.get(node.id)
     if (!point) continue
     rects.push(nodeRect(point))
     if (node.pointer.kind === 'null') {
       if (orientation === 'horizontal') {
-        rects.push({
-          x: point.x + NODE_W,
-          y: point.y + NODE_H / 2 - 22,
-          width: NULL_STUB + 74,
-          height: 62,
-        })
+        if (ring) {
+          rects.push({
+            x: point.x - NULL_STUB - 26,
+            y: point.y - 26,
+            width: NODE_W + (NULL_STUB + 26) * 2,
+            height: NODE_H + 52,
+          })
+        } else {
+          rects.push({
+            x: point.x + NODE_W,
+            y: point.y + NODE_H / 2 - 22,
+            width: NULL_STUB + 74,
+            height: 62,
+          })
+        }
       } else {
         rects.push({
           x: point.x + VALUE_W - 18,
@@ -574,14 +924,29 @@ export function contentBounds(
       }
     }
   }
-  for (const { rect: cell } of layoutGlobals(globals, nodes, layout, orientation).values()) {
+  for (const { rect: cell } of layoutGlobals(
+    globals,
+    nodes,
+    layout,
+    orientation,
+    ring,
+  ).values()) {
     rects.push({ x: cell.x - 8, y: cell.y - 26, width: cell.width + 16, height: cell.height + 70 })
   }
   for (const pin of pins) {
     const target =
       pin.value.kind === 'node' ? layout.get(pin.value.id) ?? null : null
     if (target) {
-      rects.push({ x: target.x - 110, y: target.y - 84, width: NODE_W + 220, height: NODE_H + 110 })
+      if (ring) {
+        rects.push({
+          x: target.x - 170,
+          y: target.y - 110,
+          width: NODE_W + 340,
+          height: NODE_H + 220,
+        })
+      } else {
+        rects.push({ x: target.x - 110, y: target.y - 84, width: NODE_W + 220, height: NODE_H + 110 })
+      }
     }
   }
   return unionBounds(rects)
