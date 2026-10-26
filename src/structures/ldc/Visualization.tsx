@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import type {
+  CSSProperties,
   JSX,
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
@@ -9,10 +10,14 @@ import type {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerValue, VisualizationProps } from '../../core/types'
 import { fr } from '../../i18n/fr'
+import zelligePatternUrl from '../../ui/zellige-pattern.webp?inline'
+import './Visualization.css'
 import {
   BAND_PAD,
   CELL_W,
+  EMPTY_BAND_EXTRA,
   EMPTY_BAND_HEIGHT,
+  EMPTY_BAND_MIN_WIDTH,
   EMPTY_BAND_TOP,
   HEAP_BAND_BOTTOM,
   HEAP_BAND_TOP,
@@ -23,13 +28,15 @@ import {
   ROW_BAND_BOTTOM,
   ROW_BAND_TOP,
   cameraAtOne,
+  circleBand,
   circleGeometry,
   circleHeapBand,
   clamp,
   debutCellGeometry,
   debutRoute,
+  emptyListBand,
   fitCamera,
-  isNodeFlipped,
+  isRowFlipped,
   layoutNodes,
   layoutPins,
   pointerAnchor,
@@ -188,6 +195,10 @@ export default function LdcVisualization({
     () => (layoutMode === 'circle' ? circleGeometry(nodes) : null),
     [nodes, layoutMode],
   )
+  const ringBand = useMemo(
+    () => (layoutMode === 'circle' ? circleBand(nodes) : null),
+    [nodes, layoutMode],
+  )
   const circleHeap = useMemo(
     () => (layoutMode === 'circle' ? circleHeapBand(nodes) : null),
     [nodes, layoutMode],
@@ -213,7 +224,26 @@ export default function LdcVisualization({
       ),
     )
   }, [operationSteps, layoutMode])
-  const fitBounds = operationBounds ?? contentBounds
+  // The first insertion starts from an empty list: the operation bounds also
+  // cover the empty band and the heap, which would keep the new ring far to
+  // the right. Once the first row node exists, focus the camera on the ring
+  // so the insertion itself is centred.
+  const firstInsertion = useMemo(() => {
+    if (layoutMode !== 'circle' || !operationSteps || operationSteps.length === 0) {
+      return false
+    }
+    const countRowNodes = (stepNodes: LdcNode[]): number =>
+      stepNodes.filter((node) => !node.freed && node.lane === 'row').length
+    return (
+      countRowNodes(operationSteps[0]!.snapshot.nodes) === 0 &&
+      countRowNodes(operationSteps[operationSteps.length - 1]!.snapshot.nodes) === 1
+    )
+  }, [layoutMode, operationSteps])
+  const hasRowNode = nodes.some((node) => !node.freed && node.lane === 'row')
+  const fitBounds =
+    firstInsertion && hasRowNode
+      ? contentBounds
+      : operationBounds ?? contentBounds
   const hasHeap =
     nodes.some((node) => node.lane === 'heap') ||
     Boolean(operationSteps?.some((operationStep) =>
@@ -522,28 +552,49 @@ export default function LdcVisualization({
     }
   }
 
-  const strokeWidth = presentation ? 4 : 3
+  const strokeWidth = presentation ? 5 : 4
+  // Once an operation is committed there are no operation steps left: the
+  // ring is at rest and can use its cleaner node-to-node `precedent` arrows.
+  const finalForm = !operationSteps || operationSteps.length === 0
   const renderRoute = (
     source: LdcNode,
     field: PointerField,
     pointer: PointerValue,
+    useFinalForm = finalForm,
   ): ReturnType<typeof routeArrow> => {
     if (pointer.kind === 'uninit') return null
-    if (pointer.kind === 'null') return routeArrow(source, field, null, layout, layoutMode, nodes)
+    if (pointer.kind === 'null') {
+      return routeArrow(source, field, null, layout, layoutMode, nodes, {
+        finalForm: useFinalForm,
+      })
+    }
     const target = nodes.find((candidate) => candidate.id === pointer.id) ?? null
     if (!target) return null
-    return routeArrow(source, field, target, layout, layoutMode, nodes)
+    return routeArrow(source, field, target, layout, layoutMode, nodes, {
+      finalForm: useFinalForm,
+    })
   }
 
   const showHeapBand = circleHeap !== null || (layoutMode === 'row' && hasHeap)
-  const emptyBandExtra = nodes.length === 0 ? 36 : 0
-  const bandX = fitBounds.x - BAND_PAD - emptyBandExtra
-  const bandWidth = Math.max(
-    nodes.length === 0 ? 480 : 120,
-    fitBounds.width + BAND_PAD * 2 + emptyBandExtra,
-  )
-  const emptyBandTop = EMPTY_BAND_TOP
-  const emptyBandHeight = EMPTY_BAND_HEIGHT
+  const emptyCircleBand =
+    layoutMode === 'circle' && !nodes.some((node) => node.lane === 'row')
+      ? emptyListBand()
+      : null
+  const emptyRowBand = emptyCircleBand !== null || nodes.length === 0
+  const emptyBandExtra = nodes.length === 0 ? EMPTY_BAND_EXTRA : 0
+  const bandX = emptyCircleBand
+    ? emptyCircleBand.x
+    : fitBounds.x - BAND_PAD - emptyBandExtra
+  const bandWidth = emptyCircleBand
+    ? emptyCircleBand.width
+    : Math.max(
+        nodes.length === 0 ? EMPTY_BAND_MIN_WIDTH : 120,
+        fitBounds.width + BAND_PAD * 2 + emptyBandExtra,
+      )
+  const emptyBandTop = emptyCircleBand ? emptyCircleBand.y : EMPTY_BAND_TOP
+  const emptyBandHeight = emptyCircleBand
+    ? emptyCircleBand.height
+    : EMPTY_BAND_HEIGHT
   const debutGeometry = debutCellGeometry(nodes, layoutMode)
   const debutArrow = debutRoute(nodes, snapshot.globals.debut, layoutMode)
   const debutChange = step.changes.find(
@@ -568,6 +619,14 @@ export default function LdcVisualization({
       className={`viz-stage${panning ? ' panning' : ''}${nodes.length === 0 ? ' is-empty' : ''}`}
       ref={stageRef}
     >
+      {layoutMode === 'circle' ? (
+        <div className="ldc-zellige" aria-hidden="true">
+          <div
+            className="ldc-zellige-tile"
+            style={{ '--zl-pattern': `url("${zelligePatternUrl}")` } as CSSProperties}
+          />
+        </div>
+      ) : null}
       <svg
         className="ldc-svg"
         viewBox={`0 0 ${stageW} ${stageH}`}
@@ -625,8 +684,8 @@ export default function LdcVisualization({
               viewBox="0 0 12 10"
               refX="12"
               refY="5"
-              markerWidth="12"
-              markerHeight="10"
+              markerWidth="14"
+              markerHeight="12"
               markerUnits="userSpaceOnUse"
               orient="auto"
             >
@@ -638,8 +697,8 @@ export default function LdcVisualization({
             viewBox="0 0 12 10"
             refX="12"
             refY="5"
-            markerWidth="12"
-            markerHeight="10"
+            markerWidth="14"
+            markerHeight="12"
             markerUnits="userSpaceOnUse"
             orient="auto"
           >
@@ -650,12 +709,14 @@ export default function LdcVisualization({
         <rect width={stageW} height={stageH} fill="url(#camera-grid)" />
 
         <g transform={`translate(${camera.x} ${camera.y}) scale(${camera.k})`}>
-          {ring ? (
-            <circle
+          {ringBand ? (
+            <rect
               className="lane-band lane-band-circle"
-              cx={ring.cx}
-              cy={ring.cy}
-              r={ring.radius + NODE_W / 2 + 26}
+              x={ringBand.x}
+              y={ringBand.y}
+              width={ringBand.width}
+              height={ringBand.height}
+              rx="28"
             />
           ) : null}
           {showHeapBand ? (
@@ -673,9 +734,9 @@ export default function LdcVisualization({
           <rect
             className="lane-band lane-band-row"
             x={bandX}
-            y={nodes.length === 0 ? emptyBandTop : ROW_BAND_TOP}
+            y={emptyRowBand ? emptyBandTop : ROW_BAND_TOP}
             width={bandWidth}
-            height={nodes.length === 0 ? emptyBandHeight : ROW_BAND_BOTTOM - ROW_BAND_TOP}
+            height={emptyRowBand ? emptyBandHeight : ROW_BAND_BOTTOM - ROW_BAND_TOP}
             rx="14"
             style={ring ? { display: 'none' } : undefined}
           />
@@ -691,14 +752,14 @@ export default function LdcVisualization({
           ) : null}
           <text
             x={
-              ring
-                ? ring.cx - (ring.radius + NODE_W / 2 + 26) + 18
-                : bandX + (nodes.length === 0 ? 8 : 14)
+              ringBand
+                ? ringBand.x + 18
+                : bandX + (emptyRowBand ? 8 : 14)
             }
             y={
-              ring
-                ? ring.cy - (ring.radius + NODE_W / 2 + 26) + 24
-                : (nodes.length === 0 ? emptyBandTop : ROW_BAND_TOP) + 22
+              ringBand
+                ? ringBand.y + 24
+                : (emptyRowBand ? emptyBandTop : ROW_BAND_TOP) + 22
             }
             className="lane-band-label"
             fontSize="13"
@@ -752,7 +813,7 @@ export default function LdcVisualization({
                   </title>
                   <NodeShape
                     node={node}
-                    flipped={Boolean(ring && isNodeFlipped(point, ring))}
+                    flipped={isRowFlipped(node, point, ring)}
                   />
                 </motion.g>
               )
@@ -798,7 +859,7 @@ export default function LdcVisualization({
             if (!source) return null
             const field = change.field
             if (!isPointerField(field)) return null
-            const oldRoute = renderRoute(source, field, change.from)
+            const oldRoute = renderRoute(source, field, change.from, false)
             const newRoute = renderRoute(source, field, change.to)
             const key = `change-${change.nodeId}-${field}-${index}-${stepIndex}`
             const duration = reducedMotion ? 0.001 : Math.max(0.18, 0.85 / speed)
@@ -853,7 +914,7 @@ export default function LdcVisualization({
                   node,
                   point,
                   field,
-                  Boolean(ring && isNodeFlipped(point, ring)),
+                  isRowFlipped(node, point, ring),
                 )
                 return [
                   <circle
@@ -861,7 +922,7 @@ export default function LdcVisualization({
                     className={`pointer-dot pointer-dot-${field}`}
                     cx={anchor.x}
                     cy={anchor.y}
-                    r="5.5"
+                    r="6.5"
                   >
                     <title>{`${field} de ${node.address}`}</title>
                   </circle>,

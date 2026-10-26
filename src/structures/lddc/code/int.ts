@@ -146,6 +146,91 @@ void insererEnFin(int valeur) {
   },
 )
 
+const insererApresValeur = makeFunction(
+  'insererApresValeur',
+  `
+void insererApresValeur(int apres, int valeur) {
+    if (debut == NULL) {
+        return;
+    }
+    Noeud *courant = debut;
+    do {
+        if (courant->valeur == apres) {
+            Noeud *nouveau = malloc(sizeof(Noeud));
+            nouveau->valeur = valeur;
+            nouveau->suivant = courant->suivant;
+            nouveau->precedent = courant;
+            courant->suivant->precedent = nouveau;
+            courant->suivant = nouveau;
+            return;
+        }
+        courant = courant->suivant;
+    } while (courant != debut);
+}
+`,
+  {
+    entry: 'void insererApresValeur(int apres, int valeur) {',
+    ifEmpty: 'if (debut == NULL) {',
+    returnEmpty: { text: 'return;', occurrence: 0 },
+    declCourant: 'Noeud *courant = debut;',
+    checkValue: 'if (courant->valeur == apres) {',
+    malloc: 'Noeud *nouveau = malloc',
+    setValeur: 'nouveau->valeur = valeur;',
+    setSuivant: 'nouveau->suivant = courant->suivant;',
+    setPrecedent: 'nouveau->precedent = courant;',
+    linkNextPrec: 'courant->suivant->precedent = nouveau;',
+    linkAfter: 'courant->suivant = nouveau;',
+    returnFound: { text: 'return;', occurrence: 1 },
+    avancer: 'courant = courant->suivant;',
+    whileCond: 'while (courant != debut);',
+  },
+)
+
+const insererAvantValeur = makeFunction(
+  'insererAvantValeur',
+  `
+void insererAvantValeur(int avant, int valeur) {
+    if (debut == NULL) {
+        return;
+    }
+    Noeud *courant = debut;
+    do {
+        if (courant->valeur == avant) {
+            Noeud *nouveau = malloc(sizeof(Noeud));
+            nouveau->valeur = valeur;
+            nouveau->suivant = courant;
+            nouveau->precedent = courant->precedent;
+            courant->precedent->suivant = nouveau;
+            courant->precedent = nouveau;
+            if (courant == debut) {
+                debut = nouveau;
+            }
+            return;
+        }
+        courant = courant->suivant;
+    } while (courant != debut);
+}
+`,
+  {
+    entry: 'void insererAvantValeur(int avant, int valeur) {',
+    ifEmpty: 'if (debut == NULL) {',
+    returnEmpty: { text: 'return;', occurrence: 0 },
+    declCourant: 'Noeud *courant = debut;',
+    checkValue: 'if (courant->valeur == avant) {',
+    malloc: 'Noeud *nouveau = malloc',
+    setValeur: 'nouveau->valeur = valeur;',
+    setSuivant: 'nouveau->suivant = courant;',
+    setPrecedent: 'nouveau->precedent = courant->precedent;',
+    linkPrevNext: 'courant->precedent->suivant = nouveau;',
+    linkCourantPrec: 'courant->precedent = nouveau;',
+    ifHead: 'if (courant == debut) {',
+    setDebut: 'debut = nouveau;',
+    returnFound: { text: 'return;', occurrence: 1 },
+    avancer: 'courant = courant->suivant;',
+    whileCond: 'while (courant != debut);',
+  },
+)
+
 const supprimerEnTete = makeFunction(
   'supprimerEnTete',
   `
@@ -154,8 +239,9 @@ void supprimerEnTete(void) {
         return;
     }
     if (debut->suivant == debut) {
-        free(debut);
+        Noeud *ancien = debut;
         debut = NULL;
+        free(ancien);
         return;
     }
     Noeud *ancienDebut = debut;
@@ -171,8 +257,9 @@ void supprimerEnTete(void) {
     ifNull: 'if (debut == NULL) {',
     returnEmpty: { text: 'return;', occurrence: 0 },
     ifSingle: 'if (debut->suivant == debut) {',
-    freeSingle: 'free(debut);',
+    declSingle: 'Noeud *ancien = debut;',
     setDebutNull: 'debut = NULL;',
+    freeSingle: 'free(ancien);',
     returnSingle: { text: 'return;', occurrence: 1 },
     declAncien: 'Noeud *ancienDebut = debut;',
     declDernier: 'Noeud *dernier = debut->precedent;',
@@ -194,15 +281,15 @@ void supprimerValeur(int valeur) {
     do {
         if (courant->valeur == valeur) {
             if (courant->suivant == courant) {
-                free(courant);
                 debut = NULL;
+                free(courant);
                 return;
             }
-            courant->precedent->suivant = courant->suivant;
-            courant->suivant->precedent = courant->precedent;
             if (courant == debut) {
                 debut = courant->suivant;
             }
+            courant->precedent->suivant = courant->suivant;
+            courant->suivant->precedent = courant->precedent;
             free(courant);
             return;
         }
@@ -217,13 +304,13 @@ void supprimerValeur(int valeur) {
     declCourant: 'Noeud *courant = debut;',
     checkValue: 'if (courant->valeur == valeur) {',
     ifSingle: 'if (courant->suivant == courant) {',
-    freeSingle: { text: 'free(courant);', occurrence: 0 },
     setDebutNull: 'debut = NULL;',
+    freeSingle: { text: 'free(courant);', occurrence: 0 },
     returnSingle: { text: 'return;', occurrence: 1 },
-    unlinkPrev: 'courant->precedent->suivant = courant->suivant;',
-    unlinkNext: 'courant->suivant->precedent = courant->precedent;',
     ifHead: 'if (courant == debut) {',
     setDebut: 'debut = courant->suivant;',
+    unlinkPrev: 'courant->precedent->suivant = courant->suivant;',
+    unlinkNext: 'courant->suivant->precedent = courant->precedent;',
     freeNode: { text: 'free(courant);', occurrence: 1 },
     returnFound: { text: 'return;', occurrence: 2 },
     avancer: 'courant = courant->suivant;',
@@ -295,16 +382,52 @@ void detruireListe(void) {
   },
 )
 
+const inverserListe = makeFunction(
+  'inverserListe',
+  `
+void inverserListe(void) {
+    if (debut == NULL) {
+        return;
+    }
+    Noeud *dernier = debut->precedent;
+    Noeud *courant = debut;
+    do {
+        Noeud *temp = courant->suivant;
+        courant->suivant = courant->precedent;
+        courant->precedent = temp;
+        courant = temp;
+    } while (courant != debut);
+    debut = dernier;
+}
+`,
+  {
+    entry: 'void inverserListe(void) {',
+    ifEmpty: 'if (debut == NULL) {',
+    returnEmpty: 'return;',
+    declDernier: 'Noeud *dernier = debut->precedent;',
+    declCourant: 'Noeud *courant = debut;',
+    declTemp: 'Noeud *temp = courant->suivant;',
+    swapSuivant: 'courant->suivant = courant->precedent;',
+    swapPrecedent: 'courant->precedent = temp;',
+    avancer: 'courant = temp;',
+    whileCond: 'while (courant != debut);',
+    setDebut: 'debut = dernier;',
+  },
+)
+
 export const intFunctions: FunctionCode[] = [
   afficherListe,
   afficherListeEnvers,
   insererEnTete,
   insererEnFin,
+  insererApresValeur,
+  insererAvantValeur,
   supprimerEnTete,
   supprimerValeur,
   rechercher,
   passerAuSuivant,
   detruireListe,
+  inverserListe,
 ]
 
 export const intCode = collectCode(intFunctions)

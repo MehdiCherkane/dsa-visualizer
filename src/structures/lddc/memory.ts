@@ -78,10 +78,70 @@ export function emptyCircularSnapshot(profile: ProfileId): LdcSnapshot {
 }
 
 /**
- * Validates the chapter 5 invariant: following `suivant` from `debut` visits
- * every live node exactly once and comes back to `debut`, and each `precedent`
- * mirrors the link of its successor.
+ * Per-step invariant: the links that remain reachable from `debut` must form
+ * exactly one closed walk that comes back to `debut`, with no `NULL`,
+ * uninitialized or freed node on the way.
+ *
+ * This deliberately ignores unreachable nodes. A doubly linked ring cannot
+ * stay fully mirror-consistent after every single C assignment (a new node is
+ * reachable before its lane changes, an old head is detached before it is
+ * freed, reversal closes a smaller sub-cycle for a few steps). The full
+ * reciprocal invariant is asserted on the final snapshot of each operation by
+ * `checkCircularInvariants`.
  */
+export function checkRingInvariants(snapshot: LdcSnapshot): string[] {
+  const errors: string[] = []
+  const debut = snapshot.globals.debut
+
+  if (!debut) {
+    errors.push('debut missing')
+    return errors
+  }
+  if (debut.kind === 'null') return errors
+  if (debut.kind !== 'node') {
+    errors.push('debut is uninitialized')
+    return errors
+  }
+
+  const seen = new Set<number>()
+  let current: PointerValue = debut
+  for (;;) {
+    if (current.kind !== 'node') {
+      errors.push('reachable link is not a node')
+      break
+    }
+    const currentId: number = current.id
+    if (seen.has(currentId)) {
+      if (currentId !== debut.id) {
+        errors.push(`cycle stops at node ${currentId}, not at debut`)
+      }
+      break
+    }
+    if (seen.size >= snapshot.nodes.length) {
+      errors.push('ring walk never returns to debut')
+      break
+    }
+    seen.add(currentId)
+
+    const node: LdcNode | undefined = snapshot.nodes.find((candidate) => candidate.id === currentId)
+    if (!node) {
+      errors.push(`missing node ${currentId}`)
+      break
+    }
+    if (node.freed) errors.push(`reachable node ${node.id} is freed`)
+    if (node.suivant.kind !== 'node') {
+      errors.push(`node ${node.id} suivant is ${node.suivant.kind}`)
+      break
+    }
+    if (node.precedent.kind !== 'node') {
+      errors.push(`node ${node.id} precedent is ${node.precedent.kind}`)
+    }
+    current = node.suivant
+  }
+
+  return errors
+}
+
 export function checkCircularInvariants(snapshot: LdcSnapshot): string[] {
   const errors: string[] = []
   const debut = snapshot.globals.debut

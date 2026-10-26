@@ -4,27 +4,32 @@ import {
   CELL_W,
   CIRCLE_CX,
   CIRCLE_CY,
+  CIRCLE_HEAP_GAP,
   CIRCLE_MIN_RADIUS,
   DEBUT_CELL_GAP,
   DEBUT_CELL_H,
   DEBUT_CELL_W,
+  EMPTY_ROW_Y,
   NODE_H,
   NODE_W,
   NULL_STUB,
   PIN_DEBUT_CLEARANCE,
   PIN_NULL_STUB,
-  PRECEDENT_LANE,
   ROW_Y,
-  SUIVANT_LANE,
+  borderPoint,
   cameraAtOne,
+  circleBand,
   circleGeometry,
   circleHeapBand,
+  circleNodeRect,
   debutCellGeometry,
   debutRoute,
+  emptyListBand,
   fitCamera,
   isNodeFlipped,
   layoutNodes,
   layoutPins,
+  nodeCenter,
   pointerAnchor,
   pointerSide,
   routeArrow,
@@ -38,6 +43,7 @@ import type { LdcNode } from './memory'
 import { createSnapshot } from './memory'
 import { runInsererEnTete } from './ops/intOps'
 import { createCircularSnapshot } from '../lddc/memory'
+import { runInsererEnTete as runCircularInsererEnTete } from '../lddc/ops/intOps'
 
 function center(rect: Rect): Point {
   return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
@@ -50,6 +56,20 @@ function contains(outer: Rect, inner: Rect): boolean {
     inner.x + inner.width <= outer.x + outer.width + 0.001 &&
     inner.y + inner.height <= outer.y + outer.height + 0.001
   )
+}
+
+function onBorder(point: Point, rect: Rect, epsilon = 0.75): boolean {
+  const insideX =
+    point.x >= rect.x - epsilon && point.x <= rect.x + rect.width + epsilon
+  const insideY =
+    point.y >= rect.y - epsilon && point.y <= rect.y + rect.height + epsilon
+  const onVertical =
+    Math.abs(point.x - rect.x) <= epsilon ||
+    Math.abs(point.x - (rect.x + rect.width)) <= epsilon
+  const onHorizontal =
+    Math.abs(point.y - rect.y) <= epsilon ||
+    Math.abs(point.y - (rect.y + rect.height)) <= epsilon
+  return insideX && insideY && (onVertical || onHorizontal)
 }
 
 describe('caméra et géométrie du canvas', () => {
@@ -284,71 +304,146 @@ describe('géométrie circulaire du chapitre 5', () => {
     expect(ring).not.toBeNull()
     expect(ring!.cx).toBe(CIRCLE_CX)
     expect(ring!.cy).toBe(CIRCLE_CY)
+    expect(ring!.count).toBe(4)
 
     const layout = layoutNodes(snapshot.nodes, 'circle')
     for (const node of snapshot.nodes) {
       const point = layout.get(node.id)!
-      const nodeCenter = { x: point.x + 110, y: point.y + 50 }
-      expect(
-        Math.hypot(nodeCenter.x - ring!.cx, nodeCenter.y - ring!.cy),
-      ).toBeCloseTo(ring!.radius, 6)
+      const nodeCenter = { x: point.x + NODE_W / 2, y: point.y + NODE_H / 2 }
+      const ellipse =
+        ((nodeCenter.x - ring!.cx) / ring!.rx) ** 2 +
+        ((nodeCenter.y - ring!.cy) / ring!.ry) ** 2
+      expect(ellipse).toBeCloseTo(1, 6)
     }
+
+    // Four nodes form the square of the reference drawing: two flat top
+    // nodes and two flat bottom nodes, with a pair on each side.
+    const centers = snapshot.nodes.map((node) => {
+      const point = layout.get(node.id)!
+      return { x: point.x + NODE_W / 2, y: point.y + NODE_H / 2 }
+    })
+    expect(centers[0]!.y).toBeCloseTo(centers[1]!.y, 6)
+    expect(centers[2]!.y).toBeCloseTo(centers[3]!.y, 6)
+    expect(centers[0]!.x).toBeLessThan(centers[1]!.x)
+    expect(centers[3]!.x).toBeLessThan(centers[2]!.x)
 
     const first = snapshot.nodes[0]!
     const firstPoint = layout.get(first.id)!
-    expect(firstPoint.x + 110).toBeCloseTo(CIRCLE_CX, 6)
-    expect(firstPoint.y + 50).toBeLessThan(CIRCLE_CY)
-
     const rowPoint = layoutNodes(snapshot.nodes).get(first.id)!
     expect(rowPoint.y).toBe(ROW_Y)
     expect(rowPoint.x).not.toBe(firstPoint.x)
   })
 
   it('place le tas à gauche de l’anneau, pas au-dessus', () => {
-    const snapshot = circular()
-    const heapNode: LdcNode = {
-      id: 99,
-      address: '0x1AB8',
-      payload: { kind: 'uninit' },
-      suivant: { kind: 'uninit' },
-      precedent: { kind: 'uninit' },
-      freed: false,
-      slot: snapshot.nodes.length,
-      lane: 'heap',
+    // Check every ring size from 1 to 8: the heap band must stay clear of the
+    // list band whatever the ellipse proportions, with a constant visible gap.
+    for (let count = 1; count <= 8; count += 1) {
+      const snapshot = createCircularSnapshot(
+        'int',
+        Array.from({ length: count }, (_, index) => ({
+          kind: 'int' as const,
+          value: index + 1,
+        })),
+      )
+      const heapNode: LdcNode = {
+        id: 99,
+        address: '0x1AB8',
+        payload: { kind: 'uninit' },
+        suivant: { kind: 'uninit' },
+        precedent: { kind: 'uninit' },
+        freed: false,
+        slot: snapshot.nodes.length,
+        lane: 'heap',
+      }
+      const nodes = [...snapshot.nodes, heapNode]
+      const point = layoutNodes(nodes, 'circle').get(heapNode.id)!
+      const band = circleHeapBand(nodes)!
+      const listBand = circleBand(nodes)!
+
+      expect(point.x + NODE_W).toBeLessThan(listBand.x)
+      expect(point.y + NODE_H / 2).toBeCloseTo(CIRCLE_CY, 6)
+      expect(band.x).toBeLessThan(point.x)
+      // The heap band must stay clear of the decorative list band, not just of
+      // the node border: the band is wider than the ring itself.
+      expect(band.x + band.width).toBeLessThan(listBand.x)
+      expect(listBand.x - (band.x + band.width)).toBeCloseTo(
+        CIRCLE_HEAP_GAP,
+        6,
+      )
+      expect(
+        snapshotBounds(nodes, [], { kind: 'null' }, 'circle').x,
+      ).toBeLessThanOrEqual(band.x + 0.001)
     }
-    const nodes = [...snapshot.nodes, heapNode]
-    const ring = circleGeometry(nodes)!
-    const point = layoutNodes(nodes, 'circle').get(heapNode.id)!
-    const ringLeft = ring.cx - ring.radius - NODE_W / 2
-
-    expect(point.x + NODE_W).toBeLessThan(ringLeft)
-    expect(point.y + NODE_H / 2).toBeCloseTo(CIRCLE_CY, 6)
-
-    const band = circleHeapBand(nodes)!
-    expect(band.x).toBeLessThan(point.x)
-    expect(band.x + band.width).toBeLessThan(ringLeft)
-    expect(
-      snapshotBounds(nodes, [], { kind: 'null' }, 'circle').x,
-    ).toBeLessThanOrEqual(band.x + 0.001)
   })
 
-  it('route suivant à l’extérieur et precedent à l’intérieur du cercle', () => {
+  it('place le tas à gauche de la bande vide sans chevauchement', () => {
+    const steps = runCircularInsererEnTete(createCircularSnapshot('int', []), {
+      valeur: 7,
+    })
+    const heapOnly = steps
+      .map((step) => step.snapshot.nodes)
+      .find(
+        (nodes) =>
+          nodes.some((node) => node.lane === 'heap') &&
+          !nodes.some((node) => node.lane === 'row'),
+      )
+    if (!heapOnly) throw new Error('missing heap-only step')
+
+    const listBand = emptyListBand()
+    const heapBand = circleHeapBand(heapOnly)!
+    expect(heapBand.x + heapBand.width).toBeLessThan(listBand.x)
+    expect(listBand.x - (heapBand.x + heapBand.width)).toBeCloseTo(
+      CIRCLE_HEAP_GAP,
+      6,
+    )
+
+    const overlap =
+      heapBand.x < listBand.x + listBand.width &&
+      heapBand.x + heapBand.width > listBand.x &&
+      heapBand.y < listBand.y + listBand.height &&
+      heapBand.y + heapBand.height > listBand.y
+    expect(overlap).toBe(false)
+
+    const bounds = snapshotBounds(heapOnly, [], { kind: 'null' }, 'circle')
+    expect(contains(bounds, heapBand)).toBe(true)
+    expect(contains(bounds, listBand)).toBe(true)
+
+    const geometry = debutCellGeometry(heapOnly, 'circle')
+    expect(geometry.cell.y).toBeCloseTo(
+      EMPTY_ROW_Y - DEBUT_CELL_GAP - DEBUT_CELL_H,
+      6,
+    )
+  })
+
+  it('trace les paires adjacentes en lignes droites ou en arcs extérieurs', () => {
     const snapshot = circular()
     const [first, second, , fourth] = snapshot.nodes
     if (!first || !second || !fourth) throw new Error('missing nodes')
     const layout = layoutNodes(snapshot.nodes, 'circle')
-    const ring = circleGeometry(snapshot.nodes)!
-    const distance = (point: Point): number =>
-      Math.hypot(point.x - ring.cx, point.y - ring.cy)
 
     const next = routeArrow(first, 'suivant', second, layout, 'circle', snapshot.nodes)
     const previous = routeArrow(first, 'precedent', fourth, layout, 'circle', snapshot.nodes)
     expect(next).not.toBeNull()
     expect(previous).not.toBeNull()
-    expect(next!.kind).toBe('curve')
+
+    // The top pair faces across the ring: two straight parallel arrows.
+    expect(next!.kind).toBe('straight')
+    // The left pair wraps around the outside: two nested arcs.
     expect(previous!.kind).toBe('curve')
-    expect(distance(next!.tail)).toBeGreaterThan(ring.radius)
-    expect(distance(previous!.tail)).toBeLessThan(ring.radius)
+
+    expect(next!.tail.x).toBeCloseTo(
+      pointerAnchor(first, layout.get(first.id)!, 'suivant', false).x,
+      6,
+    )
+    expect(previous!.tail.x).toBeCloseTo(
+      pointerAnchor(first, layout.get(first.id)!, 'precedent', false).x,
+      6,
+    )
+
+    const secondRect = circleNodeRect(layout.get(second.id)!)
+    const fourthRect = circleNodeRect(layout.get(fourth.id)!)
+    expect(onBorder(next!.tip, secondRect)).toBe(true)
+    expect(onBorder(previous!.tip, fourthRect)).toBe(true)
   })
 
   it('agrandit l’anneau à partir de trois nœuds', () => {
@@ -400,8 +495,8 @@ describe('géométrie circulaire du chapitre 5', () => {
     }
   })
 
-  it('fait partir les flèches des points et arriver sur la bordure opposée', () => {
-    for (const count of [3, 4, 8]) {
+  it('fait partir les flèches des points et arriver sur la bordure la plus proche', () => {
+    for (const count of [2, 3, 4, 8]) {
       const snapshot = createCircularSnapshot(
         'int',
         Array.from({ length: count }, (_, index) => ({
@@ -424,7 +519,6 @@ describe('géométrie circulaire du chapitre 5', () => {
         ] as const) {
           const target = nodes[(index + offset + nodes.length) % nodes.length]!
           const targetPoint = layout.get(target.id)!
-          const targetFlipped = isNodeFlipped(targetPoint, ring)
           const route = routeArrow(
             source,
             field,
@@ -444,17 +538,41 @@ describe('géométrie circulaire du chapitre 5', () => {
           expect(route!.tail.x).toBeCloseTo(expectedTail.x, 6)
           expect(route!.tail.y).toBeCloseTo(expectedTail.y, 6)
 
-          const endAtRight =
-            field === 'suivant' ? targetFlipped : !targetFlipped
-          const expectedTip = {
-            x: endAtRight ? targetPoint.x + NODE_W : targetPoint.x,
-            y:
-              targetPoint.y +
-              NODE_H *
-                (field === 'suivant' ? PRECEDENT_LANE : SUIVANT_LANE),
+          const targetRect = circleNodeRect(targetPoint)
+          const tip = route!.tip
+          const onVerticalBorder =
+            Math.abs(tip.x - targetRect.x) < 1e-6 ||
+            Math.abs(tip.x - (targetRect.x + targetRect.width)) < 1e-6
+          const onHorizontalBorder =
+            Math.abs(tip.y - targetRect.y) < 1e-6 ||
+            Math.abs(tip.y - (targetRect.y + targetRect.height)) < 1e-6
+          expect(onVerticalBorder || onHorizontalBorder).toBe(true)
+          expect(tip.x).toBeGreaterThanOrEqual(targetRect.x - 1e-6)
+          expect(tip.x).toBeLessThanOrEqual(
+            targetRect.x + targetRect.width + 1e-6,
+          )
+          expect(tip.y).toBeGreaterThanOrEqual(targetRect.y - 1e-6)
+          expect(tip.y).toBeLessThanOrEqual(
+            targetRect.y + targetRect.height + 1e-6,
+          )
+
+          // The tip lands on the border facing the approach. Its exact
+          // position may be snapped to the pointer lane, so check that the
+          // curve enters through the same side as the first intersection.
+          const approach = route!.points[route!.points.length - 2]!
+          const expectedTip = borderPoint(
+            approach,
+            nodeCenter(targetPoint),
+            targetRect,
+          )
+          const verticalBorder =
+            Math.abs(expectedTip.x - targetRect.x) < 1e-6 ||
+            Math.abs(expectedTip.x - (targetRect.x + targetRect.width)) < 1e-6
+          if (verticalBorder) {
+            expect(tip.x).toBeCloseTo(expectedTip.x, 6)
+          } else {
+            expect(tip.y).toBeCloseTo(expectedTip.y, 6)
           }
-          expect(route!.tip.x).toBeCloseTo(expectedTip.x, 6)
-          expect(route!.tip.y).toBeCloseTo(expectedTip.y, 6)
         }
       }
     }

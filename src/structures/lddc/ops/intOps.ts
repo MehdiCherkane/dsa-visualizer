@@ -97,12 +97,14 @@ function bodySupprimerEnTete(r: Recorder): boolean {
   )
 
   if (single) {
-    r.freeNode(head.id)
-    r.step(fn, fnLabels.freeSingle.line, C.removeSingleNode)
+    r.declareLocal('ancien', debut)
+    r.step(fn, fnLabels.declSingle.line, fr.captions.declarePointer('ancien', r.describe(debut)))
     r.setGlobal('debut', { kind: 'null' })
     r.step(fn, fnLabels.setDebutNull.line, fr.captions.assignGlobalDebut(fr.common.null), {
       badge: 'debut-modifie',
     })
+    r.freeNode(head.id)
+    r.step(fn, fnLabels.freeSingle.line, C.removeSingleNode)
     r.step(fn, fnLabels.returnSingle.line, fr.captions.returnVoid)
     return true
   }
@@ -440,6 +442,266 @@ export function runInsererEnFin(state: LdcSnapshot, params: ParamValues): Step<L
   return r.finish(fn, fnLabels.end.line)
 }
 
+export function runInsererApresValeur(
+  state: LdcSnapshot,
+  params: ParamValues,
+): Step<LdcSnapshot>[] {
+  const fn = 'insererApresValeur'
+  const fnLabels = L.insererApresValeur
+  const apres = numberParam(params, 'apres')
+  const valeur = numberParam(params, 'valeur')
+  const r = new Recorder(state)
+  r.pushFrame(fn, {
+    apres: { kind: 'int', value: apres },
+    valeur: { kind: 'int', value: valeur },
+  })
+  r.step(fn, fnLabels.entry.line, fr.captions.entry(fn))
+
+  const debut = r.global('debut')
+  conditionStep(
+    r,
+    fn,
+    fnLabels.ifEmpty.line,
+    'debut == NULL',
+    debut.kind === 'null',
+    debut.kind === 'null' ? fr.captions.reasonListEmpty : fr.captions.reasonListNotEmpty,
+  )
+
+  if (debut.kind === 'null') {
+    r.step(fn, fnLabels.returnEmpty.line, fr.captions.returnVoid)
+    return r.finish(fn, fnLabels.end.line)
+  }
+
+  r.declareLocal('courant', debut)
+  r.step(fn, fnLabels.declCourant.line, fr.captions.declarePointer('courant', r.describe(debut)))
+
+  for (;;) {
+    const courant = pointerOf(r.local('courant'))
+    if (courant.kind !== 'node') break
+    const node = r.node(courant.id)
+    const value = payloadKey(node) ?? 0
+
+    const equal = value === apres
+    r.incrementComparisons()
+    conditionStep(
+      r,
+      fn,
+      fnLabels.checkValue.line,
+      'courant->valeur == apres',
+      equal,
+      equal
+        ? fr.captions.reasonValueEquals(node.id, value, apres)
+        : fr.captions.reasonValueDiffers(node.id, value, apres),
+    )
+
+    if (equal) {
+      const id = r.mallocNode(node.slot + 1)
+      const newNode = r.node(id)
+      const nouveau = nodePointer(id)
+      r.declareLocal('nouveau', nouveau)
+      r.step(fn, fnLabels.malloc.line, fr.captions.malloc(id, newNode.address))
+
+      r.setPayload(id, { kind: 'int', value: valeur })
+      r.step(fn, fnLabels.setValeur.line, fr.captions.assignPayloadInt(id, valeur))
+
+      const next = r.node(courant.id).suivant
+      r.setPointer(id, 'suivant', next)
+      r.step(fn, fnLabels.setSuivant.line, fr.captions.assignField(id, 'suivant', r.describe(next)), {
+        evals: [r.makeEval('courant->suivant', next)],
+      })
+
+      r.setPointer(id, 'precedent', courant)
+      r.step(
+        fn,
+        fnLabels.setPrecedent.line,
+        fr.captions.assignField(id, 'precedent', r.describe(courant)),
+        { evals: [r.makeEval('courant', courant)] },
+      )
+
+      if (next.kind !== 'node') {
+        throw new Error('A circular list must have a next node')
+      }
+      r.setPointer(next.id, 'precedent', nouveau)
+      r.step(
+        fn,
+        fnLabels.linkNextPrec.line,
+        fr.captions.assignField(next.id, 'precedent', r.describe(nouveau)),
+        { evals: [r.makeEval('courant->suivant', next)] },
+      )
+
+      r.setPointer(courant.id, 'suivant', nouveau)
+      r.insertRowNode(id, node.slot + 1)
+      r.step(fn, fnLabels.linkAfter.line, C.insertedAfter, {
+        evals: [r.makeEval('courant', courant)],
+      })
+
+      r.step(fn, fnLabels.returnFound.line, fr.captions.returnVoid)
+      return r.finish(fn, fnLabels.end.line)
+    }
+
+    const next = node.suivant
+    r.setLocal('courant', next)
+    r.incrementTraversed()
+    r.step(fn, fnLabels.avancer.line, fr.captions.advanceNext('courant', r.describe(next)), {
+      evals: [r.makeEval('courant->suivant', next)],
+    })
+
+    const stop = sameNode(next, debut)
+    conditionStep(
+      r,
+      fn,
+      fnLabels.whileCond.line,
+      'courant != debut',
+      !stop,
+      stop ? C.notFoundInsert : C.circularContinue,
+    )
+    if (stop) break
+  }
+
+  return r.finish(fn, fnLabels.end.line)
+}
+
+export function runInsererAvantValeur(
+  state: LdcSnapshot,
+  params: ParamValues,
+): Step<LdcSnapshot>[] {
+  const fn = 'insererAvantValeur'
+  const fnLabels = L.insererAvantValeur
+  const avant = numberParam(params, 'avant')
+  const valeur = numberParam(params, 'valeur')
+  const r = new Recorder(state)
+  r.pushFrame(fn, {
+    avant: { kind: 'int', value: avant },
+    valeur: { kind: 'int', value: valeur },
+  })
+  r.step(fn, fnLabels.entry.line, fr.captions.entry(fn))
+
+  const debut = r.global('debut')
+  conditionStep(
+    r,
+    fn,
+    fnLabels.ifEmpty.line,
+    'debut == NULL',
+    debut.kind === 'null',
+    debut.kind === 'null' ? fr.captions.reasonListEmpty : fr.captions.reasonListNotEmpty,
+  )
+
+  if (debut.kind === 'null') {
+    r.step(fn, fnLabels.returnEmpty.line, fr.captions.returnVoid)
+    return r.finish(fn, fnLabels.end.line)
+  }
+
+  r.declareLocal('courant', debut)
+  r.step(fn, fnLabels.declCourant.line, fr.captions.declarePointer('courant', r.describe(debut)))
+
+  for (;;) {
+    const courant = pointerOf(r.local('courant'))
+    if (courant.kind !== 'node') break
+    const node = r.node(courant.id)
+    const value = payloadKey(node) ?? 0
+
+    const equal = value === avant
+    r.incrementComparisons()
+    conditionStep(
+      r,
+      fn,
+      fnLabels.checkValue.line,
+      'courant->valeur == avant',
+      equal,
+      equal
+        ? fr.captions.reasonValueEquals(node.id, value, avant)
+        : fr.captions.reasonValueDiffers(node.id, value, avant),
+    )
+
+    if (equal) {
+      const previous = node.precedent
+      if (previous.kind !== 'node') {
+        throw new Error('A circular list must have a previous node')
+      }
+      const id = r.mallocNode(node.slot)
+      const newNode = r.node(id)
+      const nouveau = nodePointer(id)
+      r.declareLocal('nouveau', nouveau)
+      r.step(fn, fnLabels.malloc.line, fr.captions.malloc(id, newNode.address))
+
+      r.setPayload(id, { kind: 'int', value: valeur })
+      r.step(fn, fnLabels.setValeur.line, fr.captions.assignPayloadInt(id, valeur))
+
+      r.setPointer(id, 'suivant', courant)
+      r.step(fn, fnLabels.setSuivant.line, fr.captions.assignField(id, 'suivant', r.describe(courant)), {
+        evals: [r.makeEval('courant', courant)],
+      })
+
+      r.setPointer(id, 'precedent', previous)
+      r.step(
+        fn,
+        fnLabels.setPrecedent.line,
+        fr.captions.assignField(id, 'precedent', r.describe(previous)),
+        { evals: [r.makeEval('courant->precedent', previous)] },
+      )
+
+      r.setPointer(previous.id, 'suivant', nouveau)
+      r.step(
+        fn,
+        fnLabels.linkPrevNext.line,
+        fr.captions.assignField(previous.id, 'suivant', r.describe(nouveau)),
+        { evals: [r.makeEval('courant->precedent', previous)] },
+      )
+
+      r.setPointer(courant.id, 'precedent', nouveau)
+      r.step(
+        fn,
+        fnLabels.linkCourantPrec.line,
+        fr.captions.assignField(courant.id, 'precedent', r.describe(nouveau)),
+        { evals: [r.makeEval('courant', courant)] },
+      )
+
+      const isHead = sameNode(debut, courant)
+      conditionStep(
+        r,
+        fn,
+        fnLabels.ifHead.line,
+        'courant == debut',
+        isHead,
+        isHead ? C.reasonHeadInsert : C.reasonNotHeadInsert,
+        isHead ? 'cas-particulier' : undefined,
+      )
+
+      if (isHead) {
+        r.setGlobal('debut', nouveau)
+        r.step(fn, fnLabels.setDebut.line, fr.captions.assignGlobalDebut(r.describe(nouveau)), {
+          badge: 'debut-modifie',
+          evals: [r.makeEval('nouveau', nouveau)],
+        })
+      }
+
+      r.insertRowNode(id, node.slot)
+      r.step(fn, fnLabels.returnFound.line, C.insertedBefore)
+      return r.finish(fn, fnLabels.end.line)
+    }
+
+    const next = node.suivant
+    r.setLocal('courant', next)
+    r.incrementTraversed()
+    r.step(fn, fnLabels.avancer.line, fr.captions.advanceNext('courant', r.describe(next)), {
+      evals: [r.makeEval('courant->suivant', next)],
+    })
+
+    const stop = sameNode(next, debut)
+    conditionStep(
+      r,
+      fn,
+      fnLabels.whileCond.line,
+      'courant != debut',
+      !stop,
+      stop ? C.notFoundInsert : C.circularContinue,
+    )
+    if (stop) break
+  }
+
+  return r.finish(fn, fnLabels.end.line)
+}
+
 export function runSupprimerEnTete(state: LdcSnapshot, _params: ParamValues): Step<LdcSnapshot>[] {
   const fn = 'supprimerEnTete'
   const fnLabels = L.supprimerEnTete
@@ -508,37 +770,18 @@ export function runSupprimerValeur(state: LdcSnapshot, params: ParamValues): Ste
       )
 
       if (single) {
-        r.freeNode(node.id)
-        r.step(fn, fnLabels.freeSingle.line, C.removeSingleNode)
         r.setGlobal('debut', { kind: 'null' })
         r.step(fn, fnLabels.setDebutNull.line, fr.captions.assignGlobalDebut(fr.common.null), {
           badge: 'debut-modifie',
         })
+        r.freeNode(node.id)
+        r.step(fn, fnLabels.freeSingle.line, C.removeSingleNode)
         r.step(fn, fnLabels.returnSingle.line, fr.captions.returnVoid)
         return r.finish(fn, fnLabels.end.line)
       }
 
       const previous = node.precedent
       const next = node.suivant
-      if (previous.kind === 'node') {
-        r.setPointer(previous.id, 'suivant', next)
-        r.step(
-          fn,
-          fnLabels.unlinkPrev.line,
-          fr.captions.removeMiddle(node.id),
-          { evals: [r.makeEval('courant->precedent->suivant', next)] },
-        )
-      }
-      if (next.kind === 'node') {
-        r.setPointer(next.id, 'precedent', previous)
-        r.step(
-          fn,
-          fnLabels.unlinkNext.line,
-          fr.captions.assignField(next.id, 'precedent', r.describe(previous)),
-          { evals: [r.makeEval('courant->suivant->precedent', previous)] },
-        )
-      }
-
       const isHead = sameNode(debut, courant)
       conditionStep(
         r,
@@ -556,6 +799,25 @@ export function runSupprimerValeur(state: LdcSnapshot, params: ParamValues): Ste
           badge: 'debut-modifie',
           evals: [r.makeEval('courant->suivant', next)],
         })
+      }
+
+      if (previous.kind === 'node') {
+        r.setPointer(previous.id, 'suivant', next)
+        r.step(
+          fn,
+          fnLabels.unlinkPrev.line,
+          fr.captions.removeMiddle(node.id),
+          { evals: [r.makeEval('courant->precedent->suivant', next)] },
+        )
+      }
+      if (next.kind === 'node') {
+        r.setPointer(next.id, 'precedent', previous)
+        r.step(
+          fn,
+          fnLabels.unlinkNext.line,
+          fr.captions.assignField(next.id, 'precedent', r.describe(previous)),
+          { evals: [r.makeEval('courant->suivant->precedent', previous)] },
+        )
       }
 
       r.freeNode(node.id)
@@ -721,5 +983,88 @@ export function runDetruireListe(state: LdcSnapshot, _params: ParamValues): Step
   }
 
   r.step(fn, fnLabels.end.line, fr.captions.functionEnd(fn))
+  return r.finish(fn, fnLabels.end.line)
+}
+
+export function runInverserListe(state: LdcSnapshot, _params: ParamValues): Step<LdcSnapshot>[] {
+  const fn = 'inverserListe'
+  const fnLabels = L.inverserListe
+  const r = new Recorder(state)
+  r.pushFrame(fn)
+  r.step(fn, fnLabels.entry.line, fr.captions.entry(fn))
+
+  const debut = r.global('debut')
+  conditionStep(
+    r,
+    fn,
+    fnLabels.ifEmpty.line,
+    'debut == NULL',
+    debut.kind === 'null',
+    debut.kind === 'null' ? fr.captions.reasonListEmpty : fr.captions.reasonListNotEmpty,
+  )
+
+  if (debut.kind === 'null') {
+    r.step(fn, fnLabels.returnEmpty.line, fr.captions.returnVoid)
+    return r.finish(fn, fnLabels.end.line)
+  }
+
+  const last = r.node(debut.id).precedent
+  r.declareLocal('dernier', last)
+  r.step(fn, fnLabels.declDernier.line, C.lastFromPrecedent, {
+    evals: [r.makeEval('debut->precedent', last)],
+  })
+
+  r.declareLocal('courant', debut)
+  r.step(fn, fnLabels.declCourant.line, fr.captions.declarePointer('courant', r.describe(debut)))
+
+  for (;;) {
+    const courant = pointerOf(r.local('courant'))
+    if (courant.kind !== 'node') break
+    const node = r.node(courant.id)
+    const oldNext = node.suivant
+    const oldPrevious = node.precedent
+
+    r.declareLocal('temp', oldNext)
+    r.step(fn, fnLabels.declTemp.line, fr.captions.declarePointer('temp', r.describe(oldNext)), {
+      evals: [r.makeEval('courant->suivant', oldNext)],
+    })
+
+    r.setPointer(courant.id, 'suivant', oldPrevious)
+    r.step(fn, fnLabels.swapSuivant.line, fr.captions.swapFields(courant.id), {
+      evals: [r.makeEval('courant->precedent', oldPrevious)],
+    })
+
+    r.setPointer(courant.id, 'precedent', oldNext)
+    r.step(fn, fnLabels.swapPrecedent.line, fr.captions.swapFields(courant.id), {
+      evals: [r.makeEval('temp', oldNext)],
+    })
+
+    r.setLocal('courant', oldNext)
+    r.incrementTraversed()
+    r.step(fn, fnLabels.avancer.line, fr.captions.advanceNext('courant', r.describe(oldNext)), {
+      evals: [r.makeEval('temp', oldNext)],
+    })
+
+    const stop = sameNode(oldNext, debut)
+    conditionStep(
+      r,
+      fn,
+      fnLabels.whileCond.line,
+      'courant != debut',
+      !stop,
+      stop ? C.reverseStop : C.circularContinue,
+    )
+    if (stop) break
+  }
+
+  const lastPointer = pointerOf(r.local('dernier'))
+  r.setGlobal('debut', lastPointer)
+  r.step(fn, fnLabels.setDebut.line, fr.captions.assignGlobalDebut(r.describe(lastPointer)), {
+    badge: 'debut-modifie',
+    evals: [r.makeEval('dernier', lastPointer)],
+  })
+
+  r.reverseRowLayout()
+  r.step(fn, fnLabels.end.line, fr.captions.relayout)
   return r.finish(fn, fnLabels.end.line)
 }

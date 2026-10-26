@@ -345,7 +345,7 @@ const chapterHashAfterClick = await menuNav.evaluate(() => window.location.hash)
 if (chapterHashAfterClick !== '#/chapitre-4') {
   throw new Error(`menu card did not open the demo: ${chapterHashAfterClick}`)
 }
-await menuNav.getByRole('button', { name: 'Revenir au menu principal' }).click()
+await menuNav.getByRole('button', { name: 'Accueil', exact: true }).click()
 await menuNav.waitForSelector('.menu-app', { timeout: 10000 })
 const menuHashAfterBack = await menuNav.evaluate(() => window.location.hash)
 if (menuHashAfterBack !== '#/') throw new Error(`← Menu did not return: ${menuHashAfterBack}`)
@@ -382,6 +382,10 @@ if (!lddcDock.includes('debut')) {
   throw new Error('chapter 5 dock does not expose debut')
 }
 await shot(lddcPage, '21-lddc-cours-1920', 800)
+await loadScenario(lddcPage, 'Deux nœuds')
+await shot(lddcPage, '22-lddc-deux-1920', 800)
+await loadScenario(lddcPage, 'Quatre nœuds')
+await shot(lddcPage, '23-lddc-quatre-1920', 800)
 await lddcPage.close()
 
 await browser.close()
