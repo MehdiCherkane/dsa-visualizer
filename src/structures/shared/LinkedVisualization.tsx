@@ -10,6 +10,7 @@ import type {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { BaseSnapshot, Change, PointerValue, VisualizationProps } from '../../core/types'
 import { fr } from '../../i18n/fr'
+import { ZelligeFrieze } from '../../ui/ZelligeFrieze'
 import {
   FIELD_W,
   FIT_PADDING,
@@ -937,6 +938,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
       className={`viz-stage${panning ? ' panning' : ''}${empty ? ' is-empty' : ''}`}
       ref={stageRef}
     >
+      <ZelligeFrieze />
       <svg
         className="viz-svg"
         viewBox={`0 0 ${stageW} ${stageH}`}
