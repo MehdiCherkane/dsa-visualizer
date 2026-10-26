@@ -1,0 +1,48 @@
+/* Shared footer: credits on the left, contact in the middle, offline note on the right. */
+
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 20px;
+  border-top: 1px solid var(--line);
+  padding: 6px 8px 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.site-footer-credit {
+  color: var(--ink-2);
+}
+
+.site-footer-source {
+  color: var(--ink-2);
+}
+
+.site-footer-contact {
+  color: var(--ink-2);
+  text-align: center;
+}
+
+.site-footer-contact a {
+  color: var(--gold);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.site-footer-contact a:hover {
+  text-decoration: underline;
+}
+
+.site-footer-offline {
+  color: var(--ink-2);
+  text-align: right;
+}
+
+@media (max-width: 760px) {
+  .site-footer {
+    flex-wrap: wrap;
+  }
+}

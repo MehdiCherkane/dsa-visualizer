@@ -21,6 +21,12 @@ export const fr = {
     subtitle: 'EST Béni Mellal · DUT GI S3 · d’après le cours du Pr. M. OUTANOUTE',
     ready: 'Prêt pour la démonstration',
   },
+  footer: {
+    contact: 'Contact',
+    email: 'stdprojectestbm@gmail.com',
+    emailAria: (email: string) => `Envoyer un e-mail à ${email}`,
+    offline: 'Tout fonctionne hors ligne : un seul fichier, aucune connexion.',
+  },
   menu: {
     title: 'Structures de données',
     pageTitle: 'Structures de données en C — simulation et visualisation',
@@ -36,7 +42,6 @@ export const fr = {
     soon: 'Bientôt disponible',
     soonAria: (title: string) => `« ${title} » : bientôt disponible`,
     soonItems: [] as Array<{ chapter: number; title: string; description: string }>,
-    footer: 'Tout fonctionne hors ligne : un seul fichier, aucune connexion.',
     homeLabel: 'Accueil',
     homeAria: 'Revenir au menu principal',
   },

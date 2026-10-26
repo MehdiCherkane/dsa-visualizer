@@ -33,6 +33,7 @@ import {
 } from './layout'
 import type { LayoutPatch, LayoutState } from './layout'
 import { ScenarioStrip } from './ScenarioStrip'
+import { SiteFooter } from './SiteFooter'
 import { usePlayerState } from './usePlayer'
 import type { TreeSnapshot } from '../structures/trees/memory'
 
@@ -597,6 +598,7 @@ export function DemoApp<S extends BaseSnapshot>({
 
   const appClassName = [
     'app',
+    'has-footer',
     presentation ? 'presentation' : '',
     simulationFullscreen ? 'simulation-fullscreen' : '',
   ]
@@ -756,6 +758,8 @@ export function DemoApp<S extends BaseSnapshot>({
         onReset={resetAll}
         onLayoutChange={updateLayout}
       />
+
+      <SiteFooter />
     </div>
   )
 }

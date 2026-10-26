@@ -2688,6 +2688,10 @@ body.is-resizing-horizontal * {
   grid-template-rows: var(--header-h) minmax(0, 1fr) auto;
 }
 
+.app.has-footer {
+  grid-template-rows: var(--header-h) minmax(0, 1fr) auto auto;
+}
+
 .app.presentation {
   --ui-scale: 1.25;
   --header-h: 78px;
@@ -2705,6 +2709,7 @@ body.is-resizing-horizontal * {
 .app.simulation-fullscreen .app-header,
 .app.simulation-fullscreen .right-column,
 .app.simulation-fullscreen .bottom-dock,
+.app.simulation-fullscreen .site-footer,
 .app.simulation-fullscreen .workspace-sash {
   display: none;
 }

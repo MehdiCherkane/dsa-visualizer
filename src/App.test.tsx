@@ -32,6 +32,10 @@ describe('coquille de l’application', () => {
     expect(markup).toContain('la liste est vide')
     expect(markup).toContain(fr.viz.emptyInsert)
     expect(markup).toContain(defaultPlugin.id === 'ldc' ? 'Chapitre 4' : 'Chapitre 4')
+    expect(markup).toContain('class="app has-footer"')
+    expect(markup).toContain('class="site-footer"')
+    expect(markup).toContain(fr.footer.email)
+    expect(markup).toContain(`href="mailto:${fr.footer.email}"`)
   })
 
   it('affiche les paramètres de l’opération par défaut', () => {
@@ -66,6 +70,9 @@ describe('coquille de l’application', () => {
       expect(markup).toContain('class="site-backdrop"')
       expect(markup).toContain('site-backdrop-zellige')
       expect(markup).toContain(fr.menu.title)
+      expect(markup).toContain('class="site-footer"')
+      expect(markup).toContain(fr.footer.email)
+      expect(markup).toContain(`href="mailto:${fr.footer.email}"`)
     } finally {
       window.location.hash = previousHash
     }
