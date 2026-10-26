@@ -8,7 +8,7 @@ DS Visualizer is a static single-page app: no backend, no Functions, no database
 - **Output directory:** `dist`
 - **Artifact:** `dist/index.html` (~1.0 MB, ~300 kB gzip), two small SVGs, and one optional PDF per chapter under `dist/cours/`; the largest file is far below the 25 MiB limit.
 
-`dist/` is gitignored on purpose: it is rebuilt from source on every deploy. The current branch builds with **319 tests passing**.
+`dist/` is gitignored on purpose: it is rebuilt from source on every deploy. The current branch builds with **320 tests passing**.
 
 **Before you start:** push the commit you want to deploy to `origin/main`. Cloudflare builds from GitHub, never from your working tree.
 

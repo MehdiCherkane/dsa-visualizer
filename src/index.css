@@ -706,6 +706,52 @@ body.is-resizing-horizontal * {
     var(--viz-bg);
 }
 
+/* Operation status floats over the top centre of the animation, on every chapter. */
+.operation-status {
+  position: absolute;
+  z-index: 6;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--success) 45%, transparent);
+  border-radius: 999px;
+  background: var(--success-soft);
+  padding: 4px 12px;
+  color: var(--success);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.operation-status::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  content: '';
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+.operation-status.is-paused {
+  border-color: color-mix(in srgb, var(--gold) 55%, transparent);
+  background: var(--gold-soft);
+  color: #8a6d00;
+}
+
+.operation-status.is-paused::before {
+  animation: none;
+}
+
+[data-theme='dark'] .operation-status.is-paused {
+  color: var(--gold);
+}
+
 .viz-stage {
   position: relative;
   display: flex;
@@ -1466,25 +1512,6 @@ body.is-resizing-horizontal * {
   font-size: 9.5px;
   font-weight: 750;
   white-space: nowrap;
-}
-
-.in-progress {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--gold);
-  font-size: 9.5px;
-  font-weight: 750;
-  white-space: nowrap;
-}
-
-.in-progress::before {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--gold);
-  content: '';
-  animation: blink 1.2s ease-in-out infinite;
 }
 
 .limit-message {
@@ -2850,6 +2877,10 @@ body.is-resizing-horizontal * {
   grid-template-rows: var(--header-h) minmax(0, 1fr) auto;
 }
 
+.app.has-footer {
+  grid-template-rows: var(--header-h) minmax(0, 1fr) auto auto;
+}
+
 .app.presentation {
   --ui-scale: 1.25;
   --header-h: 78px;
@@ -2867,6 +2898,7 @@ body.is-resizing-horizontal * {
 .app.simulation-fullscreen .app-header,
 .app.simulation-fullscreen .right-column,
 .app.simulation-fullscreen .bottom-dock,
+.app.simulation-fullscreen .site-footer,
 .app.simulation-fullscreen .workspace-sash {
   display: none;
 }
@@ -4073,7 +4105,6 @@ body.is-resizing-horizontal * {
 }
 
 .brand-course,
-.brand-school,
 .brand-institution-name,
 .brand-sep {
   overflow: visible;

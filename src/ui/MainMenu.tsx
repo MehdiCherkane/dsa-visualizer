@@ -3,6 +3,7 @@ import { config } from '../config'
 import { fr } from '../i18n/fr'
 import { BrandMark } from './BrandMark'
 import { CreditsMenu } from './CreditsMenu'
+import { SiteFooter } from './SiteFooter'
 import { ThemeToggle } from './ThemeToggle'
 import { chapterHash, navigate } from './useHashRoute'
 import './MainMenu.css'
@@ -45,7 +46,7 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
           </span>
           <div className="brand-copy">
             <div className="brand-meta menu-brand-meta">
-              {config.course} · {config.school} · {config.institutionName}
+              {config.course} · {config.institutionName}
             </div>
           </div>
         </div>
@@ -125,13 +126,7 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
         </section>
       </main>
 
-      <footer className="menu-footer">
-        <span>
-          {config.institution}
-          <span className="menu-footer-source"> · {config.source}</span>
-        </span>
-        <span className="menu-footer-offline">{fr.menu.footer}</span>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }
