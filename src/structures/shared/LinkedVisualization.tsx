@@ -31,13 +31,18 @@ import {
   clamp,
   contentBounds,
   emptyBounds,
+  emptyRingBand,
   fitCamera,
   globalAnchor,
+  isRingNodeFlipped,
   layoutGlobals,
   layoutNodes,
   pointerAnchor,
+  ringBand,
+  ringGeometry,
   routeField,
   routeGlobal,
+  routeRingField,
   unionBounds,
   worldPoint,
   zoomAtCursor,
@@ -49,6 +54,7 @@ import type {
   NullStub,
   Point,
   Rect,
+  RingGeometry,
   Size,
   VizField,
   VizNode,
@@ -161,6 +167,7 @@ function layoutPins(
   nodes: VizNode[],
   layout: Map<number, Point>,
   orientation: 'horizontal' | 'vertical',
+  ring: RingGeometry | null = null,
 ): PinPlacement[] {
   const placements: PinPlacement[] = []
   const groups = new Map<number, VizPin[]>()
@@ -180,6 +187,84 @@ function layoutPins(
     const node = nodes.find((candidate) => candidate.id === nodeId)
     if (!point || !node) continue
     const widths = group.map((pin) => pinWidth(pin.name))
+
+    if (ring && orientation === 'horizontal') {
+      const center = { x: point.x + NODE_W / 2, y: point.y + NODE_H / 2 }
+      const dx = center.x - ring.cx
+      const dy = center.y - ring.cy
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        const right = dx >= 0
+        const totalHeight = group.length * 24 + (group.length - 1) * 6
+        let y = center.y - totalHeight / 2
+        group.forEach((pin, index) => {
+          const width = widths[index] ?? 46
+          const tag: Rect = {
+            x: right ? point.x + NODE_W + 24 : point.x - width - 24,
+            y,
+            width,
+            height: 24,
+          }
+          placements.push({
+            pin,
+            tag,
+            from: { x: right ? tag.x : tag.x + width, y: tag.y + tag.height / 2 },
+            to: { x: right ? point.x + NODE_W : point.x, y: center.y },
+            dangling: node.freed,
+          })
+          y += 30
+        })
+        continue
+      }
+
+      const above = dy < 0
+      const totalWidth = widths.reduce((sum, width) => sum + width + 8, -8)
+      if (above) {
+        // The top node sits directly under the global cells: keep its pins
+        // beside the node so they never cover `debut` or the node address.
+        const right = dx >= 0
+        let x = right ? point.x + NODE_W + 18 : point.x - totalWidth - 18
+        group.forEach((pin, index) => {
+          const width = widths[index] ?? 46
+          const tag: Rect = {
+            x,
+            y: point.y - 34,
+            width,
+            height: 24,
+          }
+          placements.push({
+            pin,
+            tag,
+            from: right
+              ? { x: tag.x, y: tag.y + tag.height / 2 }
+              : { x: tag.x + width, y: tag.y + tag.height / 2 },
+            to: { x: right ? point.x + NODE_W - 10 : point.x + 10, y: point.y },
+            dangling: node.freed,
+          })
+          x += width + 8
+        })
+        continue
+      }
+      let x = center.x - totalWidth / 2
+      group.forEach((pin, index) => {
+        const width = widths[index] ?? 46
+        const tag: Rect = {
+          x,
+          y: point.y + NODE_H + 14,
+          width,
+          height: 24,
+        }
+        placements.push({
+          pin,
+          tag,
+          from: { x: tag.x + width / 2, y: tag.y },
+          to: { x: tag.x + width / 2, y: point.y + NODE_H },
+          dangling: node.freed,
+        })
+        x += width + 8
+      })
+      continue
+    }
+
     const total = widths.reduce((sum, width) => sum + width + 8, -8)
     let x = point.x + NODE_W / 2 - total / 2
     const baseY = orientation === 'horizontal' ? point.y - 38 - (group.length - 1) * 28 : point.y + 10
@@ -211,6 +296,49 @@ function layoutPins(
     .slice()
     .sort((a, b) => a.slot - b.slot)
   const lastPoint = row.length > 0 ? layout.get(row[row.length - 1]!.id) : undefined
+  if (ring && orientation === 'horizontal') {
+    if (ring.count >= 2) {
+      const totalHeight = nullPins.length * 24 + Math.max(0, nullPins.length - 1) * 6
+      let y = ring.cy - totalHeight / 2
+      nullPins.forEach((pin) => {
+        const width = pinWidth(pin.name)
+        const tag: Rect = {
+          x: ring.cx - width / 2,
+          y,
+          width,
+          height: 24,
+        }
+        placements.push({
+          pin,
+          tag,
+          from: { x: tag.x + width / 2, y: tag.y + tag.height / 2 },
+          to: null,
+          dangling: false,
+        })
+        y += 30
+      })
+    } else {
+      const point = row.length > 0 ? layout.get(row[0]!.id) : undefined
+      nullPins.forEach((pin, index) => {
+        const width = pinWidth(pin.name)
+        const tag: Rect = {
+          x: (point ? point.x : PAD_L) - width - 70,
+          y: (point ? point.y + 10 : ROW_Y) + index * 30,
+          width,
+          height: 24,
+        }
+        placements.push({
+          pin,
+          tag,
+          from: { x: tag.x + width, y: tag.y + tag.height / 2 },
+          to: null,
+          dangling: false,
+        })
+      })
+    }
+    return placements
+  }
+
   nullPins.forEach((pin, index) => {
     const width = pinWidth(pin.name)
     const point = lastPoint
@@ -266,7 +394,10 @@ function NullGround({
       <text
         x={stub.label.x}
         y={stub.label.y}
-        textAnchor={stub.orientation === 'vertical' ? 'middle' : 'start'}
+        textAnchor={
+          stub.labelAnchor ??
+          (stub.orientation === 'vertical' ? 'middle' : 'start')
+        }
         className="null-label"
         fontSize="14"
         fill={color}
@@ -342,31 +473,31 @@ function NodeShape({
   node,
   fieldLabel,
   field,
+  flipped = false,
 }: {
   node: VizNode
   fieldLabel: string
   field: VizField
+  flipped?: boolean
 }): JSX.Element {
-  const pointerX = VALUE_W + FIELD_W / 2
+  const fieldX = flipped ? 0 : VALUE_W
+  const valueX = flipped ? FIELD_W : 0
+  const pointerX = flipped ? FIELD_W / 2 : VALUE_W + FIELD_W / 2
+  const separatorX = flipped ? FIELD_W : VALUE_W
   const fieldFill = field === 'suivant' ? 'var(--cell-next)' : 'var(--cell-prev)'
   const fieldClass = field === 'suivant' ? 'cell-label-next' : 'cell-label-prev'
   return (
     <g>
       <g clipPath="url(#linked-node-clip)">
         <rect width={NODE_W} height={NODE_H} fill="var(--node-bg)" />
-        <rect width={VALUE_W} height={NODE_H} fill="var(--cell-value)" />
-        <rect
-          x={VALUE_W}
-          width={FIELD_W}
-          height={NODE_H}
-          fill={fieldFill}
-        />
+        <rect x={valueX} width={VALUE_W} height={NODE_H} fill="var(--cell-value)" />
+        <rect x={fieldX} width={FIELD_W} height={NODE_H} fill={fieldFill} />
         {node.uninit ? (
-          <rect width={VALUE_W} height={NODE_H} fill="url(#hatch-uninit)" />
+          <rect x={valueX} width={VALUE_W} height={NODE_H} fill="url(#hatch-uninit)" />
         ) : null}
         {node.pointerUninit ? (
           <rect
-            x={VALUE_W}
+            x={fieldX}
             width={FIELD_W}
             height={NODE_H}
             fill="url(#hatch-uninit)"
@@ -383,9 +514,9 @@ function NodeShape({
         strokeWidth="1.8"
       />
       <line
-        x1={VALUE_W}
+        x1={separatorX}
         y1="0"
-        x2={VALUE_W}
+        x2={separatorX}
         y2={NODE_H}
         stroke="var(--node-border)"
         strokeWidth="1"
@@ -412,7 +543,7 @@ function NodeShape({
       ) : null}
       {node.uninit ? (
         <text
-          x={VALUE_W / 2}
+          x={valueX + VALUE_W / 2}
           y={NODE_H / 2 + 12}
           textAnchor="middle"
           className="node-uninit"
@@ -423,7 +554,7 @@ function NodeShape({
       ) : node.subvalue ? (
         <g>
           <text
-            x={VALUE_W / 2}
+            x={valueX + VALUE_W / 2}
             y={NODE_H / 2 - 2}
             textAnchor="middle"
             className="node-value-small"
@@ -432,7 +563,7 @@ function NodeShape({
             {node.value}
           </text>
           <text
-            x={VALUE_W / 2}
+            x={valueX + VALUE_W / 2}
             y={NODE_H / 2 + 18}
             textAnchor="middle"
             className="node-subvalue"
@@ -443,7 +574,7 @@ function NodeShape({
         </g>
       ) : (
         <text
-          x={VALUE_W / 2}
+          x={valueX + VALUE_W / 2}
           y={NODE_H / 2 + 12}
           textAnchor="middle"
           className="node-value"
@@ -527,30 +658,61 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
   const nodes = useMemo(() => model.nodes(snapshot), [model, snapshot])
   const globals = useMemo(() => model.globals(snapshot), [model, snapshot])
   const pins = useMemo(() => model.pins(snapshot), [model, snapshot])
-  const layout = useMemo(() => layoutNodes(nodes, model.orientation), [nodes, model.orientation])
+  const ring = useMemo(
+    () =>
+      model.circular && model.orientation === 'horizontal'
+        ? ringGeometry(nodes)
+        : null,
+    [model.circular, model.orientation, nodes],
+  )
+  const layout = useMemo(
+    () => layoutNodes(nodes, model.orientation, ring ? 'ring' : 'row'),
+    [nodes, model.orientation, ring],
+  )
+  const ringFlips = useMemo(() => {
+    const flips = new Map<number, boolean>()
+    if (!ring) return flips
+    for (const node of nodes) {
+      if (node.lane !== 'row') continue
+      const point = layout.get(node.id)
+      if (!point) continue
+      const targetPoint =
+        node.pointer.kind === 'node'
+          ? layout.get(node.pointer.id) ?? null
+          : null
+      flips.set(node.id, isRingNodeFlipped(point, ring, targetPoint))
+    }
+    return flips
+  }, [nodes, layout, ring])
   const globalCells = useMemo(
-    () => layoutGlobals(globals, nodes, layout, model.orientation),
-    [globals, nodes, layout, model.orientation],
+    () => layoutGlobals(globals, nodes, layout, model.orientation, ring),
+    [globals, nodes, layout, model.orientation, ring],
   )
   const pinPlacements = useMemo(
-    () => layoutPins(pins, nodes, layout, model.orientation),
-    [pins, nodes, layout, model.orientation],
+    () => layoutPins(pins, nodes, layout, model.orientation, ring),
+    [pins, nodes, layout, model.orientation, ring],
   )
   const content = useMemo(
-    () => contentBounds(nodes, globals, pins, model.orientation),
-    [nodes, globals, pins, model.orientation],
+    () => contentBounds(nodes, globals, pins, model.orientation, ring),
+    [nodes, globals, pins, model.orientation, ring],
   )
   const operationBounds = useMemo(() => {
     if (!operationSteps || operationSteps.length === 0) return null
     return unionBounds(
-      operationSteps.map((operationStep) =>
-        contentBounds(
-          model.nodes(operationStep.snapshot),
+      operationSteps.map((operationStep) => {
+        const stepNodes = model.nodes(operationStep.snapshot)
+        const stepRing =
+          model.circular && model.orientation === 'horizontal'
+            ? ringGeometry(stepNodes)
+            : null
+        return contentBounds(
+          stepNodes,
           model.globals(operationStep.snapshot),
           model.pins(operationStep.snapshot),
           model.orientation,
-        ),
-      ),
+          stepRing,
+        )
+      }),
     )
   }, [operationSteps, model])
   const fitBounds = operationBounds ?? content
@@ -608,7 +770,11 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
       const from = cameraRef.current
       const start = performance.now()
       const tick = (now: number): void => {
-        const progress = Math.min(1, (now - start) / duration)
+        // The first requestAnimationFrame timestamp can be a few milliseconds
+        // older than the performance.now() taken when the animation starts.
+        // Clamp both ends so the cubic easing never overshoots into a huge or
+        // negative zoom.
+        const progress = clamp((now - start) / duration, 0, 1)
         const eased = 1 - Math.pow(1 - progress, 3)
         const next = {
           x: from.x + (target.x - from.x) * eased,
@@ -863,6 +1029,17 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
     if (!point) return null
     const target = findNode(pointer)
     const targetPoint = target ? layout.get(target.id) ?? null : null
+    if (ring) {
+      return routeRingField(
+        source,
+        target,
+        point,
+        targetPoint,
+        model.field,
+        ring,
+        ringFlips.get(source.id) ?? false,
+      )
+    }
     return routeField(
       point,
       target,
@@ -871,6 +1048,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
       model.orientation,
       Boolean(target && target.lane === source.lane),
       target ? target.slot - source.slot : 0,
+      Boolean(model.circular),
     )
   }
 
@@ -886,6 +1064,9 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
           width: NODE_W + 220,
           height: Math.max(190, nodes.filter((node) => node.lane === 'row').length * STACK_SLIDE + 60),
         }
+  const ringBandGeometry = ring ? ringBand(ring) : null
+  const drawnRingBand =
+    ringBandGeometry ?? (model.circular && empty ? emptyRingBand() : null)
   const heapNodes = nodes.filter((node) => node.lane === 'heap')
   const heapBand: Rect | null =
     heapNodes.length > 0 || model.showHeap
@@ -1026,17 +1207,48 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
               </text>
             </>
           ) : null}
-          <rect
-            className="lane-band lane-band-row"
-            x={rowBand.x}
-            y={rowBand.y}
-            width={rowBand.width}
-            height={rowBand.height}
-            rx="14"
-          />
-          <text x={rowBand.x + 14} y={rowBand.y + 22} className="lane-band-label" fontSize="13">
-            {model.rowLabel}
-          </text>
+          {drawnRingBand ? (
+            <>
+              <ellipse
+                className="lane-band lane-band-circle"
+                cx={drawnRingBand.cx}
+                cy={drawnRingBand.cy}
+                rx={drawnRingBand.rx}
+                ry={drawnRingBand.ry}
+              />
+              {ring && ring.rx > 1 && ring.ry > 1 ? (
+                <ellipse
+                  className="ring-guide"
+                  cx={ring.cx}
+                  cy={ring.cy}
+                  rx={ring.rx}
+                  ry={ring.ry}
+                />
+              ) : null}
+              <text
+                x={drawnRingBand.cx - drawnRingBand.rx * 0.72}
+                y={drawnRingBand.cy - drawnRingBand.ry - 8}
+                className="lane-band-label"
+                fontSize="13"
+              >
+                {model.rowLabel}
+              </text>
+            </>
+          ) : (
+            <>
+              <rect
+                className="lane-band lane-band-row"
+                x={rowBand.x}
+                y={rowBand.y}
+                width={rowBand.width}
+                height={rowBand.height}
+                rx="14"
+              />
+              <text x={rowBand.x + 14} y={rowBand.y + 22} className="lane-band-label" fontSize="13">
+                {model.rowLabel}
+              </text>
+            </>
+          )}
 
           {[...evalNodes].map((id) => {
             const point = layout.get(id)
@@ -1080,7 +1292,12 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
                   <title>
                     {node.freed ? fr.viz.freed : `${fr.common.node} ${node.id} · ${node.address}`}
                   </title>
-                  <NodeShape node={node} fieldLabel={model.fieldLabel} field={model.field} />
+                  <NodeShape
+                    node={node}
+                    fieldLabel={model.fieldLabel}
+                    field={model.field}
+                    flipped={ringFlips.get(node.id) ?? false}
+                  />
                 </motion.g>
               )
             })}
@@ -1123,7 +1340,12 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
             .map((node) => {
               const point = layout.get(node.id)
               if (!point) return null
-              const anchor = pointerAnchor(point, model.field, model.orientation)
+              const anchor = pointerAnchor(
+                point,
+                model.field,
+                model.orientation,
+                ringFlips.get(node.id) ?? false,
+              )
               return (
                 <circle
                   key={`dot-${node.id}`}

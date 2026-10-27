@@ -8,7 +8,7 @@ A single-page, fully offline French teaching platform for data structures in C (
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (320 tests)
+npm test      # vitest suite (341 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
@@ -41,6 +41,7 @@ The circular profile adds two side cards: **Calcul des indices** evaluates both 
 ### Chapitre 2 — Listes simplement chaînées (`lsc`)
 
 - **Entiers** (`int`): the course list `9 → 2 → 5`; display, insert head/tail, delete head/by-value, search and destroy.
+- **Circulaire** (`circulaire`): the same integer operations on a closed ring (`5.suivant == 9`), with `debut` kept outside the ring. The shared ring router mirrors the `suivant` cell per node so the dot faces its successor, uses straight dot-to-border links from four nodes upwards, outward rounded arcs for the two- and three-node drawings, and a visible self-loop for a single node. Every arrowhead lands on the target border without crossing a foreign card for 0–8 nodes.
 - **Étudiants** (`etudiant`): a student registry (`E1 = {101, AAA, aaa}`, …) with display, `inscrireEtudiant`, `radierEtudiant` and `detruireListe`.
 
 ### Chapitre 3 — Piles et files dynamiques (`pile` / `file`)
@@ -110,7 +111,8 @@ The main menu is the entry point (`#/`); each card opens `#/chapitre-<chapter>`.
 Key guarantees enforced by tests:
 
 - the LDC and circular LDDC operations equal a plain-array oracle on empty / 1 / 2 / 3 / 8-element lists (head, middle, tail, absent, duplicates);
-- the chapter 2 and 3 operations finish on the expected arrays and satisfy their structural invariants;
+- the chapter 2 and 3 operations finish on the expected arrays and satisfy their structural invariants; the circular chapter 2 profile matches an array oracle on empty / 1 / 2 / 3 / 8-node lists and keeps `checkCircularInvariants` true after 20 random operations;
+- the shared ring router keeps every `suivant` arrowhead on the target border and avoids foreign cards for 0–8 nodes, with fixed two/three/four-node drawings and shortest-side cell flips above four;
 - the chapter 1 stack and three queue profiles reproduce the course traces and reject overflow / underflow; the circular ring keeps a fixed centred fit, non-colliding pointers, badges and wrap arc for capacities 3–8, and its empty callout stays outside the ring at 1366×768 and 1920×1080;
 - `checkInvariants` holds after every random 20-operation LDC sequence (no cycles, mirror forward/backward walk, no reachable freed node);
 - `checkCircularInvariants` holds on every final circular-list state (mirror `suivant`/`precedent`, exactly one turn, no NULL inside a non-empty ring), while `checkRingInvariants` verifies on every intermediate step that the links reachable from `debut` still form one closed walk;
@@ -139,7 +141,7 @@ Key guarantees enforced by tests:
 - The code panel auto-fits presentation mode from the measured monospace width and available height, clamped to 14–26px, with horizontal scroll as fallback. The left viz card contains the caption band, playback row, operation row, and scenario strip.
 - The journal lives in the bottom dock; `D` toggles the dock, `P` hides only the journal while keeping Variables and Console visible. Panel focus buttons maximize one dock pane; presentation shows only Variables and Console.
 - Below 1020px the workspace stacks, all separators are hidden, and the dock panels wrap at auto height.
-- Verified visually with Playwright (`scripts/shots.mjs`) at 1920×1080 and 1280×720: empty, delete-middle, heap insertion, shared-node pins, reverse swap, 8 nodes, manual zoom/pan, presentation code fit, dock, dark theme, scenario/help popovers, plus chapter 2 course, chapter 3 queue and chapter 5 circular-ring smoke screens. Chapter 1's ring was additionally checked at 1366×768, 1440×900 and 1920×1080, in light and dark themes, for the empty, one-element, full and wrapped states.
+- Verified visually with Playwright (`scripts/shots.mjs`) at 1920×1080 and 1280×720: empty, delete-middle, heap insertion, shared-node pins, reverse swap, 8 nodes, manual zoom/pan, presentation code fit, dock, dark theme, scenario/help popovers, plus chapter 2 linear and circular rings (1, 2, 3, 4 and 8 nodes), chapter 3 queue and chapter 5 circular-ring smoke screens. Chapter 1's ring was additionally checked at 1366×768, 1440×900 and 1920×1080, in light and dark themes, for the empty, one-element, full and wrapped states.
 
 ## Chapter 1 assumptions
 

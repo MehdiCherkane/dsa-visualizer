@@ -1,7 +1,7 @@
 import type { StructurePlugin } from '../../core/types'
 import { fr } from '../../i18n/fr'
+import { circularCode, circularTypes } from './code/circular'
 import { intCode, intTypes } from './code/int'
-import { studentCode, studentTypes } from './code/student'
 import {
   MAX_NODES,
   countListNodes,
@@ -11,8 +11,8 @@ import {
   requireNode,
 } from './memory'
 import type { LscSnapshot } from './memory'
-import { intOperations, studentOperations } from './operations'
-import { intScenarios, studentScenarios } from './scenarios'
+import { circularOperations, linearOperations } from './operations'
+import { circularScenarios, linearScenarios } from './scenarios'
 import LscVisualization from './Visualization'
 
 export const lscPlugin: StructurePlugin<LscSnapshot> = {
@@ -20,30 +20,31 @@ export const lscPlugin: StructurePlugin<LscSnapshot> = {
   chapter: 2,
   title: fr.chapters.lsc.title,
   description: fr.chapters.lsc.description,
+  profileSwitchLabel: fr.profiles.structureLabel,
   profiles: [
     {
-      id: 'int',
-      label: fr.profiles.int,
+      id: 'lineaire',
+      label: fr.profiles.lineaire,
       maxNodes: MAX_NODES,
-      initialState: () => emptySnapshot('int'),
-      operations: intOperations,
-      scenarios: intScenarios,
+      initialState: () => emptySnapshot('lineaire'),
+      operations: linearOperations,
+      scenarios: linearScenarios,
       code: intCode,
       typesCode: intTypes,
       defaultOperationId: 'supprimerValeur',
       emptyInsertOperationId: 'insererEnTete',
     },
     {
-      id: 'etudiant',
-      label: fr.profiles.etudiant,
+      id: 'circulaire',
+      label: fr.profiles.circulaire,
       maxNodes: MAX_NODES,
-      initialState: () => emptySnapshot('etudiant'),
-      operations: studentOperations,
-      scenarios: studentScenarios,
-      code: studentCode,
-      typesCode: studentTypes,
-      defaultOperationId: 'radierEtudiant',
-      emptyInsertOperationId: 'inscrireEtudiant',
+      initialState: () => emptySnapshot('circulaire'),
+      operations: circularOperations,
+      scenarios: circularScenarios,
+      code: circularCode,
+      typesCode: circularTypes,
+      defaultOperationId: 'supprimerValeur',
+      emptyInsertOperationId: 'insererEnTete',
     },
   ],
   Visualization: LscVisualization,

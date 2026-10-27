@@ -3,35 +3,32 @@ import type { VisualizationProps } from '../../core/types'
 import { fr } from '../../i18n/fr'
 import LinkedVisualization from '../shared/LinkedVisualization'
 import type { LinkedModel, VizNode, VizPin } from '../shared/linkedViz'
-import { payloadText, studentSubtitle } from './memory'
+import { payloadText } from './memory'
 import type { LscSnapshot } from './memory'
 
 function makeModel(profile: LscSnapshot['profile']): LinkedModel<LscSnapshot> {
+  const circular = profile === 'circulaire'
   return {
     orientation: 'horizontal',
     field: 'suivant',
     fieldLabel: fr.viz.nextCell,
     rowLabel: fr.viz.row,
-    emptyText: fr.viz.emptyLsc,
-    emptyInsert:
-      profile === 'etudiant' ? fr.viz.insertEmptyEtudiant : fr.viz.insertEmptyLsc,
+    circular,
+    emptyText: circular ? fr.viz.emptyLscCirculaire : fr.viz.emptyLsc,
+    emptyInsert: circular ? fr.viz.insertEmptyLscCirculaire : fr.viz.insertEmptyLsc,
     ariaLabel: fr.chapters.lsc.title,
     nodes(snapshot) {
-      return snapshot.nodes.map<VizNode>((node) => {
-        const subtitle = studentSubtitle(node)
-        return {
-          id: node.id,
-          address: node.address,
-          slot: node.slot,
-          lane: node.lane,
-          freed: node.freed,
-          value: payloadText(node),
-          ...(subtitle ? { subvalue: subtitle } : {}),
-          uninit: node.payload.kind === 'uninit',
-          pointer: node.suivant,
-          pointerUninit: node.suivant.kind === 'uninit',
-        }
-      })
+      return snapshot.nodes.map<VizNode>((node) => ({
+        id: node.id,
+        address: node.address,
+        slot: node.slot,
+        lane: node.lane,
+        freed: node.freed,
+        value: payloadText(node),
+        uninit: node.payload.kind === 'uninit',
+        pointer: node.suivant,
+        pointerUninit: node.suivant.kind === 'uninit',
+      }))
     },
     globals(snapshot) {
       return [
@@ -52,10 +49,10 @@ function makeModel(profile: LscSnapshot['profile']): LinkedModel<LscSnapshot> {
   }
 }
 
-const intModel = makeModel('int')
-const studentModel = makeModel('etudiant')
+const linearModel = makeModel('lineaire')
+const circularModel = makeModel('circulaire')
 
 export default function LscVisualization(props: VisualizationProps<LscSnapshot>): JSX.Element {
-  const model = props.snapshot.profile === 'etudiant' ? studentModel : intModel
+  const model = props.snapshot.profile === 'circulaire' ? circularModel : linearModel
   return <LinkedVisualization {...props} model={model} />
 }
