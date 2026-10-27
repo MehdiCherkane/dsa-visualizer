@@ -9,9 +9,621 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Crect width='36' height='36' rx='9' fill='%231F2A5C'/%3E%3Ccircle cx='11' cy='13' r='3' fill='%23fff'/%3E%3Ccircle cx='25' cy='23' r='3' fill='%23C9A227'/%3E%3Cpath d='M14 13h7M22 23h-7' stroke='%23fff' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E"
     />
     <title>Structures de données en C — simulation et visualisation</title>
+    <script>
+      var ALLOW_CONTINUE = true
+      var PHONE_NOTICE_CONTINUE_KEY = 'dsa-phone-continue'
+      function isPhoneScreen(width, height) {
+        return Math.min(width, height) < 600
+      }
+      ;(function () {
+        var continued = false
+        if (ALLOW_CONTINUE) {
+          try {
+            continued = window.sessionStorage.getItem(PHONE_NOTICE_CONTINUE_KEY) === '1'
+          } catch (error) {}
+        }
+        if (isPhoneScreen(window.screen.width, window.screen.height) && !continued) {
+          document.documentElement.classList.add('is-phone')
+        }
+      })()
+    </script>
+    <style>
+      .phone-notice {
+        --pn-bg: #eef2fb;
+        --pn-panel: #ffffff;
+        --pn-line: #d6deee;
+        --pn-ink: #1f2a5c;
+        --pn-ink-2: #4b5879;
+        --pn-muted: #56627f;
+        --pn-gold: #7a5b0b;
+        --pn-gold-line: #c9a227;
+        --pn-primary-bg: #c9a227;
+        --pn-primary-hover: #b8931f;
+        --pn-primary-active: #a88417;
+        --pn-primary-ink: #14204a;
+        --pn-primary-border: #b8931f;
+        --pn-link: #1f2a5c;
+        --pn-link-hover: #3b4d89;
+        --pn-success: #006b3a;
+        --pn-alert: #b83a2f;
+        --pn-alert-soft: #fde8e5;
+        --pn-input-bg: #f7f9fe;
+        --pn-focus: #1f2a5c;
+        --pn-art-line: #6d7b9f;
+        --pn-art-fill: #f7f9fe;
+        --pn-shadow: 0 24px 60px rgba(31, 42, 92, 0.16);
+        color-scheme: light;
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        display: none;
+        overflow: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
+        padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+          max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+        background-color: var(--pn-bg);
+        background-image:
+          radial-gradient(circle at 12% 8%, rgba(201, 162, 39, 0.16), transparent 38%),
+          radial-gradient(circle at 88% 92%, rgba(47, 86, 176, 0.12), transparent 42%),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='144' height='144' viewBox='0 0 144 144'%3E%3Cg fill='none' stroke='%23c9a227' stroke-opacity='.12'%3E%3Cpath d='M72 6 90 44 128 54 98 78 108 118 72 98 36 118 46 78 16 54 54 44Z'/%3E%3Ccircle cx='72' cy='62' r='15'/%3E%3C/g%3E%3C/svg%3E");
+        background-size: auto, auto, 144px 144px;
+        color: var(--pn-ink);
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        text-align: left;
+      }
+
+      html.is-phone .phone-notice {
+        display: flex;
+      }
+
+      html.is-phone,
+      html.is-phone body {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      html.is-phone body {
+        margin: 0;
+      }
+
+      html.is-phone #root {
+        display: none !important;
+      }
+
+      .phone-notice-card {
+        box-sizing: border-box;
+        flex: none;
+        width: min(100%, 600px);
+        margin: auto;
+        padding: clamp(16px, 5vw, 30px);
+        border: 1px solid var(--pn-line);
+        border-radius: clamp(18px, 5vw, 24px);
+        background: var(--pn-panel);
+        box-shadow: var(--pn-shadow);
+        color: var(--pn-ink);
+      }
+
+      .phone-notice-brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        margin-bottom: clamp(14px, 4vw, 20px);
+      }
+
+      .phone-notice-logo {
+        display: grid;
+        flex: none;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 12px;
+        background: linear-gradient(145deg, #1f2a5c, #35467f);
+        color: #ffffff;
+      }
+
+      .phone-notice-logo svg {
+        display: block;
+        width: 30px;
+        height: 30px;
+      }
+
+      .phone-notice-brand-text {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        gap: 1px;
+      }
+
+      .phone-notice-kicker {
+        color: var(--pn-gold);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        line-height: 1.3;
+        text-transform: uppercase;
+      }
+
+      .phone-notice-brand-sub {
+        color: var(--pn-ink-2);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .phone-notice-title {
+        margin: 0 0 10px;
+        color: var(--pn-ink);
+        font-size: clamp(23px, 6.2vw, 33px);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.16;
+        text-wrap: balance;
+      }
+
+      .phone-notice-text {
+        margin: 0;
+        color: var(--pn-ink-2);
+        font-size: clamp(14px, 4vw, 16px);
+        line-height: 1.6;
+      }
+
+      .phone-notice-art {
+        display: flex;
+        justify-content: center;
+        margin: clamp(14px, 4vw, 20px) 0;
+      }
+
+      .phone-notice-art svg {
+        display: block;
+        width: 100%;
+        max-width: 360px;
+        height: auto;
+      }
+
+      .pn-art-device {
+        fill: var(--pn-art-fill);
+        stroke: var(--pn-art-line);
+        stroke-width: 2.2;
+      }
+
+      .pn-art-screen {
+        fill: none;
+        opacity: 0.7;
+        stroke: var(--pn-art-line);
+        stroke-width: 1.6;
+      }
+
+      .pn-art-arrow {
+        fill: none;
+        stroke: var(--pn-gold-line);
+        stroke-width: 2.4;
+      }
+
+      .pn-art-gold {
+        fill: none;
+        stroke: var(--pn-gold-line);
+        stroke-width: 3;
+      }
+
+      .pn-art-alert {
+        fill: none;
+        stroke: var(--pn-alert);
+        stroke-width: 2.8;
+      }
+
+      .pn-art-alert-soft {
+        fill: var(--pn-alert-soft);
+        stroke: var(--pn-alert);
+        stroke-width: 1.4;
+      }
+
+      .pn-art-dot {
+        fill: var(--pn-art-line);
+      }
+
+      .phone-notice-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .phone-notice-primary {
+        box-sizing: border-box;
+        min-height: 48px;
+        padding: 12px 18px;
+        border: 1px solid var(--pn-primary-border);
+        border-radius: 12px;
+        background: var(--pn-primary-bg);
+        color: var(--pn-primary-ink);
+        font: inherit;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+        touch-action: manipulation;
+        transition: none;
+        animation: none;
+      }
+
+      .phone-notice-primary:hover {
+        background: var(--pn-primary-hover);
+      }
+
+      .phone-notice-primary:active {
+        background: var(--pn-primary-active);
+      }
+
+      .phone-notice-primary:focus-visible,
+      .phone-notice-continue:focus-visible,
+      .phone-notice-url:focus-visible {
+        outline: 3px solid var(--pn-focus);
+        outline-offset: 2px;
+      }
+
+      .phone-notice-status {
+        min-height: 20px;
+        margin: 2px 0 0;
+        color: var(--pn-success);
+        font-size: 13.5px;
+        font-weight: 700;
+        line-height: 1.4;
+        text-align: center;
+      }
+
+      .phone-notice-url {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 46px;
+        margin-top: 4px;
+        padding: 10px 12px;
+        border: 1px solid var(--pn-line);
+        border-radius: 10px;
+        background: var(--pn-input-bg);
+        color: var(--pn-ink);
+        font-family: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .phone-notice-url[hidden],
+      .phone-notice-continue[hidden] {
+        display: none !important;
+      }
+
+      .phone-notice-continue {
+        display: inline-flex;
+        min-height: 44px;
+        align-self: center;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 14px;
+        border-radius: 8px;
+        color: var(--pn-link);
+        font-size: 13.5px;
+        font-weight: 600;
+        line-height: 1.4;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        touch-action: manipulation;
+      }
+
+      .phone-notice-continue:hover {
+        color: var(--pn-link-hover);
+      }
+
+      .phone-notice-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: clamp(16px, 5vw, 24px);
+        padding-top: 12px;
+        border-top: 1px solid var(--pn-line);
+        color: var(--pn-muted);
+        font-size: 11px;
+        line-height: 1.45;
+        text-align: center;
+      }
+
+      @media (min-width: 640px) and (max-height: 600px) {
+        .phone-notice {
+          padding: 14px 20px;
+        }
+
+        .phone-notice-card {
+          width: min(100%, 900px);
+          padding: 18px 24px;
+          border-radius: 18px;
+        }
+
+        .phone-notice-brand {
+          margin-bottom: 10px;
+        }
+
+        .phone-notice-main {
+          display: grid;
+          grid-template-areas:
+            'copy art'
+            'actions art';
+          grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+          column-gap: 24px;
+          row-gap: 8px;
+          align-items: center;
+        }
+
+        .phone-notice-copy {
+          grid-area: copy;
+        }
+
+        .phone-notice-art {
+          grid-area: art;
+          align-self: center;
+          margin: 0;
+        }
+
+        .phone-notice-art svg {
+          max-width: 240px;
+        }
+
+        .phone-notice-actions {
+          grid-area: actions;
+          align-self: start;
+        }
+
+        .phone-notice-title {
+          font-size: clamp(22px, 3vw, 30px);
+        }
+
+        .phone-notice-text {
+          font-size: 14px;
+        }
+
+        .phone-notice-footer {
+          flex-direction: row;
+          justify-content: space-between;
+          gap: 8px;
+          margin-top: 12px;
+          padding-top: 8px;
+          text-align: left;
+        }
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .phone-notice {
+          --pn-bg: #070b18;
+          --pn-panel: #0e142a;
+          --pn-line: #283357;
+          --pn-ink: #eef1ff;
+          --pn-ink-2: #b7c1de;
+          --pn-muted: #99a5c8;
+          --pn-gold: #e0bc4a;
+          --pn-gold-line: #e0bc4a;
+          --pn-primary-bg: #e0bc4a;
+          --pn-primary-hover: #f0cf6a;
+          --pn-primary-active: #c9a227;
+          --pn-primary-ink: #0b1428;
+          --pn-primary-border: #f0cf6a;
+          --pn-link: #e0bc4a;
+          --pn-link-hover: #f4d97e;
+          --pn-success: #5ee0a0;
+          --pn-alert: #ff8b7d;
+          --pn-alert-soft: #3c1715;
+          --pn-input-bg: #0a1024;
+          --pn-focus: #eef1ff;
+          --pn-art-line: #9aa8ce;
+          --pn-art-fill: #0b1125;
+          --pn-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+          color-scheme: dark;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+
+    <section
+      id="phone-notice"
+      class="phone-notice"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="phone-notice-title"
+      aria-describedby="phone-notice-text"
+      lang="fr"
+    >
+      <div class="phone-notice-card">
+        <div class="phone-notice-brand">
+          <span class="phone-notice-logo" aria-hidden="true">
+            <svg viewBox="0 0 36 36" focusable="false">
+              <circle cx="11" cy="12.5" r="3.1" fill="currentColor" />
+              <circle cx="25" cy="23.5" r="3.1" fill="currentColor" />
+              <path
+                d="M14.2 12.5h7.2M21.8 23.5h-7.2"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+              <path
+                d="m19.2 10.1 3.3 2.4-3.3 2.4M16.8 21.1l-3.3 2.4 3.3 2.4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M8 17.5c2.7 0 2.7 5 5.3 5M28 18.5c-2.7 0-2.7-5-5.3-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+                opacity=".55"
+              />
+            </svg>
+          </span>
+          <span class="phone-notice-brand-text">
+            <span class="phone-notice-kicker">Structures de données en C</span>
+            <span class="phone-notice-brand-sub">Visualiseur pédagogique</span>
+          </span>
+        </div>
+
+        <div class="phone-notice-main">
+          <div class="phone-notice-copy">
+            <h1 id="phone-notice-title" class="phone-notice-title">
+              Cette application n’est pas faite pour les téléphones
+            </h1>
+            <p id="phone-notice-text" class="phone-notice-text">
+              Les visualisations ont besoin d’un grand écran. Ouvrez ce lien sur un ordinateur ou
+              une tablette.
+            </p>
+          </div>
+
+          <div class="phone-notice-art" aria-hidden="true">
+            <svg viewBox="0 0 420 150" focusable="false">
+              <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <rect class="pn-art-device" x="24" y="18" width="62" height="114" rx="12" />
+                <rect class="pn-art-screen" x="33" y="32" width="44" height="82" rx="5" />
+                <circle class="pn-art-alert-soft" cx="55" cy="75" r="17" />
+                <path class="pn-art-alert" d="M48 68l14 14M62 68L48 82" />
+                <path class="pn-art-arrow" d="M104 75h38" />
+                <path class="pn-art-arrow" d="M134 67l10 8-10 8" />
+                <rect class="pn-art-device" x="168" y="38" width="116" height="72" rx="8" />
+                <rect class="pn-art-screen" x="177" y="47" width="98" height="54" rx="4" />
+                <path class="pn-art-device" d="M152 118h148" />
+                <path class="pn-art-gold" d="M207 72l8 9 17-19" />
+                <rect class="pn-art-device" x="318" y="52" width="64" height="92" rx="9" />
+                <rect class="pn-art-screen" x="327" y="62" width="46" height="68" rx="4" />
+                <circle class="pn-art-dot" cx="350" cy="138" r="2.2" />
+                <path class="pn-art-gold" d="M337 101l7 8 14-15" />
+              </g>
+            </svg>
+          </div>
+
+          <div class="phone-notice-actions">
+            <button id="phone-notice-primary" class="phone-notice-primary" type="button">
+              Copier le lien
+            </button>
+            <p
+              id="phone-notice-status"
+              class="phone-notice-status"
+              role="status"
+              aria-live="polite"
+            ></p>
+            <input
+              id="phone-notice-url"
+              class="phone-notice-url"
+              type="text"
+              readonly
+              hidden
+              aria-label="Lien de l’application"
+            />
+            <a id="phone-notice-continue" class="phone-notice-continue" href="#" hidden>
+              Continuer quand même
+            </a>
+          </div>
+        </div>
+
+        <footer class="phone-notice-footer">
+          <span>Visualiseur de structures de données · DUT GI S3 · EST Béni Mellal</span>
+          <span>d’après le cours du Pr. M. OUTANOUTE</span>
+        </footer>
+      </div>
+    </section>
+
+    <script>
+      ;(function () {
+        var html = document.documentElement
+        if (!html.classList.contains('is-phone')) return
+
+        var root = document.getElementById('root')
+        var notice = document.getElementById('phone-notice')
+        var primary = document.getElementById('phone-notice-primary')
+        var status = document.getElementById('phone-notice-status')
+        var input = document.getElementById('phone-notice-url')
+        var continueLink = document.getElementById('phone-notice-continue')
+
+        if (!root || !notice || !primary || !status || !input || !continueLink) return
+
+        root.setAttribute('inert', '')
+        root.setAttribute('aria-hidden', 'true')
+
+        var canShare = typeof navigator.share === 'function'
+        primary.textContent = canShare ? 'Partager le lien' : 'Copier le lien'
+        primary.setAttribute('data-action', canShare ? 'share' : 'copy')
+
+        function showUrlFallback() {
+          status.textContent = ''
+          input.value = window.location.href
+          input.hidden = false
+          input.focus({ preventScroll: true })
+          try {
+            input.select()
+            input.setSelectionRange(0, input.value.length)
+          } catch (error) {}
+        }
+
+        function copyLink() {
+          try {
+            var result = navigator.clipboard.writeText(window.location.href)
+            result.then(
+              function () {
+                status.textContent = 'Lien copié ✓'
+                input.hidden = true
+              },
+              showUrlFallback,
+            )
+          } catch (error) {
+            showUrlFallback()
+          }
+        }
+
+        primary.addEventListener('click', function () {
+          if (canShare) {
+            try {
+              var result = navigator.share({
+                title: document.title,
+                url: window.location.href,
+              })
+              if (result && typeof result.catch === 'function') result.catch(function () {})
+            } catch (error) {}
+            return
+          }
+          copyLink()
+        })
+
+        input.addEventListener('click', function () {
+          try {
+            input.select()
+          } catch (error) {}
+        })
+
+        input.addEventListener('focus', function () {
+          try {
+            input.select()
+          } catch (error) {}
+        })
+
+        if (ALLOW_CONTINUE) {
+          continueLink.hidden = false
+          continueLink.addEventListener('click', function (event) {
+            event.preventDefault()
+            try {
+              window.sessionStorage.setItem(PHONE_NOTICE_CONTINUE_KEY, '1')
+            } catch (error) {}
+            html.classList.remove('is-phone')
+            root.removeAttribute('inert')
+            root.removeAttribute('aria-hidden')
+            notice.hidden = true
+            var target = root.querySelector('button, a[href], input, select, textarea, [tabindex]')
+            if (target) target.focus({ preventScroll: true })
+          })
+        }
+
+        primary.focus({ preventScroll: true })
+      })()
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
