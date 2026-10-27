@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { BaseSnapshot, Change, PointerValue, VisualizationProps } from '../../core/types'
 import { fr } from '../../i18n/fr'
 import { ZelligeFrieze } from '../../ui/ZelligeFrieze'
+import { wheelIntent } from '../../ui/wheelGestures'
 import {
   FIELD_W,
   FIT_PADDING,
@@ -841,12 +842,20 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
       if ((event.target as Element | null)?.closest('.camera-toolbar')) return
       event.preventDefault()
       const rect = element.getBoundingClientRect()
-      let delta = event.deltaY
-      if (event.deltaMode === 1) delta *= 16
-      else if (event.deltaMode === 2) delta *= rect.height
-      const factor = Math.exp(-delta * (event.ctrlKey ? 0.0035 : 0.0015))
+      const intent = wheelIntent(event, rect.height)
+      if (intent.kind === 'pan') {
+        enterManual(
+          {
+            k: cameraRef.current.k,
+            x: cameraRef.current.x - intent.dx,
+            y: cameraRef.current.y - intent.dy,
+          },
+          false,
+        )
+        return
+      }
       const cursor = { x: event.clientX - rect.left, y: event.clientY - rect.top }
-      enterManual(zoomAtCursor(cameraRef.current, cursor, factor, MIN_K, MAX_K), false)
+      enterManual(zoomAtCursor(cameraRef.current, cursor, intent.factor, MIN_K, MAX_K), false)
     }
     element.addEventListener('wheel', handleWheel, { passive: false })
     return () => element.removeEventListener('wheel', handleWheel)

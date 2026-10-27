@@ -8,7 +8,7 @@ A single-page, fully offline French teaching platform for data structures in C (
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (341 tests)
+npm test      # vitest suite (355 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
@@ -127,7 +127,7 @@ Key guarantees enforced by tests:
 - `↑ / ↓` faster / slower · `+ / -` zoom · `0 / F` fit · `D` bottom panels · `P` presentation · `R` reset (confirmation shown)
 - `?` (header button) keyboard-shortcut popover
 - `Échap` returns to the main menu (only when no popover or dialog is open)
-- mouse wheel zooms at the cursor, drag pans, double-click fits; the toolbar also exposes −, 100 %, +, Ajuster and an Auto/Manuel chip.
+- a mouse wheel zooms at the cursor; a laptop trackpad pans with two fingers and zooms with a pinch; drag pans, double-click fits; the toolbar also exposes −, 100 %, +, Ajuster and an Auto/Manuel chip.
 - click a leaf node in the SVG to fill a "cible" parameter (used by delete-by-value, insert-after/before, radiate).
 - drag a workspace or dock separator to resize; focus it and use the arrow keys to adjust (`Shift` for coarse steps, `Home`/`Enter` or double-click to reset).
 

@@ -228,7 +228,7 @@ export const fr = {
   },
   shortcuts: {
     title: 'Raccourcis clavier',
-    hint: 'Molette : zoom · Glisser : déplacer · Double-clic : ajuster',
+    hint: 'Molette : zoom · Pavé tactile : deux doigts pour déplacer, pincer pour zoomer · Glisser : déplacer · Double-clic : ajuster',
     rows: [
       { keys: ['←', '→'], label: 'Pas précédent / pas suivant' },
       { keys: ['Espace'], label: 'Lecture / pause' },

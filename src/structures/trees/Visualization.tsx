@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { VisualizationProps } from '../../core/types'
 import { fr } from '../../i18n/fr'
 import { ZelligeFrieze } from '../../ui/ZelligeFrieze'
+import { wheelIntent } from '../../ui/wheelGestures'
 import {
   layoutTree,
   measureTree,
@@ -209,9 +210,23 @@ export default function TreeVisualization({
   const onWheel = (event: ReactWheelEvent<SVGSVGElement>): void => {
     event.preventDefault()
     const rect = event.currentTarget.getBoundingClientRect()
-    const x = clamp((event.clientX - rect.left) / rect.width, 0, 1)
-    const y = clamp((event.clientY - rect.top) / rect.height, 0, 1)
-    zoomAt(event.deltaY < 0 ? 0.88 : 1.14, x, y)
+    const width = Math.max(1, rect.width)
+    const height = Math.max(1, rect.height)
+    const intent = wheelIntent(event.nativeEvent, height)
+    if (intent.kind === 'pan') {
+      setManualViewBox((current) => {
+        const base = current ?? defaultViewBox
+        return {
+          ...base,
+          x: base.x + (intent.dx * base.width) / width,
+          y: base.y + (intent.dy * base.height) / height,
+        }
+      })
+      return
+    }
+    const x = clamp((event.clientX - rect.left) / width, 0, 1)
+    const y = clamp((event.clientY - rect.top) / height, 0, 1)
+    zoomAt(1 / intent.factor, x, y)
   }
 
   const onPointerDown = (event: ReactPointerEvent<SVGSVGElement>): void => {
