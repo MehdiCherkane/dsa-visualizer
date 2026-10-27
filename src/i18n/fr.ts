@@ -800,6 +800,7 @@ export const fr = {
       ringCase: (index: number) => `Case ${index}`,
       ringSlots: 'Cases de l’anneau',
       ringUndefined: 'indice indéfini : la file est vide',
+      ringUndefinedShort: 'non défini',
       wrapFormula: (from: number, max: number, to: number) =>
         `(${from} + 1) % ${max} = ${to}`,
       freeSlots: (free: number) =>

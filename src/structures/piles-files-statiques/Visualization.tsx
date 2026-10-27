@@ -510,6 +510,7 @@ export default function StaticStructuresVisualization({
   const instant = !animate || reducedMotion || speed >= 4
   const duration = instant ? 0.001 : 0.34 / speed
   const ringMotionDuration = Math.round(340 / speed)
+  const pointerMotionDuration = Math.round(200 / speed)
   const [stageRef, stage] = useElementSize()
   const stageW = Math.max(360, stage.width)
   const stageH = Math.max(240, stage.height)
@@ -927,6 +928,7 @@ export default function StaticStructuresVisualization({
               changedGlobals={changedGlobals}
               motion={!instant}
               motionDuration={ringMotionDuration}
+              pointerMotionDuration={pointerMotionDuration}
             />
           ) : (
             <>

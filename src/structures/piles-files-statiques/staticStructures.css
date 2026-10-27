@@ -1664,7 +1664,7 @@
 }
 
 [data-motion='on'] .ss-ring-pointer.is-changed {
-  animation: ss-ring-pointer-in var(--ss-motion-duration, 340ms) ease-out;
+  animation: ss-ring-pointer-in var(--ss-pointer-motion-duration, 200ms) ease-out;
 }
 
 [data-motion='on'] .ss-ring-slot-hatch {

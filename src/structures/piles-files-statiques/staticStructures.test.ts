@@ -36,11 +36,18 @@ import {
   RING_ARROW_GAP,
   RING_CANVAS,
   RING_FIT_INSETS,
+  RING_INDEX_RADIUS,
+  RING_POINTER_H,
+  RING_POINTER_W,
+  RING_STACK_BOTTOM,
+  RING_STACK_GAP,
+  RING_STACK_RIGHT,
   RING_TRACK_RADIUS,
   rectGap,
   rectInside,
   ringFitBounds,
   ringGeometry,
+  undefinedPointerRect,
   wrapArcPoints,
 } from './ringGeometry'
 import type { RingGeometry, RingRect } from './ringGeometry'
@@ -945,6 +952,121 @@ describe('géométrie de l’anneau', () => {
           ).toBeGreaterThan(8)
         }
         expectClearLayout(emptyRing, `vide N=${capacity}`)
+      }
+    }
+  })
+
+  it('empile les pointeurs indéfinis dans le coin supérieur gauche de 3 à 8 cases', () => {
+    const stages = [
+      { width: 899, height: 389 },
+      { width: 1317.5, height: 565 },
+    ]
+    for (let capacity = 3; capacity <= 8; capacity += 1) {
+      const empty = emptySnapshot('file-circulaire', capacity)
+      const emptyRing = ringGeometry(empty, { idle: true })
+      expect(emptyRing, `N=${capacity}`).not.toBeNull()
+      if (!emptyRing) continue
+      const av = emptyRing.pointers.find((pointer) => pointer.key === 'av')
+      const ar = emptyRing.pointers.find((pointer) => pointer.key === 'ar')
+      expect(av, `N=${capacity}`).toBeDefined()
+      expect(ar, `N=${capacity}`).toBeDefined()
+      if (!av || !ar) continue
+
+      const stack = {
+        x: av.rect.x,
+        y: av.rect.y,
+        width: av.rect.width,
+        height: ar.rect.y + ar.rect.height - av.rect.y,
+      }
+      expect(av.rect).toEqual(undefinedPointerRect('av'))
+      expect(ar.rect).toEqual(undefinedPointerRect('ar'))
+      expect(av.dashed && ar.dashed).toBe(true)
+      expect(av.connectors).toEqual([])
+      expect(ar.connectors).toEqual([])
+      expect(ar.rect.x).toBe(av.rect.x)
+      expect(ar.rect.width).toBe(RING_POINTER_W)
+      expect(ar.rect.y - (av.rect.y + av.rect.height)).toBe(RING_STACK_GAP)
+      expect(stack.x + stack.width).toBeCloseTo(RING_STACK_RIGHT)
+      expect(stack.y + stack.height).toBeCloseTo(RING_STACK_BOTTOM)
+      expect(stack.y).toBeCloseTo(-1.4 * RING_TRACK_RADIUS)
+
+      const nearestX = Math.max(stack.x, -stack.x - stack.width, 0)
+      const nearestY = Math.max(stack.y, -stack.y - stack.height, 0)
+      expect(
+        Math.hypot(nearestX, nearestY),
+        `N=${capacity} : le coin doit rester hors de l’anneau et des indices`,
+      ).toBeGreaterThan(RING_INDEX_RADIUS + RING_POINTER_H / 2 + 8)
+      for (const slot of emptyRing.slots) {
+        expect(
+          rectGap(stack, slot.indexRect),
+          `N=${capacity} : le coin doit éviter l’indice ${slot.index}`,
+        ).toBeGreaterThan(8)
+      }
+
+      for (const stage of stages) {
+        const camera = fitCamera(
+          ringFitBounds(capacity),
+          stage,
+          FIT_PADDING,
+          MIN_AUTO_K,
+          MAX_AUTO_K,
+          RING_FIT_INSETS,
+        )
+        const top = camera.y + stack.y * camera.k
+        const right = camera.x + (stack.x + stack.width) * camera.k
+        expect(top, `N=${capacity} ${stage.width}px : les puces doivent rester au-dessus`).toBeGreaterThan(66)
+        expect(right, `N=${capacity} ${stage.width}px : le bandeau doit rester à droite`).toBeLessThan(
+          stage.width - 12 - 300,
+        )
+      }
+
+      // A wrap arc stays on the index circle; the stack is entirely outside it.
+      const values = Array.from({ length: capacity }, (_, index) => 10 + index)
+      let wrappedSnapshot = createSnapshot('file-circulaire', values, { capacity })
+      for (let count = 1; count < capacity; count += 1) {
+        wrappedSnapshot = lastStep(
+          runOperation('file-circulaire', 'defiler', wrappedSnapshot, {}),
+        ).snapshot
+      }
+      wrappedSnapshot = lastStep(
+        runOperation('file-circulaire', 'enfiler', wrappedSnapshot, { valeur: 71 }),
+      ).snapshot
+      const wrappedRing = ringGeometry(wrappedSnapshot, { idle: true })
+      expect(wrappedRing?.wrap, `N=${capacity}`).not.toBeNull()
+      if (wrappedRing?.wrap) {
+        for (const point of wrapArcPoints(wrappedRing.wrap)) {
+          expect(
+            pointInside(point, stack),
+            `N=${capacity} : l’arc de retour croise le coin`,
+          ).toBe(false)
+        }
+      }
+
+      // Each pointer is independent: the defined one leaves the stack, the other keeps its slot.
+      const circular = emptyRing.circular!
+      const partialSnapshot: ArraySnapshot = {
+        ...empty,
+        circular: {
+          ...circular,
+          av: 0,
+          ar: -1,
+          taille: 1,
+          order: [0],
+          elements: circular.elements.map((element, index) =>
+            index === 0 ? { ...element, state: 'used' as const, value: 42 } : element,
+          ),
+        },
+      }
+      const partial = ringGeometry(partialSnapshot, { idle: true })
+      expect(partial, `N=${capacity}`).not.toBeNull()
+      if (partial) {
+        const partialAv = partial.pointers.find((pointer) => pointer.key === 'av')
+        const partialAr = partial.pointers.find((pointer) => pointer.key === 'ar')
+        expect(partialAv?.dashed).toBe(false)
+        expect(partialAv?.connectors).toHaveLength(1)
+        expect(partialAv?.rect).not.toEqual(undefinedPointerRect('av'))
+        expect(partialAr?.dashed).toBe(true)
+        expect(partialAr?.rect).toEqual(ar.rect)
       }
     }
   })
