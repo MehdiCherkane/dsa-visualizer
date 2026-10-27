@@ -53,7 +53,8 @@ export const fr = {
     },
     lsc: {
       title: 'Listes simplement chaînées',
-      description: 'Un seul lien suivant : parcours, insertion, suppression et registre étudiant.',
+      description:
+        'Un seul lien suivant : version linéaire et version circulaire, parcours, insertion et suppression.',
     },
     pilesFiles: {
       title: 'Piles et files dynamiques',
@@ -210,7 +211,7 @@ export const fr = {
     scenarios: 'Scénarios',
     about: 'À propos',
     profile: 'Profil de données',
-    shortcuts: '← → étapes · ↑ ↓ vitesse · Espace lecture · P présentation · R réinitialiser',
+    shortcuts: '← → étapes · ↑ ↓ vitesse · Espace lecture · P présentation · Maj+F plein écran · R réinitialiser',
     shortcutsButton: 'Raccourcis',
     shortcutsHelp: 'Raccourcis clavier',
   },
@@ -235,6 +236,7 @@ export const fr = {
       { keys: ['↑', '↓'], label: 'Accélérer / ralentir' },
       { keys: ['+', '-'], label: 'Zoom avant / arrière' },
       { keys: ['0', 'F'], label: 'Ajuster la vue' },
+      { keys: ['Maj', 'F'], label: 'Plein écran' },
       { keys: ['D'], label: 'Afficher / masquer les panneaux' },
       { keys: ['P'], label: 'Mode présentation' },
       { keys: ['R'], label: 'Réinitialiser la liste' },
@@ -313,6 +315,7 @@ export const fr = {
     slider: 'Position dans l’opération',
     fullscreen: 'Plein écran',
     exitFullscreen: 'Quitter le plein écran',
+    fullscreenShortcut: 'Maj+F',
   },
   operation: {
     title: 'Opération',
@@ -413,6 +416,8 @@ export const fr = {
     structureLabel: 'Structure',
     int: 'Entiers',
     etudiant: 'Étudiants',
+    lineaire: 'Linéaire',
+    circulaire: 'Circulaire',
     pile: 'Pile',
     file: 'File',
     file1: 'File 1 · ordinaire',
@@ -800,6 +805,7 @@ export const fr = {
       ringCase: (index: number) => `Case ${index}`,
       ringSlots: 'Cases de l’anneau',
       ringUndefined: 'indice indéfini : la file est vide',
+      ringUndefinedShort: 'non défini',
       wrapFormula: (from: number, max: number, to: number) =>
         `(${from} + 1) % ${max} = ${to}`,
       freeSlots: (free: number) =>
@@ -962,6 +968,43 @@ export const fr = {
         note: 'Recherche par numéro, détachement O(1).',
       },
     },
+    circularOps: {
+      afficherListe: {
+        label: 'Afficher la liste',
+        complexity: 'O(n)',
+        note: 'Parcours do … while jusqu’au retour sur debut.',
+      },
+      insererEnTete: {
+        label: 'Insérer en tête',
+        complexity: 'O(n)',
+        note: 'Il faut atteindre le dernier nœud pour le raccorder à la nouvelle tête.',
+      },
+      insererEnFin: {
+        label: 'Insérer en fin',
+        complexity: 'O(n)',
+        note: 'Parcours jusqu’au nœud dont le suivant est debut.',
+      },
+      supprimerEnTete: {
+        label: 'Supprimer en tête',
+        complexity: 'O(n)',
+        note: 'Le dernier nœud doit être raccordé au nouveau debut.',
+      },
+      supprimerValeur: {
+        label: 'Supprimer une valeur',
+        complexity: 'O(n)',
+        note: 'Parcours circulaire ; la tête est retirée via supprimerEnTete.',
+      },
+      rechercher: {
+        label: 'Rechercher une valeur',
+        complexity: 'O(n)',
+        note: 'Parcours do … while qui s’arrête au retour sur debut.',
+      },
+      detruireListe: {
+        label: 'Détruire la liste',
+        complexity: 'O(n)',
+        note: 'On coupe le lien circulaire, puis on libère les nœuds linéairement.',
+      },
+    },
     captions: {
       malloc: (nodeId: number, address: string) =>
         `\`malloc\` réserve le nœud ${nodeId} à l’adresse \`${address}\`. \`valeur\` et \`suivant\` sont non initialisés.`,
@@ -1004,6 +1047,38 @@ export const fr = {
       scanfNumero: 'Le numéro saisi est copié dans la variable locale `numero`.',
       scanfNom: 'Le nom saisi est copié dans le tableau local `nom`.',
       scanfPrenom: 'Le prénom saisi est copié dans le tableau local `prenom`.',
+      circularLoopStart:
+        'On entre dans la boucle `do … while` : le premier nœud est traité avant le test.',
+      circularStop: '`courant` est revenu sur `debut` : le parcours circulaire s’arrête.',
+      circularContinue: '`courant` n’est pas revenu sur `debut` : le parcours continue.',
+      circularSelfLink:
+        'La liste était vide : `nouveau->suivant` pointe vers `nouveau`, le cercle est fermé.',
+      circularLinkLast: 'Le dernier nœud pointe maintenant vers `nouveau`.',
+      circularClose: '`nouveau->suivant` reçoit `debut` : le cercle reste fermé.',
+      circularNewHead: '`debut` pointe maintenant sur `nouveau` : la nouvelle tête est en place.',
+      circularSingle: '`debut->suivant == debut` : un seul nœud, le cercle se réduit à lui-même.',
+      circularMultiple: '`debut->suivant != debut` : la liste contient plusieurs nœuds.',
+      circularLastFound: '`dernier->suivant` vaut `debut` : `dernier` est le dernier nœud du cercle.',
+      circularNotLast: '`dernier->suivant` n’est pas `debut` : on avance dans le cercle.',
+      circularRemoveHead:
+        'On avance `debut` sur `debut->suivant`, puis on raccorde le dernier nœud au nouveau `debut`.',
+      circularRelinkLast:
+        'Le dernier nœud pointe maintenant vers le nouveau `debut` : le cercle est refermé.',
+      circularSingleRemove: 'Le nœud était seul : `debut` reçoit `NULL` avant la libération.',
+      circularHeadDelegation:
+        '`courant` pointe sur `debut` : on délègue à `supprimerEnTete` pour refermer le cercle.',
+      circularNotHead:
+        '`courant` n’est pas `debut` : `precedent` permet de détacher le nœud sans casser le cercle.',
+      circularDetach:
+        'On relie `precedent->suivant` à `courant->suivant` : le nœud est sauté, puis libéré.',
+      circularAfterHeadCall:
+        'On revient dans `supprimerValeur` : la tête a été retirée et le cercle est refermé.',
+      circularBreakRing:
+        'On coupe le lien du dernier nœud vers `debut` : la liste redevient linéaire pour la libération.',
+      circularDestroyHead:
+        'On retire la tête courante, puis on recommence tant que `debut` n’est pas `NULL`.',
+      circularNotFound:
+        'Le parcours est revenu sur `debut` sans trouver la valeur : la fonction retourne `0`.',
     },
     scenarios: {
       cours: {
@@ -1031,6 +1106,52 @@ export const fr = {
       detruire: {
         title: 'Détruire la liste',
         description: 'Détruire 9 → 2 → 5 nœud par nœud et vérifier que debut devient NULL.',
+      },
+      circulaire: {
+        cours: {
+          title: 'Le cours : l’anneau 9 → 2 → 5',
+          description:
+            'Charge la liste simplement chaînée circulaire : le dernier nœud (5) pointe vers debut (9).',
+        },
+        milieu: {
+          title: 'Supprimer au milieu (circulaire)',
+          description:
+            'Supprimer 2 puis 5 dans l’anneau : un seul pointeur precedent suffit pour détacher un nœud.',
+        },
+        tete: {
+          title: 'Les deux extrémités (circulaire)',
+          description: 'Insérer 9 en tête puis 7 en fin, et afficher l’anneau obtenu.',
+        },
+        absente: {
+          title: 'Valeur absente (circulaire)',
+          description:
+            'Supprimer 99 puis rechercher 99 : le parcours revient sur debut sans trouver la valeur.',
+        },
+        detruire: {
+          title: 'Détruire l’anneau',
+          description:
+            'Couper le lien circulaire, puis libérer 9 → 2 → 5 nœud par nœud jusqu’à debut == NULL.',
+        },
+        vide: {
+          title: 'Anneau vide',
+          description:
+            'Point de départ vide : insérer un premier nœud referme le cercle sur lui-même.',
+        },
+        single: {
+          title: 'Anneau à un seul nœud',
+          description:
+            'Un unique nœud : son champ suivant pointe vers lui-même, formant une boucle visible.',
+        },
+        supprimerSeul: {
+          title: 'Supprimer l’unique nœud',
+          description:
+            'Supprimer l’unique nœud de l’anneau : debut repasse à NULL et la liste redevient vide.',
+        },
+        supprimerDebut: {
+          title: 'Supprimer le début (circulaire)',
+          description:
+            'Supprimer la tête 9 : le dernier nœud (5) est raccordé au nouveau debut (2).',
+        },
       },
     },
   },
@@ -1478,9 +1599,11 @@ export const fr = {
     empty: 'Liste vide. Insérez un nœud.',
     emptyInsert: '＋ Insérer un nœud',
     emptyLsc: 'debut vaut NULL : la liste est vide.',
+    emptyLscCirculaire: 'debut vaut NULL : l’anneau est vide.',
     emptyPile: 'sommet vaut NULL : la pile est vide.',
     emptyFile: 'debut et fin valent NULL : la file est vide.',
     insertEmptyLsc: '＋ Insérer un premier nœud',
+    insertEmptyLscCirculaire: '＋ Insérer un premier nœud dans l’anneau',
     insertEmptyEtudiant: '＋ Inscrire un premier étudiant',
     insertEmptyPile: '＋ Empiler une première valeur',
     insertEmptyFile: '＋ Enfiler un premier client',

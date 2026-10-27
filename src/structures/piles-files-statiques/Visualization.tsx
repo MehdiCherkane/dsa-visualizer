@@ -9,6 +9,7 @@ import type {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { VisualizationProps } from '../../core/types'
 import { fr } from '../../i18n/fr'
+import { ZelligeFrieze } from '../../ui/ZelligeFrieze'
 import {
   ARRAY_X,
   ARRAY_Y,
@@ -509,6 +510,7 @@ export default function StaticStructuresVisualization({
   const instant = !animate || reducedMotion || speed >= 4
   const duration = instant ? 0.001 : 0.34 / speed
   const ringMotionDuration = Math.round(340 / speed)
+  const pointerMotionDuration = Math.round(200 / speed)
   const [stageRef, stage] = useElementSize()
   const stageW = Math.max(360, stage.width)
   const stageH = Math.max(240, stage.height)
@@ -708,7 +710,7 @@ export default function StaticStructuresVisualization({
       } else if (event.key === '-' || event.key === '_') {
         event.preventDefault()
         zoomBy(1 / 1.2)
-      } else if (event.key === '0' || event.key === 'f' || event.key === 'F') {
+      } else if (!event.shiftKey && (event.key === '0' || event.key === 'f' || event.key === 'F')) {
         event.preventDefault()
         fitView()
       }
@@ -847,6 +849,7 @@ export default function StaticStructuresVisualization({
       className={`viz-stage${panning ? ' panning' : ''}${empty ? ' is-empty' : ''}${isRing ? ' is-ring' : ''}`}
       ref={stageRef}
     >
+      <ZelligeFrieze />
       <svg
         className="viz-svg"
         viewBox={`0 0 ${stageW} ${stageH}`}
@@ -925,6 +928,7 @@ export default function StaticStructuresVisualization({
               changedGlobals={changedGlobals}
               motion={!instant}
               motionDuration={ringMotionDuration}
+              pointerMotionDuration={pointerMotionDuration}
             />
           ) : (
             <>

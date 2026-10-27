@@ -35,7 +35,7 @@ export default function App() {
 
   return (
     <>
-      {plugin.chapter === 5 ? <ZelligeBackdrop /> : null}
+      <ZelligeBackdrop />
       <DemoApp
         key={plugin.id}
         plugin={plugin}

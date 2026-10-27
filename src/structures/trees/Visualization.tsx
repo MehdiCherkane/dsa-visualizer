@@ -2,6 +2,7 @@ import type { CSSProperties, JSX, PointerEvent as ReactPointerEvent, RefObject, 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { VisualizationProps } from '../../core/types'
 import { fr } from '../../i18n/fr'
+import { ZelligeFrieze } from '../../ui/ZelligeFrieze'
 import {
   layoutTree,
   measureTree,
@@ -237,6 +238,7 @@ export default function TreeVisualization({
   return (
     <div className="tree-viz" style={canvasStyle}>
       <div ref={canvasRef} className="tree-viz-stage">
+      <ZelligeFrieze />
       <div className="tree-viz-toolbar camera-toolbar" aria-label="Commandes de la vue de l’arbre">
         <button className="camera-button" type="button" title={fr.trees.viz.zoomOut} onClick={() => zoomAt(1.2)} aria-label={fr.trees.viz.zoomOut}>−</button>
         <span className="camera-button camera-zoom-label" aria-live="polite">{zoom} %</span>

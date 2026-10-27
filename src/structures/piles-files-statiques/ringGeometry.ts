@@ -21,9 +21,15 @@ export const RING_POINTER_H = 32
 export const RING_POINTER_CONNECTED_H = 26
 export const RING_POINTER_START_RADIUS = 194
 export const RING_POINTER_MAX_RADIUS = 324
-export const RING_POINTER_GAP = 4
 /** Room for a visible arrowhead between a connected pill and the index. */
 export const RING_POINTER_CONNECTED_GAP = 10
+/**
+ * Undefined pointers sit in the upper-left corner, outside the index/wrap
+ * circle, expressed relative to the ring centre and radius.
+ */
+export const RING_STACK_GAP = 8
+export const RING_STACK_RIGHT = -RING_TRACK_RADIUS
+export const RING_STACK_BOTTOM = -0.92 * RING_TRACK_RADIUS
 /** Arrow tip clearance above the index pill, in world units. */
 export const RING_ARROW_GAP = 4
 export const RING_WRAP_RADIUS = RING_INDEX_RADIUS
@@ -408,21 +414,44 @@ function expand(rect: RingRect, amount: number): RingRect {
   }
 }
 
+/** Slot of an undefined pointer in the upper-left stack. */
+export function undefinedPointerRect(key: 'av' | 'ar'): RingRect {
+  const height = RING_POINTER_H * 2 + RING_STACK_GAP
+  const top = RING_STACK_BOTTOM - height
+  return {
+    x: RING_STACK_RIGHT - RING_POINTER_W,
+    y: key === 'av' ? top : top + RING_POINTER_H + RING_STACK_GAP,
+    width: RING_POINTER_W,
+    height: RING_POINTER_H,
+  }
+}
+
+function undefinedPointer(key: 'av' | 'ar'): RingPointerGeometry {
+  return {
+    key,
+    text: `${key} = -1`,
+    tone: key === 'av' ? 'gold' : 'success',
+    rect: undefinedPointerRect(key),
+    fontSize: 15,
+    dashed: true,
+    connectors: [],
+  }
+}
+
 function buildPointer(
   key: 'av' | 'ar',
   index: number,
   angle: number,
   obstacles: RingRect[],
   indexRect: RingRect,
-  dashed = false,
 ): RingPointerGeometry {
   const text = `${key} = ${index}`
   const placement = placePointer(
     angle,
     RING_POINTER_W,
-    dashed ? RING_POINTER_H : RING_POINTER_CONNECTED_H,
+    RING_POINTER_CONNECTED_H,
     obstacles,
-    dashed ? RING_POINTER_GAP : RING_POINTER_CONNECTED_GAP,
+    RING_POINTER_CONNECTED_GAP,
   )
   return {
     key,
@@ -430,15 +459,13 @@ function buildPointer(
     tone: key === 'av' ? 'gold' : 'success',
     rect: placement.rect,
     fontSize: 15,
-    dashed,
-    connectors: dashed
-      ? []
-      : pointerConnectors(
-          placement.rect,
-          angle,
-          [key === 'av' ? 'gold' : 'success'],
-          indexRect,
-        ),
+    dashed: false,
+    connectors: pointerConnectors(
+      placement.rect,
+      angle,
+      [key === 'av' ? 'gold' : 'success'],
+      indexRect,
+    ),
   }
 }
 
@@ -447,7 +474,6 @@ function buildPointer(
  * structure, which keeps the linear visualisations untouched.
  */
 interface RingMarkers {
-  empty: boolean
   one: boolean
   av: number
   ar: number
@@ -459,32 +485,10 @@ function buildPointers(
   indexRects: RingRect[],
 ): RingPointerGeometry[] {
   const pointers: RingPointerGeometry[] = []
-  if (markers.empty) {
-    // Left/right keeps the undefined pointers away from the index 0 pill.
-    const first = buildPointer(
-      'av',
-      markers.av,
-      Math.PI,
-      indexRects,
-      indexRects[0]!,
-      true,
-    )
-    pointers.push(first)
-    pointers.push(
-      buildPointer(
-        'ar',
-        markers.ar,
-        0,
-        [...indexRects, first.rect],
-        indexRects[0]!,
-        true,
-      ),
-    )
-    return pointers
-  }
+  const { one, av, ar } = markers
 
-  if (markers.one) {
-    const index = markers.av
+  if (one && av >= 0 && ar >= 0) {
+    const index = av
     const angle = slotAngle(index, max)
     const text = `av = ar = ${index}`
     const width = Math.max(118, Math.ceil(textWidth(text, 13) + 18))
@@ -512,23 +516,22 @@ function buildPointers(
     return pointers
   }
 
-  const first = buildPointer(
-    'av',
-    markers.av,
-    slotAngle(markers.av, max),
-    indexRects,
-    indexRects[markers.av]!,
-  )
-  pointers.push(first)
-  pointers.push(
-    buildPointer(
-      'ar',
-      markers.ar,
-      slotAngle(markers.ar, max),
-      [...indexRects, first.rect],
-      indexRects[markers.ar]!,
-    ),
-  )
+  for (const key of ['av', 'ar'] as const) {
+    const index = key === 'av' ? av : ar
+    if (index < 0) {
+      pointers.push(undefinedPointer(key))
+      continue
+    }
+    pointers.push(
+      buildPointer(
+        key,
+        index,
+        slotAngle(index, max),
+        [...indexRects, ...pointers.map((pointer) => pointer.rect)],
+        indexRects[index]!,
+      ),
+    )
+  }
   return pointers
 }
 
@@ -561,14 +564,14 @@ export function ringFitBounds(max: number): RingRect {
   }
 
   // Any applied formula can draw the wrap chip, so every slot pair must fit.
-  collect({ empty: true, one: false, av: -1, ar: -1 }, false)
+  collect({ one: false, av: -1, ar: -1 }, false)
   for (let index = 0; index < max; index += 1) {
-    collect({ empty: false, one: true, av: index, ar: index }, true)
+    collect({ one: true, av: index, ar: index }, true)
   }
   for (let av = 0; av < max; av += 1) {
     for (let ar = 0; ar < max; ar += 1) {
       if (av === ar) continue
-      collect({ empty: false, one: false, av, ar }, true)
+      collect({ one: false, av, ar }, true)
     }
   }
 
@@ -643,7 +646,7 @@ export function ringGeometry(
   })
 
   const pointers = buildPointers(
-    { empty, one, av: circular.av, ar: circular.ar },
+    { one, av: circular.av, ar: circular.ar },
     max,
     indexRects,
   )

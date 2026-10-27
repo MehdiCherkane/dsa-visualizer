@@ -27,8 +27,8 @@ describe('coquille de l’application', () => {
     expect(markup).toContain(fr.operation.execute)
     expect(markup).toContain(fr.scenarios.title)
     expect(markup).toContain('ldc-svg')
-    expect(markup).not.toContain('ldc-zellige')
-    expect(markup).not.toContain('site-backdrop')
+    expect(markup).toContain('viz-zellige')
+    expect(markup).toContain('site-backdrop-zellige')
     expect(markup).toContain('la liste est vide')
     expect(markup).toContain(fr.viz.emptyInsert)
     expect(markup).toContain(defaultPlugin.id === 'ldc' ? 'Chapitre 4' : 'Chapitre 4')
@@ -65,6 +65,24 @@ describe('coquille de l’application', () => {
     }
   })
 
+  it('ouvre le chapitre 2 sur les profils linéaire et circulaire', () => {
+    const previousHash = window.location.hash
+    window.location.hash = '#/chapitre-2'
+
+    try {
+      const markup = renderToStaticMarkup(<App />)
+      expect(markup).toContain(fr.chapters.lsc.title)
+      expect(markup).toContain(fr.profiles.structureLabel)
+      expect(markup).toContain(fr.profiles.lineaire)
+      expect(markup).toContain(fr.profiles.circulaire)
+      expect(markup).not.toContain(fr.profiles.etudiant)
+      expect(markup).toContain('supprimerValeur(int valeur)')
+      expect(markup).toContain(fr.viz.emptyLsc)
+    } finally {
+      window.location.hash = previousHash
+    }
+  })
+
   it('ajoute la décoration de fond au menu principal', () => {
     const previousHash = window.location.hash
     window.location.hash = MENU_HASH
@@ -86,16 +104,18 @@ describe('coquille de l’application', () => {
     }
   })
 
-  it('ajoute le fond zellige au chapitre 5 circulaire', () => {
+  it('applique le fond zellige aux six chapitres', () => {
     const previousHash = window.location.hash
-    window.location.hash = '#/chapitre-5'
 
     try {
-      const markup = renderToStaticMarkup(<App />)
-      expect(markup).toContain('ldc-zellige')
-      expect(markup).toContain('ldc-zellige-tile')
-      expect(markup).toContain('site-backdrop-zellige')
-      expect(markup).toContain('--zl-pattern')
+      for (const chapter of [1, 2, 3, 4, 5, 6]) {
+        window.location.hash = `#/chapitre-${chapter}`
+        const markup = renderToStaticMarkup(<App />)
+        expect(markup).toContain('viz-zellige')
+        expect(markup).toContain('viz-zellige-tile')
+        expect(markup).toContain('site-backdrop-zellige')
+        expect(markup).toContain('--zl-pattern')
+      }
     } finally {
       window.location.hash = previousHash
     }
