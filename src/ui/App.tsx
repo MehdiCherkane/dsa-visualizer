@@ -157,13 +157,17 @@ export function DemoApp<S extends BaseSnapshot>({
   }, [playerState.index, playerState.playing, playerState.total])
 
   useEffect(() => () => player.destroy(), [player])
-  useEffect(() => {
-    const handleFullscreenChange = (): void => {
-      if (!document.fullscreenElement) setSimulationFullscreen(false)
-    }
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  const syncFullscreenState = useCallback((): void => {
+    const element = document.fullscreenElement
+    setSimulationFullscreen(
+      element === document.documentElement || element === appRef.current,
+    )
   }, [])
+
+  useEffect(() => {
+    document.addEventListener('fullscreenchange', syncFullscreenState)
+    return () => document.removeEventListener('fullscreenchange', syncFullscreenState)
+  }, [syncFullscreenState])
 
   useEffect(() => {
     writeLayout(layout)
@@ -371,16 +375,25 @@ export function DemoApp<S extends BaseSnapshot>({
   )
 
   const toggleSimulationFullscreen = useCallback(() => {
-    const next = !simulationFullscreen
-    setSimulationFullscreen(next)
-    if (next) {
-      if (appRef.current?.requestFullscreen && !document.fullscreenElement) {
-        void appRef.current.requestFullscreen().catch(() => undefined)
-      }
-    } else if (document.fullscreenElement) {
-      void document.exitFullscreen().catch(() => undefined)
+    const syncAfter = (action: Promise<void> | void): void => {
+      void Promise.resolve(action).then(syncFullscreenState).catch(() => undefined)
     }
-  }, [simulationFullscreen])
+    try {
+      if (document.fullscreenElement) {
+        if (typeof document.exitFullscreen !== 'function') {
+          setSimulationFullscreen(false)
+          return
+        }
+        syncAfter(document.exitFullscreen())
+        return
+      }
+      const root = document.documentElement
+      if (typeof root.requestFullscreen !== 'function') return
+      syncAfter(root.requestFullscreen())
+    } catch {
+      // Fullscreen is optional: blocked or unsupported browsers keep the UI as-is.
+    }
+  }, [syncFullscreenState])
 
   const finishOperation = useCallback(() => {
     stackMotionRef.current = 'instant'
@@ -533,6 +546,18 @@ export function DemoApp<S extends BaseSnapshot>({
         if (buttonLike && (event.key === ' ' || event.key === 'Enter')) return
       }
 
+      const fullscreenChord =
+        event.shiftKey &&
+        (event.key === 'f' || event.key === 'F') &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        !event.metaKey
+      if (fullscreenChord) {
+        event.preventDefault()
+        if (!event.repeat) toggleSimulationFullscreen()
+        return
+      }
+
       switch (event.key) {
         case 'Escape':
           // Popovers handle Escape on `document` first and call preventDefault.
@@ -542,7 +567,10 @@ export function DemoApp<S extends BaseSnapshot>({
           if (simulationFullscreen) {
             event.preventDefault()
             setSimulationFullscreen(false)
-            if (document.fullscreenElement) {
+            if (
+              document.fullscreenElement &&
+              typeof document.exitFullscreen === 'function'
+            ) {
               void document.exitFullscreen().catch(() => undefined)
             }
             break
@@ -597,7 +625,7 @@ export function DemoApp<S extends BaseSnapshot>({
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [courseOpen, finishOperation, firstStep, nextStep, stepBack, resetAll, simulationFullscreen, onMenu, togglePlayback])
+  }, [courseOpen, finishOperation, firstStep, nextStep, stepBack, resetAll, simulationFullscreen, onMenu, togglePlayback, toggleSimulationFullscreen])
 
   const appClassName = [
     'app',
