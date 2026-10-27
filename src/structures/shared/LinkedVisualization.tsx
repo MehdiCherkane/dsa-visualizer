@@ -861,7 +861,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
       } else if (event.key === '-' || event.key === '_') {
         event.preventDefault()
         zoomBy(1 / 1.2)
-      } else if (event.key === '0' || event.key === 'f' || event.key === 'F') {
+      } else if (!event.shiftKey && (event.key === '0' || event.key === 'f' || event.key === 'F')) {
         event.preventDefault()
         fitView()
       }

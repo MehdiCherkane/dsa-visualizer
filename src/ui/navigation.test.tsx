@@ -237,3 +237,137 @@ describe('raccourcis clavier', () => {
     expect(query('.ldc-svg')).not.toBeNull()
   })
 })
+
+describe('plein écran', () => {
+  let fullscreenElement: Element | null = null
+  const requestFullscreen = vi.fn((): Promise<void> => {
+    fullscreenElement = document.documentElement
+    document.dispatchEvent(new Event('fullscreenchange'))
+    return Promise.resolve()
+  })
+  const exitFullscreen = vi.fn((): Promise<void> => {
+    fullscreenElement = null
+    document.dispatchEvent(new Event('fullscreenchange'))
+    return Promise.resolve()
+  })
+
+  function pressShiftF(init: KeyboardEventInit = {}): void {
+    act(() => {
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'F',
+          shiftKey: true,
+          bubbles: true,
+          cancelable: true,
+          ...init,
+        }),
+      )
+    })
+  }
+
+  function appIsFullscreen(): boolean {
+    return query('.app')?.className.includes('simulation-fullscreen') ?? false
+  }
+
+  beforeEach(() => {
+    fullscreenElement = null
+    requestFullscreen.mockClear()
+    exitFullscreen.mockClear()
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      get: () => fullscreenElement,
+    })
+    Object.defineProperty(document.documentElement, 'requestFullscreen', {
+      configurable: true,
+      value: requestFullscreen,
+    })
+    Object.defineProperty(document, 'exitFullscreen', {
+      configurable: true,
+      value: exitFullscreen,
+    })
+  })
+
+  afterEach(() => {
+    Reflect.deleteProperty(document, 'fullscreenElement')
+    Reflect.deleteProperty(document.documentElement, 'requestFullscreen')
+    Reflect.deleteProperty(document, 'exitFullscreen')
+  })
+
+  it('bascule le plein écran avec Maj+F', () => {
+    openDemo()
+    expect(appIsFullscreen()).toBe(false)
+
+    pressShiftF()
+    expect(requestFullscreen).toHaveBeenCalledTimes(1)
+    expect(appIsFullscreen()).toBe(true)
+
+    pressShiftF()
+    expect(exitFullscreen).toHaveBeenCalledTimes(1)
+    expect(appIsFullscreen()).toBe(false)
+  })
+
+  it('ignore Maj+F dans un champ de saisie', () => {
+    openDemo()
+    const input = document.createElement('input')
+    container.append(input)
+
+    act(() => {
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'F',
+          shiftKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      )
+    })
+
+    expect(requestFullscreen).not.toHaveBeenCalled()
+    expect(appIsFullscreen()).toBe(false)
+  })
+
+  it('ignore Maj+F avec Ctrl, Alt ou Meta', () => {
+    openDemo()
+
+    pressShiftF({ ctrlKey: true })
+    pressShiftF({ altKey: true })
+    pressShiftF({ metaKey: true })
+
+    expect(requestFullscreen).not.toHaveBeenCalled()
+  })
+
+  it('reste synchronisé quand le navigateur quitte le plein écran', () => {
+    openDemo()
+    pressShiftF()
+    expect(appIsFullscreen()).toBe(true)
+
+    act(() => {
+      fullscreenElement = null
+      document.dispatchEvent(new Event('fullscreenchange'))
+    })
+
+    expect(appIsFullscreen()).toBe(false)
+  })
+
+  it('quitte le plein écran avec Échap', () => {
+    openDemo()
+    pressShiftF()
+    expect(appIsFullscreen()).toBe(true)
+
+    press('Escape')
+    expect(exitFullscreen).toHaveBeenCalledTimes(1)
+    expect(appIsFullscreen()).toBe(false)
+  })
+
+  it('gère silencieusement un refus du navigateur', async () => {
+    requestFullscreen.mockRejectedValueOnce(new Error('refusé'))
+    openDemo()
+
+    pressShiftF()
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(appIsFullscreen()).toBe(false)
+  })
+})
