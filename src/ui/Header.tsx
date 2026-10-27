@@ -14,6 +14,8 @@ interface HeaderProps<S extends BaseSnapshot> {
   theme: 'light' | 'dark'
   onTheme: () => void
   onMenu: () => void
+  onCourse: () => void
+  courseOpen: boolean
   presentation: boolean
   onPresentation: () => void
   scenarios: ScenarioDef<S>[]
@@ -28,6 +30,8 @@ export function Header<S extends BaseSnapshot>({
   theme,
   onTheme,
   onMenu,
+  onCourse,
+  courseOpen,
   presentation,
   onPresentation,
   scenarios,
@@ -42,6 +46,7 @@ export function Header<S extends BaseSnapshot>({
   const profileStyle = {
     '--profile-count': profileCount,
   } as CSSProperties
+  const courseLabel = fr.coursePdf.openFor(plugin.chapter)
 
   return (
     <header className="app-header">
@@ -129,6 +134,17 @@ export function Header<S extends BaseSnapshot>({
           <span className="keycap">P</span>
         </button>
         <span className="header-divider" aria-hidden="true" />
+        <button
+          type="button"
+          className={courseOpen ? 'header-icon-button active' : 'header-icon-button'}
+          onClick={onCourse}
+          title={courseLabel}
+          aria-label={courseLabel}
+          aria-haspopup="dialog"
+          aria-expanded={courseOpen}
+        >
+          <CourseIcon />
+        </button>
         <ThemeToggle theme={theme} onTheme={onTheme} />
         <Shortcuts />
       </div>
@@ -160,6 +176,28 @@ function HomeIcon(): JSX.Element {
         fill="none"
         stroke="currentColor"
         strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function CourseIcon(): JSX.Element {
+  return (
+    <svg viewBox="0 0 20 20" className="button-icon" aria-hidden="true">
+      <path
+        d="M5 2.6h6.2L15 6.4v11H5z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M11.1 2.8v3.8H15M7.4 10.5h5.2M7.4 13.5h5.2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

@@ -9,6 +9,7 @@ import type {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { VisualizationProps } from '../../core/types'
 import { fr } from '../../i18n/fr'
+import { ZelligeFrieze } from '../../ui/ZelligeFrieze'
 import {
   ARRAY_X,
   ARRAY_Y,
@@ -847,6 +848,7 @@ export default function StaticStructuresVisualization({
       className={`viz-stage${panning ? ' panning' : ''}${empty ? ' is-empty' : ''}${isRing ? ' is-ring' : ''}`}
       ref={stageRef}
     >
+      <ZelligeFrieze />
       <svg
         className="viz-svg"
         viewBox={`0 0 ${stageW} ${stageH}`}

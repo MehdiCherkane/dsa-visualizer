@@ -4,7 +4,7 @@ import patternUrl from './zellige-pattern.webp?inline'
 import './SiteBackdrop.css'
 
 /**
- * Zellige frieze layer on its own. The chapter 5 page reuses it behind the
+ * Zellige frieze layer on its own. Every chapter page reuses it behind the
  * simulation panels; the menu adds the 3D still life on top of it.
  */
 export function ZelligeBackdrop(): JSX.Element {
