@@ -121,7 +121,7 @@ export function Controls({
         type="button"
         className="icon-button fullscreen-toggle"
         onClick={onFullscreen}
-        title={fullscreen ? fr.controls.exitFullscreen : fr.controls.fullscreen}
+        title={`${fullscreen ? fr.controls.exitFullscreen : fr.controls.fullscreen} (${fr.controls.fullscreenShortcut})`}
         aria-label={fullscreen ? fr.controls.exitFullscreen : fr.controls.fullscreen}
         aria-pressed={fullscreen}
       >
