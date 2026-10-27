@@ -82,6 +82,9 @@ function PointerShape({
   return (
     <g
       className={`ss-ring-pointer is-${pointer.tone}${pointer.dashed ? ' is-dashed' : ''}${changed ? ' is-changed' : ''}`}
+      role={pointer.dashed ? 'img' : undefined}
+      aria-label={pointer.dashed ? `${pointer.key} : ${V.ringUndefinedShort} (-1)` : undefined}
+      aria-hidden={pointer.dashed ? undefined : true}
     >
       {pointer.connectors.map((connector, index) => {
         const heading = direction(connector.from, connector.to)
@@ -166,12 +169,14 @@ export function RingView({
   changedGlobals,
   motion,
   motionDuration,
+  pointerMotionDuration,
 }: {
   geometry: RingGeometry
   changedIndices: Set<number>
   changedGlobals: Set<string>
   motion: boolean
   motionDuration: number
+  pointerMotionDuration: number
 }): JSX.Element {
   const status = geometry.empty
     ? V.stateEmptyFile
@@ -179,7 +184,10 @@ export function RingView({
       ? V.stateFullFile
       : V.freeSlots(geometry.free)
   const centreLabel = `${geometry.taille}/${geometry.max} · ${status}`
-  const style = { '--ss-motion-duration': `${motionDuration}ms` } as CSSProperties
+  const style = {
+    '--ss-motion-duration': `${motionDuration}ms`,
+    '--ss-pointer-motion-duration': `${pointerMotionDuration}ms`,
+  } as CSSProperties
 
   return (
     <g
@@ -349,7 +357,7 @@ export function RingView({
         ))}
       </g>
 
-      <g className="ss-ring-pointers" aria-hidden="true">
+      <g className="ss-ring-pointers">
         {geometry.pointers.map((pointer) => (
           <PointerShape
             key={`ring-pointer-${pointer.key}-${pointer.text}`}
