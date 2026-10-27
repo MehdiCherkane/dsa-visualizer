@@ -27,6 +27,10 @@ const pileModel: LinkedModel<PfSnapshot> = {
   emptyInsert: fr.viz.insertEmptyPile,
   ariaLabel: fr.chapters.pilesFiles.title,
   showHeap: true,
+  fitContent: true,
+  fitPadding: 48,
+  adaptiveLabels: true,
+  directionalMotion: true,
   nodes(snapshot) {
     if (snapshot.profile !== 'pile') return []
     return snapshot.nodes.map<VizNode>((node) => ({
@@ -56,6 +60,11 @@ const fileModel: LinkedModel<PfSnapshot> = {
   emptyText: fr.viz.emptyFile,
   emptyInsert: fr.viz.insertEmptyFile,
   ariaLabel: fr.chapters.pilesFiles.title,
+  pinAnchor: 'right',
+  fitContent: true,
+  fitPadding: 48,
+  adaptiveLabels: true,
+  directionalMotion: true,
   nodes(snapshot) {
     if (snapshot.profile !== 'file') return []
     return snapshot.nodes.map<VizNode>((node) => ({
@@ -73,7 +82,7 @@ const fileModel: LinkedModel<PfSnapshot> = {
   globals(snapshot) {
     if (snapshot.profile !== 'file') return []
     return [
-      { name: 'debut', value: snapshot.globals.debut, placement: 'top' },
+      { name: 'debut', value: snapshot.globals.debut, placement: 'top-center' },
       { name: 'fin', value: snapshot.globals.fin, placement: 'bottom' },
     ]
   },

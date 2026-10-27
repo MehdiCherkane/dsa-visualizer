@@ -123,6 +123,11 @@ export class PileRecorder {
     })
   }
 
+  dropLocal(name: string): void {
+    const frame = this.activeFrame
+    if (frame) delete frame.vars[name]
+  }
+
   setPointer(nodeId: number, field: 'precedent', value: PointerValue): void {
     const node = this.node(nodeId)
     const from = clonePointer(node[field])
@@ -254,14 +259,7 @@ export class PileRecorder {
       for (const node of freed) this.pending.push({ kind: 'remove', nodeId: node.id })
       this.state.nodes = this.state.nodes.filter((node) => !node.freed)
     }
-    const row = this.state.nodes
-      .filter((node) => node.lane === 'row')
-      .sort((a, b) => a.slot - b.slot)
-    row.forEach((node, index) => {
-      if (node.slot !== index) {
-        node.slot = index
-        this.pending.push({ kind: 'layout', nodeId: node.id, slot: index, lane: node.lane })
-      }
-    })
+    // Une pile grandit et rétrécit par le sommet : conserver les slots évite
+    // que les nœuds restants sautent lorsqu'on dépile.
   }
 }
