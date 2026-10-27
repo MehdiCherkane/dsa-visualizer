@@ -120,8 +120,15 @@ export const RING_NODE_GAP = 46
 /** Horizontal/vertical padding of the decorative band around the ring. */
 export const RING_BAND_PAD_X = 68
 export const RING_BAND_PAD_Y = 44
-/** Distance between the outer node border and the first arrow lane. */
-export const RING_OUTER_PAD = 38
+/** Extra room reserved outside the ring band for outward arcs and self-loops. */
+export const RING_ROUTE_PAD = 72
+/** How far an outward arc runs beyond the outermost card edge. */
+export const RING_ARC_OFFSET = 72
+/** Corner radius of the rounded outward arcs. */
+export const RING_ARC_RADIUS = 40
+/** Size of the rectangular self-loop outside a single node. */
+export const RING_SELF_LOOP_OUT = 44
+export const RING_SELF_LOOP_TOP = 34
 
 export interface RingGeometry {
   cx: number
@@ -229,6 +236,18 @@ export function ringGeometry(nodes: VizNode[]): RingGeometry | null {
   }
 }
 
+/** Top-left corner of the card at a given ring slot. */
+function ringNodePoint(ring: RingGeometry, index: number): Point {
+  const angle =
+    ring.count === 1
+      ? 0
+      : ring.startAngle + (index * Math.PI * 2) / ring.count
+  return {
+    x: ring.cx + Math.cos(angle) * ring.rx - NODE_W / 2,
+    y: ring.cy + Math.sin(angle) * ring.ry - NODE_H / 2,
+  }
+}
+
 export function ringBand(ring: RingGeometry): RingBandGeometry {
   const rx = ring.rx + NODE_W / 2 + RING_BAND_PAD_X
   const ry = ring.ry + NODE_H / 2 + RING_BAND_PAD_Y
@@ -258,14 +277,61 @@ export function emptyRingBand(): RingBandGeometry {
   }
 }
 
-/**
- * Ring nodes keep their cards axis-aligned. The field cell is flipped on the
- * left half and on the lower half so reciprocal links leave on opposite sides.
- */
-export function isRingNodeFlipped(point: Point, ring: RingGeometry | null): boolean {
-  if (!ring) return false
+function ringOutwardFlip(point: Point, ring: RingGeometry): boolean {
   const center = nodeCenter(point)
-  return center.x < ring.cx - 0.5 || center.y > ring.cy + 0.5
+  const dx = center.x - ring.cx
+  if (Math.abs(dx) > 0.5) return dx < 0
+  return center.y > ring.cy + 0.5
+}
+
+/**
+ * Pick the field side that shortens the straight link to `targetPoint`.
+ * Symmetric cases fall back to the outward rule so reciprocal links still
+ * leave on opposite sides of the ring.
+ */
+function ringShortestFlip(
+  point: Point,
+  ring: RingGeometry,
+  targetPoint: Point,
+): boolean {
+  const targetRect: Rect = {
+    x: targetPoint.x,
+    y: targetPoint.y,
+    width: NODE_W,
+    height: NODE_H,
+  }
+  const left = pointerAnchor(point, 'suivant', 'horizontal', true)
+  const right = pointerAnchor(point, 'suivant', 'horizontal', false)
+  const leftTip = closestBorderPoint(left, targetRect)
+  const rightTip = closestBorderPoint(right, targetRect)
+  const leftLength = Math.hypot(leftTip.x - left.x, leftTip.y - left.y)
+  const rightLength = Math.hypot(rightTip.x - right.x, rightTip.y - right.y)
+  if (Math.abs(leftLength - rightLength) < 0.5) {
+    return ringOutwardFlip(point, ring)
+  }
+  return leftLength < rightLength
+}
+
+/**
+ * Ring nodes keep their cards axis-aligned and mirror only the `suivant`
+ * field. Small rings use a fixed side pattern so their drawings stay stable:
+ * two nodes face each other, three form a triangle and four form a rectangle.
+ * Larger rings choose, per node, the side that shortens the link to its
+ * successor while keeping the dot on the target side.
+ */
+export function isRingNodeFlipped(
+  point: Point,
+  ring: RingGeometry | null,
+  targetPoint: Point | null = null,
+): boolean {
+  if (!ring) return false
+  if (ring.count === 1) return false
+  const index = ringStepIndex(point, ring)
+  if (ring.count === 2) return index >= 1
+  if (ring.count === 3) return index >= 1
+  if (ring.count === 4) return index >= 2
+  if (targetPoint) return ringShortestFlip(point, ring, targetPoint)
+  return ringOutwardFlip(point, ring)
 }
 
 export function layoutNodes(
@@ -282,13 +348,7 @@ export function layoutNodes(
     const ring = ringGeometry(nodes)
     if (ring) {
       row.forEach((node, index) => {
-        const angle =
-          row.length === 1
-            ? 0
-            : ring.startAngle + (index * Math.PI * 2) / row.length
-        const cx = ring.cx + Math.cos(angle) * ring.rx
-        const cy = ring.cy + Math.sin(angle) * ring.ry
-        layout.set(node.id, { x: cx - NODE_W / 2, y: cy - NODE_H / 2 })
+        layout.set(node.id, ringNodePoint(ring, index))
       })
 
       const heap = nodes
@@ -601,49 +661,240 @@ export function routeField(
   }
 }
 
-export function exactNodeRect(point: Point): Rect {
-  return { x: point.x, y: point.y, width: NODE_W, height: NODE_H }
-}
-
-/**
- * First border crossed by the ray `from -> toward`. `from` may be inside the
- * rectangle (source exit) or outside it (target entry).
- */
-export function borderPoint(from: Point, toward: Point, rect: Rect): Point {
-  const dx = toward.x - from.x
-  const dy = toward.y - from.y
-  const axis = (
-    start: number,
-    delta: number,
-    min: number,
-    max: number,
-  ): [number, number] | null => {
-    if (Math.abs(delta) < 1e-9) {
-      return start < min || start > max ? null : [-Infinity, Infinity]
-    }
-    const first = (min - start) / delta
-    const second = (max - start) / delta
-    return [Math.min(first, second), Math.max(first, second)]
-  }
-  const xAxis = axis(from.x, dx, rect.x, rect.x + rect.width)
-  const yAxis = axis(from.y, dy, rect.y, rect.y + rect.height)
-  if (!xAxis || !yAxis) return { ...from }
-  const enter = Math.max(xAxis[0], yAxis[0])
-  const exit = Math.min(xAxis[1], yAxis[1])
-  if (enter > exit) return { ...from }
-  const t = enter >= 0 ? enter : exit
-  if (!Number.isFinite(t)) return { ...from }
-  return { x: from.x + dx * t, y: from.y + dy * t }
-}
-
 function normalizeAngle(angle: number): number {
   return ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
 }
 
 /**
- * Route a `suivant` arrow around the outside of the ring. Both endpoint
- * tangents leave/enter the cards from the ring side, so the arrow reads as a
- * segment of the circle instead of a chord crossing its middle.
+ * Simplify consecutive duplicate or collinear orthogonal points.
+ */
+export function simplifyPoints(points: Point[]): Point[] {
+  const result: Point[] = []
+  for (const point of points) {
+    if (result.length === 0) {
+      result.push(point)
+      continue
+    }
+    const last = result[result.length - 1]!
+    if (Math.abs(point.x - last.x) < 1e-4 && Math.abs(point.y - last.y) < 1e-4) {
+      continue
+    }
+    if (result.length >= 2) {
+      const prev = result[result.length - 2]!
+      const dx1 = last.x - prev.x
+      const dy1 = last.y - prev.y
+      const dx2 = point.x - last.x
+      const dy2 = point.y - last.y
+      const cross = dx1 * dy2 - dy1 * dx2
+      const dot = dx1 * dx2 + dy1 * dy2
+      if (Math.abs(cross) < 1e-4 && dot > 0) {
+        result[result.length - 1] = point
+        continue
+      }
+    }
+    result.push(point)
+  }
+  return result
+}
+
+/**
+ * Turns a list of waypoints into an SVG path with smooth, rounded corners.
+ */
+export function roundedPath(points: Point[], radius = 16): string {
+  const compact = simplifyPoints(points)
+  if (compact.length < 2) return ''
+  if (compact.length === 2 || radius <= 0) {
+    return compact
+      .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
+      .join(' ')
+  }
+
+  const first = compact[0]!
+  const parts = [`M ${first.x} ${first.y}`]
+  for (let index = 1; index < compact.length - 1; index += 1) {
+    const previous = compact[index - 1]!
+    const current = compact[index]!
+    const next = compact[index + 1]!
+    const inDx = current.x - previous.x
+    const inDy = current.y - previous.y
+    const inLength = Math.hypot(inDx, inDy)
+    const outDx = next.x - current.x
+    const outDy = next.y - current.y
+    const outLength = Math.hypot(outDx, outDy)
+
+    if (inLength < 1e-4 || outLength < 1e-4) continue
+
+    const bend = Math.min(radius, inLength / 2, outLength / 2)
+    const before = {
+      x: current.x - (inDx * bend) / inLength,
+      y: current.y - (inDy * bend) / inLength,
+    }
+    const after = {
+      x: current.x + (outDx * bend) / outLength,
+      y: current.y + (outDy * bend) / outLength,
+    }
+    parts.push(`L ${before.x} ${before.y}`)
+    parts.push(`Q ${current.x} ${current.y} ${after.x} ${after.y}`)
+  }
+  const last = compact[compact.length - 1]!
+  parts.push(`L ${last.x} ${last.y}`)
+  return parts.join(' ')
+}
+
+export function orthogonalPath(points: Point[]): string {
+  return roundedPath(points, 0)
+}
+
+function ringStepIndex(point: Point, ring: RingGeometry): number {
+  if (ring.step <= 0) return 0
+  const center = nodeCenter(point)
+  const angle = Math.atan2(center.y - ring.cy, center.x - ring.cx)
+  return (
+    Math.round(normalizeAngle(angle - ring.startAngle) / ring.step) %
+    ring.count
+  )
+}
+
+function cardRect(point: Point): Rect {
+  return { x: point.x, y: point.y, width: NODE_W, height: NODE_H }
+}
+
+function samePoint(first: Point, second: Point): boolean {
+  return (
+    Math.abs(first.x - second.x) < 0.5 && Math.abs(first.y - second.y) < 0.5
+  )
+}
+
+/**
+ * Closest point on a card border. The arrowhead therefore lands on the side
+ * of the target that faces the source dot.
+ */
+function closestBorderPoint(from: Point, rect: Rect): Point {
+  const left = rect.x
+  const right = rect.x + rect.width
+  const top = rect.y
+  const bottom = rect.y + rect.height
+  const inside =
+    from.x > left && from.x < right && from.y > top && from.y < bottom
+  if (inside) {
+    const candidates = [
+      { distance: from.x - left, point: { x: left, y: from.y } },
+      { distance: right - from.x, point: { x: right, y: from.y } },
+      { distance: from.y - top, point: { x: from.x, y: top } },
+      { distance: bottom - from.y, point: { x: from.x, y: bottom } },
+    ]
+    candidates.sort((first, second) => first.distance - second.distance)
+    return candidates[0]!.point
+  }
+  return {
+    x: clamp(from.x, left, right),
+    y: clamp(from.y, top, bottom),
+  }
+}
+
+/** Liang-Barsky clip: does the segment enter the inside of the card? */
+function segmentCrossesRect(
+  start: Point,
+  end: Point,
+  rect: Rect,
+  inset = 1,
+): boolean {
+  const left = rect.x + inset
+  const right = rect.x + rect.width - inset
+  const top = rect.y + inset
+  const bottom = rect.y + rect.height - inset
+  if (right <= left || bottom <= top) return false
+  const dx = end.x - start.x
+  const dy = end.y - start.y
+  let enter = 0
+  let exit = 1
+  const clip = (p: number, q: number): boolean => {
+    if (Math.abs(p) < 1e-9) return q >= 0
+    const ratio = q / p
+    if (p < 0) {
+      if (ratio > exit) return false
+      if (ratio > enter) enter = ratio
+    } else {
+      if (ratio < enter) return false
+      if (ratio < exit) exit = ratio
+    }
+    return true
+  }
+  return (
+    clip(-dx, start.x - left) &&
+    clip(dx, right - start.x) &&
+    clip(-dy, start.y - top) &&
+    clip(dy, bottom - start.y)
+  )
+}
+
+/** Does a straight link pass through a ring card other than its endpoints? */
+function crossesForeignRingNode(
+  ring: RingGeometry,
+  sourcePoint: Point,
+  targetPoint: Point,
+  start: Point,
+  end: Point,
+): boolean {
+  for (let index = 0; index < ring.count; index += 1) {
+    const point = ringNodePoint(ring, index)
+    if (samePoint(point, sourcePoint) || samePoint(point, targetPoint)) {
+      continue
+    }
+    if (segmentCrossesRect(start, end, cardRect(point))) return true
+  }
+  return false
+}
+
+function routeRingStraight(
+  tail: Point,
+  targetPoint: Point,
+): { path: string; tail: Point; tip: Point } {
+  const tip = closestBorderPoint(tail, cardRect(targetPoint))
+  return { path: `M ${tail.x} ${tail.y} L ${tip.x} ${tip.y}`, tail, tip }
+}
+
+/**
+ * Rounded outer arc: leave the source towards the nearest outside lane, run
+ * along it, then enter the target border from the outside. Used for the two
+ * opposite sides of a two-node ring and the two slanted sides of a triangle.
+ */
+function routeRingArc(
+  tail: Point,
+  sourcePoint: Point,
+  targetPoint: Point,
+  side: 'left' | 'right',
+): { path: string; tail: Point; tip: Point } {
+  const sourceRect = cardRect(sourcePoint)
+  const targetRect = cardRect(targetPoint)
+  const laneX =
+    side === 'right'
+      ? Math.max(
+          sourceRect.x + sourceRect.width,
+          targetRect.x + targetRect.width,
+        ) + RING_ARC_OFFSET
+      : Math.min(sourceRect.x, targetRect.x) - RING_ARC_OFFSET
+  const targetCenter = nodeCenter(targetPoint)
+  const tip = {
+    x: side === 'right' ? targetRect.x + targetRect.width : targetRect.x,
+    y: targetCenter.y,
+  }
+  return {
+    path: roundedPath(
+      [tail, { x: laneX, y: tail.y }, { x: laneX, y: tip.y }, tip],
+      RING_ARC_RADIUS,
+    ),
+    tail,
+    tip,
+  }
+}
+
+/**
+ * Route a `suivant` arrow. Small rings follow the reference drawings:
+ * a self-loop for one node, two opposite outer arcs for two nodes, a short
+ * bottom link plus two outer arcs for three nodes, and four straight
+ * rectangle sides for four nodes. Larger rings use straight dot-to-border
+ * links and only fall back to an outer arc when a card blocks the way.
  */
 export function routeRingField(
   source: VizNode,
@@ -679,59 +930,44 @@ export function routeRingField(
     const direction = sourceFlipped ? -1 : 1
     const borderX = sourceFlipped ? sourcePoint.x : sourcePoint.x + NODE_W
     const tip = { x: borderX - direction * 18, y: sourcePoint.y }
-    const first = { x: tail.x + direction * 104, y: tail.y - 16 }
-    const second = { x: tip.x + direction * 104, y: tip.y - 26 }
+    const outX = borderX + direction * RING_SELF_LOOP_OUT
+    const topY = sourcePoint.y - RING_SELF_LOOP_TOP
     return {
-      path: `M ${tail.x} ${tail.y} C ${first.x} ${first.y}, ${second.x} ${second.y}, ${tip.x} ${tip.y}`,
+      path: roundedPath(
+        [
+          tail,
+          { x: outX, y: tail.y },
+          { x: outX, y: topY },
+          { x: tip.x, y: topY },
+          tip,
+        ],
+        14,
+      ),
       tail,
       tip,
     }
   }
 
-  const sourceCenter = nodeCenter(sourcePoint)
-  const targetCenter = nodeCenter(targetPoint)
-  const sourceAngle = Math.atan2(
-    sourceCenter.y - ring.cy,
-    sourceCenter.x - ring.cx,
-  )
-  const targetAngle = Math.atan2(
-    targetCenter.y - ring.cy,
-    targetCenter.x - ring.cx,
-  )
-  const clockwise = normalizeAngle(targetAngle - sourceAngle)
-  let delta = clockwise > Math.PI ? clockwise - Math.PI * 2 : clockwise
+  const side = sourceFlipped ? 'left' : 'right'
   if (ring.count === 2) {
-    // The two nodes are a vertical pair; pick the side of the source dot so
-    // the two reciprocal links wrap around opposite sides of the ring.
-    const tailRight = tail.x >= sourceCenter.x
-    const plusMidpoint = sourceAngle + Math.PI / 2
-    const plusRight = Math.cos(plusMidpoint) >= 0
-    delta = tailRight === plusRight ? Math.PI : -Math.PI
+    return routeRingArc(tail, sourcePoint, targetPoint, side)
   }
-  const midpoint = sourceAngle + delta / 2
-  const gap = {
-    x:
-      ring.cx +
-      Math.cos(midpoint) * (ring.rx + NODE_W / 2 + RING_OUTER_PAD),
-    y:
-      ring.cy +
-      Math.sin(midpoint) * (ring.ry + NODE_H / 2 + RING_OUTER_PAD),
+  if (ring.count === 3) {
+    const sourceCenter = nodeCenter(sourcePoint)
+    const targetCenter = nodeCenter(targetPoint)
+    if (Math.abs(sourceCenter.y - targetCenter.y) <= NODE_H / 2) {
+      return routeRingStraight(tail, targetPoint)
+    }
+    return routeRingArc(tail, sourcePoint, targetPoint, side)
   }
-  const exit = borderPoint(sourceCenter, gap, exactNodeRect(sourcePoint))
-  const entry = borderPoint(gap, targetCenter, exactNodeRect(targetPoint))
-  const startControl = {
-    x: exit.x + (gap.x - exit.x) * 0.55,
-    y: exit.y + (gap.y - exit.y) * 0.55,
+
+  const straight = routeRingStraight(tail, targetPoint)
+  if (
+    !crossesForeignRingNode(ring, sourcePoint, targetPoint, tail, straight.tip)
+  ) {
+    return straight
   }
-  const endControl = {
-    x: gap.x + (gap.x - entry.x) * 0.25,
-    y: gap.y + (gap.y - entry.y) * 0.25,
-  }
-  return {
-    path: `M ${tail.x} ${tail.y} C ${startControl.x} ${startControl.y}, ${endControl.x} ${endControl.y}, ${entry.x} ${entry.y}`,
-    tail,
-    tip: entry,
-  }
+  return routeRingArc(tail, sourcePoint, targetPoint, side)
 }
 
 export function routeGlobal(
@@ -892,7 +1128,15 @@ export function contentBounds(
 ): Rect {
   const layout = layoutNodes(nodes, orientation, ring ? 'ring' : 'row')
   const rects: Rect[] = [emptyBounds(orientation)]
-  if (ring) rects.push(ringBand(ring).rect)
+  if (ring) {
+    const band = ringBand(ring).rect
+    rects.push({
+      x: band.x - RING_ROUTE_PAD,
+      y: band.y - RING_ROUTE_PAD,
+      width: band.width + RING_ROUTE_PAD * 2,
+      height: band.height + RING_ROUTE_PAD * 2,
+    })
+  }
   for (const node of nodes) {
     const point = layout.get(node.id)
     if (!point) continue

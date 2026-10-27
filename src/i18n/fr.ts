@@ -1123,6 +1123,21 @@ export const fr = {
           description:
             'Point de départ vide : insérer un premier nœud referme le cercle sur lui-même.',
         },
+        single: {
+          title: 'Anneau à un seul nœud',
+          description:
+            'Un unique nœud : son champ suivant pointe vers lui-même, formant une boucle visible.',
+        },
+        supprimerSeul: {
+          title: 'Supprimer l’unique nœud',
+          description:
+            'Supprimer l’unique nœud de l’anneau : debut repasse à NULL et la liste redevient vide.',
+        },
+        supprimerDebut: {
+          title: 'Supprimer le début (circulaire)',
+          description:
+            'Supprimer la tête 9 : le dernier nœud (5) est raccordé au nouveau debut (2).',
+        },
       },
     },
   },

@@ -11,6 +11,7 @@ const emptyLinear = createSnapshot('lineaire', [])
 
 const circular925 = createSnapshot('circulaire', intItems([9, 2, 5]))
 const circular25 = createSnapshot('circulaire', intItems([2, 5]))
+const circularSingle = createSnapshot('circulaire', intItems([7]))
 const emptyCircular = createSnapshot('circulaire', [])
 
 const S = fr.lsc.scenarios
@@ -147,5 +148,35 @@ export const circularScenarios: ScenarioDef<LscSnapshot>[] = [
     profileId: 'circulaire',
     state: emptyCircular,
     steps: [],
+  },
+  {
+    id: 'circ-single',
+    title: SC.single.title,
+    description: SC.single.description,
+    profileId: 'circulaire',
+    state: circularSingle,
+    steps: [],
+  },
+  {
+    id: 'circ-supprimer-seul',
+    title: SC.supprimerSeul.title,
+    description: SC.supprimerSeul.description,
+    profileId: 'circulaire',
+    state: circularSingle,
+    steps: [
+      { operationId: 'supprimerEnTete', params: {} },
+      { operationId: 'afficherListe', params: {} },
+    ],
+  },
+  {
+    id: 'circ-supprimer-debut',
+    title: SC.supprimerDebut.title,
+    description: SC.supprimerDebut.description,
+    profileId: 'circulaire',
+    state: circular925,
+    steps: [
+      { operationId: 'supprimerEnTete', params: {} },
+      { operationId: 'afficherListe', params: {} },
+    ],
   },
 ]

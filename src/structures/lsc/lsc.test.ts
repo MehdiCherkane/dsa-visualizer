@@ -262,6 +262,9 @@ describe('chapitre 2 — liste simplement chaînée circulaire', () => {
       'circ-absente': [9, 2, 5],
       'circ-detruire': [],
       'circ-vide': [],
+      'circ-single': [7],
+      'circ-supprimer-seul': [],
+      'circ-supprimer-debut': [2, 5],
     }
     for (const scenario of circularScenarios) {
       let snapshot = scenario.state
@@ -277,6 +280,163 @@ describe('chapitre 2 — liste simplement chaînée circulaire', () => {
   it('les identifiants de scénarios restent uniques entre les deux profils', () => {
     const ids = [...linearScenarios, ...circularScenarios].map((scenario) => scenario.id)
     expect(new Set(ids).size).toBe(ids.length)
+  })
+})
+
+describe('chapitre 2 — oracle des opérations circulaires', () => {
+  const removeFirst = (values: number[], value: number): number[] => {
+    const index = values.indexOf(value)
+    return index < 0
+      ? values
+      : [...values.slice(0, index), ...values.slice(index + 1)]
+  }
+
+  for (const count of [0, 1, 2, 3, 8]) {
+    const values = Array.from({ length: count }, (_, index) => index + 1)
+    const label = `${count} nœud${count > 1 ? 's' : ''}`
+
+    it(`reproduit le tableau pour ${label}`, () => {
+      const shown = final(circularOperations, 'circulaire', 'afficherListe', values)
+      expect(shown.console.output.trim()).toBe(values.join(' '))
+      expect(listValues(shown.snapshot)).toEqual(values)
+      expect(checkInvariants(shown.snapshot)).toEqual([])
+
+      for (const value of [...values, 99]) {
+        const searched = final(circularOperations, 'circulaire', 'rechercher', values, {
+          valeur: value,
+        })
+        expect(searched.console.returnValue, `rechercher ${value}`).toBe(
+          values.includes(value) ? 1 : 0,
+        )
+        expect(checkInvariants(searched.snapshot)).toEqual([])
+      }
+
+      const removedHead = final(
+        circularOperations,
+        'circulaire',
+        'supprimerEnTete',
+        values,
+      )
+      expect(listValues(removedHead.snapshot)).toEqual(values.slice(1))
+      expect(checkInvariants(removedHead.snapshot)).toEqual([])
+
+      const targets = [
+        ...new Set(
+          [values[0], values[Math.floor(values.length / 2)], values.at(-1), 99].filter(
+            (value): value is number => value !== undefined,
+          ),
+        ),
+      ]
+      for (const value of targets) {
+        const removed = final(circularOperations, 'circulaire', 'supprimerValeur', values, {
+          valeur: value,
+        })
+        expect(listValues(removed.snapshot), `supprimer ${value}`).toEqual(
+          removeFirst(values, value),
+        )
+        expect(checkInvariants(removed.snapshot)).toEqual([])
+      }
+
+      const destroyed = final(circularOperations, 'circulaire', 'detruireListe', values)
+      expect(destroyed.snapshot.globals.debut).toEqual({ kind: 'null' })
+      expect(destroyed.snapshot.nodes).toEqual([])
+      expect(checkInvariants(destroyed.snapshot)).toEqual([])
+    })
+  }
+
+  it('insère en tête et en fin sur zéro à trois nœuds', () => {
+    for (const count of [0, 1, 2, 3]) {
+      const values = Array.from({ length: count }, (_, index) => index + 1)
+      for (const [id, expected] of [
+        ['insererEnTete', [99, ...values]],
+        ['insererEnFin', [...values, 99]],
+      ] as const) {
+        const step = final(circularOperations, 'circulaire', id, values, { valeur: 99 })
+        expect(listValues(step.snapshot), `${id} / ${count}`).toEqual(expected)
+        expect(checkInvariants(step.snapshot)).toEqual([])
+      }
+    }
+  })
+
+  it('conserve l’anneau après vingt opérations aléatoires', () => {
+    let seed = 0x5eed1234
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0
+      return seed / 0x100000000
+    }
+    let snapshot = snapshotOf([], 'circulaire')
+    let values: number[] = []
+    let nextValue = 10
+
+    for (let index = 0; index < 20; index += 1) {
+      const choices =
+        values.length < 8
+          ? [
+              'insererEnTete',
+              'insererEnFin',
+              'supprimerEnTete',
+              'supprimerValeur',
+              'rechercher',
+              'afficherListe',
+              'detruireListe',
+            ]
+          : [
+              'supprimerEnTete',
+              'supprimerValeur',
+              'rechercher',
+              'afficherListe',
+              'detruireListe',
+            ]
+      const id = choices[Math.floor(random() * choices.length)]!
+      let params: ParamValues = {}
+      let expected = values
+
+      if (id === 'insererEnTete') {
+        expected = [nextValue, ...values]
+        params = { valeur: nextValue }
+        nextValue += 1
+      } else if (id === 'insererEnFin') {
+        expected = [...values, nextValue]
+        params = { valeur: nextValue }
+        nextValue += 1
+      } else if (id === 'supprimerEnTete') {
+        expected = values.slice(1)
+      } else if (id === 'supprimerValeur') {
+        const target =
+          values.length > 0 && random() < 0.75
+            ? values[Math.floor(random() * values.length)]!
+            : 99
+        params = { valeur: target }
+        expected = removeFirst(values, target)
+      } else if (id === 'rechercher') {
+        const target =
+          values.length > 0 && random() < 0.5
+            ? values[Math.floor(random() * values.length)]!
+            : 99
+        params = { valeur: target }
+      } else if (id === 'detruireListe') {
+        expected = []
+      }
+
+      const steps = operation(circularOperations, id).run(snapshot, params)
+      const step = steps[steps.length - 1]!
+
+      if (id === 'rechercher') {
+        expect(
+          step.console.returnValue,
+          `rechercher ${params.valeur}`,
+        ).toBe(values.includes(Number(params.valeur)) ? 1 : 0)
+      }
+      if (id === 'afficherListe') {
+        expect(step.console.output.trim()).toBe(values.join(' '))
+      }
+
+      snapshot = step.snapshot
+      values = expected
+      expect(listValues(snapshot), `op ${index + 1} ${id}`).toEqual(values)
+      expect(checkInvariants(snapshot), `op ${index + 1} ${id}`).toEqual([])
+      expect(values.length).toBeLessThanOrEqual(8)
+    }
   })
 })
 

@@ -74,6 +74,22 @@ const startScenarioOperation = async (page) => {
   await blur(page)
 }
 
+const runLscOperation = async (page, label, params = {}) => {
+  await selectOperation(page, label)
+  for (const [field, value] of Object.entries(params)) {
+    await page.getByLabel(field, { exact: true }).fill(String(value))
+  }
+  await page.getByRole('button', { name: 'Exécuter', exact: true }).click()
+  const finish = page.getByRole('button', { name: 'Terminer', exact: true })
+  try {
+    await finish.waitFor({ timeout: 5000 })
+    await finish.click()
+  } catch {
+    // Some chapter 2 operations finish without showing the Terminer control.
+  }
+  await wait(page, 700)
+}
+
 const stepUntilCaption = async (page, needle, maxSteps = 80) => {
   for (let index = 0; index < maxSteps; index += 1) {
     const caption = (await page.locator('.caption-text').textContent()) ?? ''
@@ -360,6 +376,27 @@ await shot(lscPage, '19-lsc-cours-1920', 800)
 const lscDock = (await lscPage.locator('.bottom-dock').textContent()) ?? ''
 if (!lscDock.includes('debut')) throw new Error('chapter 2 dock does not expose debut')
 await lscPage.close()
+
+// chapter 2 circular ring: one, two, three, four and eight nodes
+const circularPage = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
+await circularPage.goto(CHAPTER2, { waitUntil: 'networkidle' })
+await circularPage.waitForSelector('.viz-svg', { timeout: 10000 })
+await circularPage.getByRole('button', { name: 'Circulaire', exact: true }).click()
+await loadScenario(circularPage, 'Anneau à un seul nœud')
+await shot(circularPage, '24-lsc-circular-one-1920', 800)
+await loadScenario(circularPage, 'l’anneau 9')
+await shot(circularPage, '25-lsc-circular-three-1920', 800)
+await runLscOperation(circularPage, 'Supprimer en tête')
+await shot(circularPage, '26-lsc-circular-two-1920', 800)
+await loadScenario(circularPage, 'l’anneau 9')
+await runLscOperation(circularPage, 'Insérer en fin', { Valeur: 7 })
+await shot(circularPage, '27-lsc-circular-four-1920', 800)
+await loadScenario(circularPage, 'l’anneau 9')
+for (const value of [30, 40, 50, 60, 70]) {
+  await runLscOperation(circularPage, 'Insérer en fin', { Valeur: value })
+}
+await shot(circularPage, '28-lsc-circular-eight-1920', 800)
+await circularPage.close()
 
 const filePage = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
 await filePage.goto(CHAPTER3, { waitUntil: 'networkidle' })

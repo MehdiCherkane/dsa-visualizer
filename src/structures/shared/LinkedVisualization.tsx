@@ -668,6 +668,21 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
     () => layoutNodes(nodes, model.orientation, ring ? 'ring' : 'row'),
     [nodes, model.orientation, ring],
   )
+  const ringFlips = useMemo(() => {
+    const flips = new Map<number, boolean>()
+    if (!ring) return flips
+    for (const node of nodes) {
+      if (node.lane !== 'row') continue
+      const point = layout.get(node.id)
+      if (!point) continue
+      const targetPoint =
+        node.pointer.kind === 'node'
+          ? layout.get(node.pointer.id) ?? null
+          : null
+      flips.set(node.id, isRingNodeFlipped(point, ring, targetPoint))
+    }
+    return flips
+  }, [nodes, layout, ring])
   const globalCells = useMemo(
     () => layoutGlobals(globals, nodes, layout, model.orientation, ring),
     [globals, nodes, layout, model.orientation, ring],
@@ -754,7 +769,11 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
       const from = cameraRef.current
       const start = performance.now()
       const tick = (now: number): void => {
-        const progress = Math.min(1, (now - start) / duration)
+        // The first requestAnimationFrame timestamp can be a few milliseconds
+        // older than the performance.now() taken when the animation starts.
+        // Clamp both ends so the cubic easing never overshoots into a huge or
+        // negative zoom.
+        const progress = clamp((now - start) / duration, 0, 1)
         const eased = 1 - Math.pow(1 - progress, 3)
         const next = {
           x: from.x + (target.x - from.x) * eased,
@@ -1017,7 +1036,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
         targetPoint,
         model.field,
         ring,
-        isRingNodeFlipped(point, ring),
+        ringFlips.get(source.id) ?? false,
       )
     }
     return routeField(
@@ -1275,7 +1294,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
                     node={node}
                     fieldLabel={model.fieldLabel}
                     field={model.field}
-                    flipped={ring ? isRingNodeFlipped(point, ring) : false}
+                    flipped={ringFlips.get(node.id) ?? false}
                   />
                 </motion.g>
               )
@@ -1323,7 +1342,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
                 point,
                 model.field,
                 model.orientation,
-                ring ? isRingNodeFlipped(point, ring) : false,
+                ringFlips.get(node.id) ?? false,
               )
               return (
                 <circle
