@@ -10,7 +10,7 @@
     />
     <title>Structures de données en C — simulation et visualisation</title>
     <script>
-      var ALLOW_CONTINUE = true
+      var ALLOW_CONTINUE = false
       var PHONE_NOTICE_CONTINUE_KEY = 'dsa-phone-continue'
       function isPhoneScreen(width, height) {
         return Math.min(width, height) < 600
@@ -219,10 +219,6 @@
         fill: var(--pn-alert-soft);
         stroke: var(--pn-alert);
         stroke-width: 1.4;
-      }
-
-      .pn-art-dot {
-        fill: var(--pn-art-line);
       }
 
       .phone-notice-actions {
@@ -480,7 +476,7 @@
           </div>
 
           <div class="phone-notice-art" aria-hidden="true">
-            <svg viewBox="0 0 420 150" focusable="false">
+            <svg viewBox="0 0 324 150" focusable="false">
               <g fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <rect class="pn-art-device" x="24" y="18" width="62" height="114" rx="12" />
                 <rect class="pn-art-screen" x="33" y="32" width="44" height="82" rx="5" />
@@ -492,10 +488,6 @@
                 <rect class="pn-art-screen" x="177" y="47" width="98" height="54" rx="4" />
                 <path class="pn-art-device" d="M152 118h148" />
                 <path class="pn-art-gold" d="M207 72l8 9 17-19" />
-                <rect class="pn-art-device" x="318" y="52" width="64" height="92" rx="9" />
-                <rect class="pn-art-screen" x="327" y="62" width="46" height="68" rx="4" />
-                <circle class="pn-art-dot" cx="350" cy="138" r="2.2" />
-                <path class="pn-art-gold" d="M337 101l7 8 14-15" />
               </g>
             </svg>
           </div>
