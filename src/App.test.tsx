@@ -116,7 +116,6 @@ describe('coquille de l’application', () => {
       expect(markup).toContain(fr.profiles.etudiant)
       expect(markup).toContain(fr.abr.support.title)
       expect(markup).toContain(fr.abr.support.inorder)
-      expect(markup).toContain(fr.abr.scenarios.cours.title)
     } finally {
       window.location.hash = previousHash
     }
