@@ -1,0 +1,383 @@
+/*
+ * Hero still life: a ring of data cells around a small stack. Every size is
+ * expressed in container query units, so the whole scene scales with the hero
+ * column without a single media query.
+ */
+
+.menu-scene {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  container-type: size;
+  isolation: isolate;
+}
+
+.menu-scene-glow {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(37, 99, 235, 0.34), transparent 62%),
+    radial-gradient(circle at 50% 72%, rgba(240, 197, 106, 0.16), transparent 56%);
+}
+
+.menu-scene-rosette {
+  position: absolute;
+  inset: 3%;
+  width: 94%;
+  height: 94%;
+  opacity: 0.85;
+  animation: menu-rosette 120s linear infinite;
+}
+
+.menu-scene-rosette-lines {
+  fill: none;
+  stroke: rgba(240, 197, 106, 0.3);
+  stroke-width: 1.5;
+}
+
+.menu-scene-rosette-lines .is-blue {
+  stroke: rgba(122, 162, 255, 0.36);
+}
+
+.menu-scene-rosette-lines .is-dashed {
+  stroke-dasharray: 3 9;
+}
+
+.menu-scene-perspective {
+  position: absolute;
+  inset: 0;
+  perspective: 270cqw;
+  perspective-origin: 50% 46%;
+}
+
+.menu-scene-tilt {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(-20deg);
+  animation: menu-bob 8s ease-in-out infinite;
+}
+
+.menu-scene-spin {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation: menu-spin 48s linear infinite;
+  will-change: transform;
+}
+
+.menu-scene-ground {
+  position: absolute;
+  inset: 0;
+  opacity: 0.75;
+  transform: translateY(21cqw) rotateX(90deg);
+  transform-style: preserve-3d;
+}
+
+.menu-scene-ground svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.menu-scene-ground-lines {
+  fill: none;
+  stroke: rgba(240, 197, 106, 0.3);
+  stroke-width: 1.5;
+}
+
+.menu-scene-ground-lines .is-dashed {
+  stroke: rgba(122, 162, 255, 0.34);
+  stroke-dasharray: 5 9;
+}
+
+/* ---- generic 3D box ---- */
+
+.menu-scene-box {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--w);
+  height: var(--h);
+  margin-left: calc(var(--w) / -2);
+  margin-top: calc(var(--h) / -2);
+  transform-style: preserve-3d;
+}
+
+.menu-scene-face {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(170, 198, 255, 0.6);
+  background: rgba(37, 99, 235, 0.24);
+  color: #f4f7ff;
+  font-family: var(--mono);
+  font-size: var(--fs, calc(var(--w) * 0.34));
+  font-weight: 800;
+  line-height: 1;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: inset 0 0 14px rgba(122, 162, 255, 0.18);
+}
+
+.menu-scene-face.is-front {
+  width: var(--w);
+  height: var(--h);
+  transform: translateZ(calc(var(--d) / 2));
+}
+
+.menu-scene-face.is-back {
+  width: var(--w);
+  height: var(--h);
+  transform: rotateY(180deg) translateZ(calc(var(--d) / 2));
+}
+
+.menu-scene-face.is-right {
+  left: calc((var(--w) - var(--d)) / 2);
+  width: var(--d);
+  height: var(--h);
+  transform: rotateY(90deg) translateZ(calc(var(--w) / 2));
+}
+
+.menu-scene-face.is-left {
+  left: calc((var(--w) - var(--d)) / 2);
+  width: var(--d);
+  height: var(--h);
+  transform: rotateY(-90deg) translateZ(calc(var(--w) / 2));
+}
+
+.menu-scene-face.is-top {
+  top: calc((var(--h) - var(--d)) / 2);
+  width: var(--w);
+  height: var(--d);
+  transform: rotateX(90deg) translateZ(calc(var(--h) / 2));
+}
+
+.menu-scene-face.is-bottom {
+  top: calc((var(--h) - var(--d)) / 2);
+  width: var(--w);
+  height: var(--d);
+  transform: rotateX(-90deg) translateZ(calc(var(--h) / 2));
+}
+
+/* ---- ring cells ---- */
+
+.menu-scene-node {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  transform: rotateY(var(--angle)) translateZ(37cqw);
+}
+
+.menu-scene-cube {
+  --w: 11.5cqw;
+  --h: 11.5cqw;
+  --d: 11.5cqw;
+}
+
+.menu-scene-cube .is-front,
+.menu-scene-cube .is-back {
+  border-color: rgba(170, 198, 255, 0.82);
+  background: linear-gradient(145deg, rgba(37, 99, 235, 0.64), rgba(12, 20, 56, 0.94));
+  box-shadow:
+    inset 0 0 18px rgba(122, 162, 255, 0.26),
+    0 0 14px rgba(37, 99, 235, 0.22);
+}
+
+.menu-scene-cube .is-right,
+.menu-scene-cube .is-left {
+  border-color: rgba(170, 198, 255, 0.42);
+  background: rgba(37, 99, 235, 0.3);
+}
+
+.menu-scene-cube .is-top {
+  border-color: rgba(170, 198, 255, 0.55);
+  background: rgba(122, 162, 255, 0.34);
+}
+
+.menu-scene-cube .is-bottom {
+  border-color: rgba(170, 198, 255, 0.3);
+  background: rgba(12, 20, 56, 0.68);
+}
+
+.menu-scene-dot {
+  width: 18%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.menu-scene-dot.is-next {
+  color: #7aa2ff;
+  background: currentColor;
+}
+
+.menu-scene-dot.is-prev {
+  color: #ffa45c;
+  background: currentColor;
+}
+
+/* ---- central stack ---- */
+
+.menu-scene-stack {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  transform: translateY(-3cqw);
+}
+
+.menu-scene-slab {
+  --w: 18cqw;
+  --h: 3.8cqw;
+  --d: 12cqw;
+  --fs: 1.9cqw;
+  transform: translateY(var(--y));
+}
+
+.slab-1 {
+  --y: 4cqw;
+}
+
+.slab-2 {
+  --y: 0cqw;
+}
+
+.slab-3 {
+  --y: -4cqw;
+}
+
+.menu-scene-slab .is-front,
+.menu-scene-slab .is-back {
+  border-color: rgba(240, 197, 106, 0.58);
+  background: linear-gradient(180deg, rgba(22, 34, 92, 0.96), rgba(10, 16, 46, 0.98));
+  box-shadow: inset 0 0 12px rgba(240, 197, 106, 0.14);
+}
+
+.menu-scene-slab .is-right,
+.menu-scene-slab .is-left,
+.menu-scene-slab .is-bottom {
+  border-color: rgba(240, 197, 106, 0.35);
+  background: rgba(12, 20, 56, 0.92);
+}
+
+.menu-scene-slab .is-top {
+  border-color: rgba(255, 233, 176, 0.8);
+  background: rgba(240, 197, 106, 0.55);
+}
+
+.menu-scene-slab.is-top .is-front,
+.menu-scene-slab.is-top .is-back {
+  border-color: rgba(240, 197, 106, 0.78);
+  background: linear-gradient(180deg, rgba(22, 34, 92, 0.96), rgba(10, 16, 46, 0.98));
+  color: #f0c56a;
+}
+
+.menu-scene-slab.is-top .is-top {
+  border-color: #ffe9b0;
+  background: linear-gradient(180deg, #ffe9b0, #f0c56a);
+}
+
+.menu-scene-slab-top-label {
+  color: #0b1034;
+  font-family: var(--mono);
+  font-size: clamp(6px, 1.7cqw, 10px);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* ---- floating mini cells ---- */
+
+.menu-scene-float {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  animation: menu-bob 6s ease-in-out infinite;
+}
+
+.menu-scene-mini {
+  --w: 4.8cqw;
+  --h: 4.8cqw;
+  --d: 4.8cqw;
+}
+
+.menu-scene-mini .menu-scene-dot {
+  display: none;
+}
+
+.float-a {
+  transform: translate3d(-27cqw, -22cqw, 40px);
+  animation-delay: -1.5s;
+}
+
+.float-b {
+  transform: translate3d(25cqw, -17cqw, 0);
+  animation-delay: -3s;
+}
+
+.float-c {
+  transform: translate3d(29cqw, 13cqw, -30px);
+  animation-delay: -4.5s;
+}
+
+/* ---- motion ---- */
+
+@keyframes menu-spin {
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+@keyframes menu-rosette {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes menu-bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-scene-rosette,
+  .menu-scene-tilt,
+  .menu-scene-spin,
+  .menu-scene-float {
+    animation: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .menu-scene {
+    max-width: 440px;
+  }
+}
+
+@media (max-width: 520px) {
+  .menu-scene {
+    max-width: 340px;
+  }
+}

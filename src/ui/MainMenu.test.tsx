@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fr } from '../i18n/fr'
 import { plugins } from '../registry'
 import { MainMenu } from './MainMenu'
@@ -76,6 +76,33 @@ describe('menu principal', () => {
       expect(element?.textContent).toContain(fr.menu.open)
       expect(element?.getAttribute('aria-label')).toBe(fr.menu.openAria(plugin.title))
     }
+  })
+
+  it('associe une icône et un numéro à chaque carte', () => {
+    for (const plugin of plugins) {
+      const card = cardForChapter(plugin.chapter)
+      expect(card.querySelector('.chapter-card-icon'), plugin.id).not.toBeNull()
+      expect(card.querySelector('.chapter-card-num')?.textContent).toBe(
+        String(plugin.chapter).padStart(2, '0'),
+      )
+    }
+  })
+
+  it('affiche une scène décorative de huit nœuds', () => {
+    const scene = container.querySelector('.menu-scene')
+    expect(scene?.getAttribute('aria-hidden')).toBe('true')
+    expect(container.querySelectorAll('.menu-scene-node')).toHaveLength(8)
+  })
+
+  it('fait défiler vers les chapitres depuis le hero', () => {
+    const target = container.querySelector<HTMLElement>('#menu-chapters')
+    expect(target).not.toBeNull()
+    const scroll = vi.fn()
+    target!.scrollIntoView = scroll
+    act(() => {
+      container.querySelector<HTMLButtonElement>('.menu-hero-cta')?.click()
+    })
+    expect(scroll).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
   })
 
   it('classe tous les chapitres dans l’ordre numérique', () => {
