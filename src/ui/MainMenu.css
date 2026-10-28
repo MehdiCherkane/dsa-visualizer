@@ -26,7 +26,8 @@
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
   align-items: center;
   gap: 8px 24px;
-  width: 100%;
+  width: auto;
+  margin: 0 0.45cm;
   padding: 38px 44px;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, #f0c56a 34%, transparent);
