@@ -436,10 +436,6 @@
   .menu-hero-copy {
     max-width: 620px;
   }
-
-  .menu-scene {
-    max-width: 440px;
-  }
 }
 
 @media (max-width: 760px) {
@@ -482,12 +478,6 @@
 
   .chapter-card-title {
     font-size: 18px;
-  }
-}
-
-@media (max-width: 520px) {
-  .menu-scene {
-    max-width: 340px;
   }
 }
 

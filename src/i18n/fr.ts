@@ -38,6 +38,7 @@ export const fr = {
     chooseHint:
       'Chaque chapitre est une démonstration pas à pas, avec le cours PDF à portée de clic.',
     explore: 'Explorer les chapitres',
+    sceneHint: 'Glissez pour faire tourner l’arbre',
     open: 'Ouvrir',
     openAria: (title: string) => `Ouvrir « ${title} »`,
     chapterLabel: (chapter: number) => `Chapitre ${chapter}`,

@@ -88,10 +88,11 @@ describe('menu principal', () => {
     }
   })
 
-  it('affiche une scène décorative de huit nœuds', () => {
+  it('affiche une scène décorative en canvas', () => {
     const scene = container.querySelector('.menu-scene')
     expect(scene?.getAttribute('aria-hidden')).toBe('true')
-    expect(container.querySelectorAll('.menu-scene-node')).toHaveLength(8)
+    expect(scene?.querySelector('canvas')).not.toBeNull()
+    expect(scene?.textContent).toContain(fr.menu.sceneHint)
   })
 
   it('fait défiler vers les chapitres depuis le hero', () => {
