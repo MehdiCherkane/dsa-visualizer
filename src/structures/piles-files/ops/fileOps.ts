@@ -34,7 +34,7 @@ function bodyEnfiler(r: FileRecorder, valeur: number): void {
   const fn = 'enfiler'
   const fnLabels = L.enfiler
   const rowCount = r.state.nodes.filter((node) => node.lane === 'row').length
-  const id = r.mallocNode(rowCount)
+  const id = r.mallocNode(rowCount, 'row')
   const node = r.node(id)
   const newPointer: PointerValue = { kind: 'node', id }
   r.declareLocal('nouveau', newPointer)
@@ -58,7 +58,6 @@ function bodyEnfiler(r: FileRecorder, valeur: number): void {
 
   if (debut.kind === 'null') {
     r.setGlobal('debut', newPointer)
-    r.insertRowNode(id, 0)
     r.step(fn, fnLabels.setDebutEmpty.line, C.enqueueEmptyDebut, { badge: 'debut-modifie' })
     r.setGlobal('fin', newPointer)
     r.step(fn, fnLabels.setFinEmpty.line, C.enqueueEmptyFin, { badge: 'debut-modifie' })
@@ -73,7 +72,6 @@ function bodyEnfiler(r: FileRecorder, valeur: number): void {
     evals: [r.makeEval('fin', fin)],
   })
   r.setGlobal('fin', newPointer)
-  r.insertRowNode(id, rowCount)
   r.step(fn, fnLabels.advanceFin.line, C.enqueueDone, { badge: 'debut-modifie' })
 }
 

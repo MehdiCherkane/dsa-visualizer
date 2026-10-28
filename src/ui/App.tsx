@@ -20,7 +20,7 @@ import { Controls } from './Controls'
 import { Header } from './Header'
 import { OperationBar } from './OperationBar'
 import { SplitHandle } from './SplitHandle'
-import { defaultOperation, defaultParams, formatCall } from './operations'
+import { defaultOperation, defaultParams, formatCall, nextInsertParams } from './operations'
 import {
   DEFAULT_LAYOUT,
   WORKSPACE_MAX_SPLIT,
@@ -278,8 +278,14 @@ export function DemoApp<S extends BaseSnapshot>({
           ? { ...current, cursor: current.cursor + 1 }
           : current,
       )
+    } else if (plugin.id === 'piles-files') {
+      // Consecutive manual pushes/enqueues should stay visually distinct.
+      setParamValues((current) => {
+        const next = nextInsertParams(activeOperation.operation, activeOperation.params, current)
+        return next ?? current
+      })
     }
-  }, [activeOperation, player, playerState.index, playerState.total])
+  }, [activeOperation, player, playerState.index, playerState.total, plugin.id])
 
   const allScenarios = useMemo(
     () => plugin.profiles.flatMap((candidate) => candidate.scenarios),

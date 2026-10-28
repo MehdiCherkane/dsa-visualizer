@@ -224,7 +224,7 @@ describe('géométrie partagée des listes', () => {
     expect(layout.get(1)!.y).toBeLessThan(layout.get(2)!.y)
   })
 
-  it('sépare debut et fin quand la file est vide', () => {
+  it('sépare debut et fin verticalement quand la file est vide', () => {
     const emptyGlobals: VizGlobal[] = [
       { name: 'debut', value: { kind: 'null' }, placement: 'top-center' },
       { name: 'fin', value: { kind: 'null' }, placement: 'bottom' },
@@ -234,9 +234,9 @@ describe('géométrie partagée des listes', () => {
     const fin = cells.get('fin')
 
     expect(debut?.placement).toBe('top-center')
-    expect(fin?.placement).toBe('top')
-    expect(fin!.rect.x).toBeGreaterThan(debut!.rect.x + debut!.rect.width)
-    expect(fin!.rect.y).toBe(debut!.rect.y)
+    expect(fin?.placement).toBe('bottom')
+    expect(fin!.rect.y).toBeGreaterThan(debut!.rect.y + debut!.rect.height)
+    expect(fin!.rect.x).toBe(debut!.rect.x)
   })
 
   it('suit le nœud ciblé par debut et fin', () => {

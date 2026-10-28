@@ -37,7 +37,7 @@ function bodyEmpiler(r: PileRecorder, valeur: number): void {
   const topSlot = currentTop.kind === 'node' ? r.node(currentTop.id).slot : 1
   // La pile pousse au-dessus du sommet : le nouveau slot est négatif et les
   // nœuds existants ne bougent pas. Une pile vide démarre au slot 0.
-  const id = r.mallocNode(topSlot - 1)
+  const id = r.mallocNode(topSlot - 1, 'row')
   const node = r.node(id)
   const newPointer: PointerValue = { kind: 'node', id }
   r.declareLocal('nouveau', newPointer)

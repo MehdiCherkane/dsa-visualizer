@@ -35,3 +35,21 @@ export function formatCall<S extends BaseSnapshot>(
     .map((value) => String(value))
   return `${operation.id}(${values.join(', ')})`
 }
+
+/**
+ * After an insertion, suggest the next integer so two consecutive manual
+ * insertions do not silently reuse the same value (13, 13 / 201, 201).
+ */
+export function nextInsertParams<S extends BaseSnapshot>(
+  operation: OperationDef<S>,
+  usedParams: ParamValues | Record<string, string>,
+  currentValues: Record<string, string>,
+): Record<string, string> | null {
+  if (!operation.inserts) return null
+  const param = operation.params.find((candidate) => candidate.kind === 'number')
+  if (!param) return null
+  const used = Number(usedParams[param.name])
+  const current = Number(currentValues[param.name])
+  if (!Number.isFinite(used) || !Number.isFinite(current) || current !== used) return null
+  return { ...currentValues, [param.name]: String(used + 1) }
+}

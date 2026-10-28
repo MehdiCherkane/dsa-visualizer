@@ -145,7 +145,7 @@ export class PileRecorder {
     this.node(nodeId).value = value
   }
 
-  mallocNode(targetSlot: number): number {
+  mallocNode(targetSlot: number, lane: NodeLane = 'heap'): number {
     const id = this.state.nextNodeId
     const address = formatAddress(this.state.nextAddressIndex)
     const node: PileNode = {
@@ -155,7 +155,7 @@ export class PileRecorder {
       precedent: { kind: 'uninit' },
       freed: false,
       slot: targetSlot,
-      lane: 'heap',
+      lane,
     }
     this.state.nodes.push(node)
     this.state.nextNodeId += 1

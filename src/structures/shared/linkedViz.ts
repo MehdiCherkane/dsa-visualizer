@@ -4,7 +4,13 @@ export type VizOrientation = 'horizontal' | 'vertical'
 export type VizLayoutMode = 'row' | 'ring'
 export type VizField = 'suivant' | 'precedent'
 export type VizLane = 'row' | 'heap'
-export type GlobalPlacement = 'left' | 'top' | 'top-center' | 'bottom' | 'row'
+export type GlobalPlacement =
+  | 'left'
+  | 'left-center'
+  | 'top'
+  | 'top-center'
+  | 'bottom'
+  | 'row'
 
 export interface VizNode {
   id: number
@@ -52,6 +58,7 @@ export interface LinkedModel<S extends BaseSnapshot> {
   fitPadding?: number
   adaptiveLabels?: boolean
   directionalMotion?: boolean
+  emptyOverlay?: 'bottom' | 'center'
   nodes: (snapshot: S) => VizNode[]
   globals: (snapshot: S) => VizGlobal[]
   pins: (snapshot: S) => VizPin[]
@@ -575,7 +582,8 @@ export function layoutGlobals(
         : []
 
     if (orientation === 'horizontal') {
-      const topGlobals = globals.filter((global) => global.placement !== 'row')
+      const topGlobals = globals.filter((global) => global.placement !== 'bottom')
+      const bottomGlobals = globals.filter((global) => global.placement === 'bottom')
       const total =
         Math.max(1, topGlobals.length) * GLOBAL_W +
         Math.max(0, topGlobals.length - 1) * 16
@@ -586,6 +594,22 @@ export function layoutGlobals(
           placement: global.placement === 'top-center' ? 'top-center' : 'top',
         })
         x += GLOBAL_W + 16
+      }
+      const bottomTotal =
+        Math.max(1, bottomGlobals.length) * GLOBAL_W +
+        Math.max(0, bottomGlobals.length - 1) * 16
+      let bottomX = centerX - bottomTotal / 2
+      for (const global of bottomGlobals) {
+        result.set(global.name, {
+          rect: {
+            x: bottomX,
+            y: ROW_Y + NODE_H + 28,
+            width: GLOBAL_W,
+            height: GLOBAL_H,
+          },
+          placement: 'bottom',
+        })
+        bottomX += GLOBAL_W + 16
       }
       return result
     }
@@ -613,6 +637,18 @@ export function layoutGlobals(
         placement: 'row',
       })
     })
+    for (const global of globals) {
+      if (global.placement !== 'left-center') continue
+      result.set(global.name, {
+        rect: {
+          x: STACK_X - GLOBAL_W - 44,
+          y: STACK_TOP + (NODE_H - GLOBAL_H) / 2,
+          width: GLOBAL_W,
+          height: GLOBAL_H,
+        },
+        placement: 'left-center',
+      })
+    }
     return result
   }
 
@@ -629,12 +665,28 @@ export function layoutGlobals(
       placement: 'row',
     })
   })
+  for (const global of globals) {
+    if (global.placement !== 'left-center') continue
+    const targetPoint =
+      global.value.kind === 'node' ? layout.get(global.value.id) : undefined
+    const point = targetPoint ?? rowFirstPoint ?? firstPoint
+    result.set(global.name, {
+      rect: {
+        x: STACK_X - GLOBAL_W - 44,
+        y: point ? point.y + (NODE_H - GLOBAL_H) / 2 : STACK_TOP,
+        width: GLOBAL_W,
+        height: GLOBAL_H,
+      },
+      placement: 'left-center',
+    })
+  }
   const leftGlobals = globals.filter(
     (global) =>
       global.placement !== 'top' &&
       global.placement !== 'top-center' &&
       global.placement !== 'bottom' &&
-      global.placement !== 'row',
+      global.placement !== 'row' &&
+      global.placement !== 'left-center',
   )
   leftGlobals.forEach((global, index) => {
     result.set(global.name, {
@@ -671,7 +723,7 @@ export function layoutGlobals(
     if (global.placement !== 'top-center') continue
     const targetPoint =
       global.value.kind === 'node' ? layout.get(global.value.id) : undefined
-    const point = targetPoint ?? (global.value.kind === 'null' ? undefined : firstPoint)
+    const point = targetPoint ?? firstPoint
     if (point) {
       result.set(global.name, {
         rect: {
@@ -1268,6 +1320,16 @@ export function routeGlobal(
         label: { x: end.x, y: end.y + 26 },
         orientation: 'vertical',
       },
+    }
+  }
+  if (placement === 'left-center' && target && targetPoint) {
+    const start = globalAnchor(cell)
+    const tip = nodeLeft(targetPoint)
+    return {
+      path: `M ${start.x} ${start.y} L ${tip.x} ${tip.y}`,
+      start,
+      tip,
+      marker: 'gold',
     }
   }
   const start = globalAnchor(cell)

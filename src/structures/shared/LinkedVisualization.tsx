@@ -14,6 +14,7 @@ import { ZelligeFrieze } from '../../ui/ZelligeFrieze'
 import {
   FIELD_W,
   FIT_PADDING,
+  GLOBAL_W,
   HEAP_STACK_X,
   HEAP_Y,
   MAX_K,
@@ -23,7 +24,6 @@ import {
   NODE_RX,
   PAD_L,
   ROW_Y,
-  STACK_SLIDE,
   STACK_TOP,
   STACK_X,
   VALUE_W,
@@ -444,6 +444,7 @@ function GlobalCell({
   labelScale,
   duration,
   pulseKey,
+  value,
 }: {
   name: string
   legend: string
@@ -455,9 +456,12 @@ function GlobalCell({
   labelScale: number
   duration: number
   pulseKey: number
+  value: PointerValue
 }): JSX.Element {
   const width = cell.width
   const height = cell.height
+  const isNull = value.kind === 'null'
+  const isUninit = value.kind === 'uninit'
   const anchor =
     placement === 'bottom'
       ? { x: width / 2, y: 0 }
@@ -485,13 +489,25 @@ function GlobalCell({
       <text
         className="debut-cell-label"
         x={width / 2}
-        y={height / 2 + 6}
+        y={isNull || isUninit ? height / 2 - 1 : height / 2 + 6}
         textAnchor="middle"
         style={{ fontSize: 20 * labelScale }}
       >
         {name}
       </text>
-      <circle className="debut-cell-dot" cx={anchor.x} cy={anchor.y} r="5" />
+      {isNull || isUninit ? (
+        <text
+          className="debut-cell-null"
+          x={width / 2}
+          y={height / 2 + 16}
+          textAnchor="middle"
+          style={{ fontSize: 10.5 * Math.min(labelScale, 1.35) }}
+        >
+          {isNull ? fr.viz.null : fr.common.uninit}
+        </text>
+      ) : (
+        <circle className="debut-cell-dot" cx={anchor.x} cy={anchor.y} r="5" />
+      )}
       {count > 0 ? (
         <text
           className="debut-cell-caption"
@@ -748,7 +764,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
         model.orientation,
         ring,
         model.pinAnchor,
-        !model.fitContent,
+        !model.fitContent || nodes.length === 0,
         Boolean(model.fitContent),
       ),
     [nodes, globals, pins, model.orientation, ring, model.pinAnchor, model.fitContent],
@@ -781,10 +797,10 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
 
   const autoCamera = useMemo(
     () =>
-      empty
+      empty && !model.fitContent
         ? cameraAtOne(emptyBounds(model.orientation), { width: stageW, height: stageH })
         : fitCamera(fitBounds, { width: stageW, height: stageH }, fitPadding),
-    [empty, fitBounds, model.orientation, fitPadding, stageW, stageH],
+    [empty, fitBounds, model.orientation, model.fitContent, fitPadding, stageW, stageH],
   )
   const [camera, setCamera] = useState<Camera>(autoCamera)
   const [mode, setMode] = useState<'auto' | 'manual'>('auto')
@@ -1131,14 +1147,24 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
   const bounds = content
   const bandX = bounds.x - 24
   const bandWidth = Math.max(320, bounds.width + 48)
+  const rowPoints = nodes
+    .filter((node) => node.lane === 'row')
+    .map((node) => layout.get(node.id))
+    .filter((point): point is Point => point !== undefined)
+  const rowTop =
+    rowPoints.length > 0 ? Math.min(...rowPoints.map((point) => point.y)) : STACK_TOP
+  const rowBottom =
+    rowPoints.length > 0
+      ? Math.max(...rowPoints.map((point) => point.y + NODE_H))
+      : STACK_TOP + NODE_H
   const rowBand: Rect =
     model.orientation === 'horizontal'
       ? { x: bandX, y: ROW_Y - 84, width: bandWidth, height: NODE_H + 150 }
       : {
-          x: STACK_X - 110,
-          y: STACK_TOP - 92,
-          width: NODE_W + 220,
-          height: Math.max(190, nodes.filter((node) => node.lane === 'row').length * STACK_SLIDE + 60),
+          x: STACK_X - GLOBAL_W - 100,
+          y: rowTop - 44,
+          width: NODE_W + GLOBAL_W + 360,
+          height: Math.max(200, rowBottom - rowTop + 134),
         }
   const ringBandGeometry = ring ? ringBand(ring) : null
   const drawnRingBand =
@@ -1169,6 +1195,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
 
   const oldGlobalRoutes = globalChanges.flatMap((change) => {
     if (change.kind !== 'variable' || !isPointerValue(change.from)) return []
+    if (change.from.kind !== 'node') return []
     const index = globals.findIndex((global) => global.name === change.name)
     const placed = globalCells.get(change.name)
     if (index < 0 || !placed) return []
@@ -1185,6 +1212,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
   })
   const newGlobalRoutes = globalChanges.flatMap((change) => {
     if (change.kind !== 'variable' || !isPointerValue(change.to)) return []
+    if (change.to.kind !== 'node') return []
     const index = globals.findIndex((global) => global.name === change.name)
     const placed = globalCells.get(change.name)
     if (index < 0 || !placed) return []
@@ -1529,28 +1557,25 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
 
           {globals.map((global, index) => {
             const placed = globalCells.get(global.name)
-            if (!placed) return null
+            if (!placed || global.value.kind !== 'node') return null
             const target = findNode(global.value)
+            if (!target) return null
             const route = routeGlobal(
               placed.rect,
               target,
-              target ? layout.get(target.id) ?? null : null,
+              layout.get(target.id) ?? null,
               index,
               model.orientation,
               placed.placement,
             )
-            const color = globalColor(global.name)
             return (
               <g key={`global-${global.name}`}>
                 <path
                   d={route.path}
                   className={`arrow ${global.name === 'fin' ? 'arrow-fin' : 'arrow-gold'}`}
                   style={{ strokeWidth }}
-                  markerEnd={route.nullStub ? undefined : `url(#${globalMarker(global.name)})`}
+                  markerEnd={`url(#${globalMarker(global.name)})`}
                 />
-                {route.nullStub ? (
-                  <NullGround stub={route.nullStub} color={color} labelScale={labelScale} />
-                ) : null}
               </g>
             )
           })}
@@ -1602,6 +1627,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
                 labelScale={globalLabelScale}
                 duration={globalDuration}
                 pulseKey={stepIndex}
+                value={global.value}
               />
             )
           })}
@@ -1609,7 +1635,11 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
       </svg>
 
       {empty ? (
-        <div className="empty-overlay empty-overlay-docked">
+        <div
+          className={`empty-overlay empty-overlay-docked${
+            model.emptyOverlay === 'center' ? ' empty-overlay-center' : ''
+          }`}
+        >
           <p className="empty-overlay-text">{model.emptyText}</p>
           <button type="button" className="primary-button empty-insert-button" onClick={onEmptyInsert}>
             {model.emptyInsert}
