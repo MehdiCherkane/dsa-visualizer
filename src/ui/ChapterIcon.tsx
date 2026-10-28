@@ -74,8 +74,8 @@ function glyph(chapter: number): JSX.Element {
           <circle cx="11" cy="5.5" r="3" />
           <circle cx="6" cy="16" r="3" />
           <circle cx="16" cy="16" r="3" />
-          <circle cx="23" cy="23" r="5" className="chapter-card-glyph-accent" />
-          <path d="M27 27l3 3" className="chapter-card-glyph-accent" />
+          <circle cx="23" cy="23" r="5" className="chapter-card-glyph-stroke" />
+          <path d="M27 27l3 3" className="chapter-card-glyph-stroke" />
         </g>
       )
     default:

@@ -264,8 +264,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   fill: none;
   stroke: var(--ink);
   stroke-width: 2.2;
@@ -276,6 +276,10 @@
 
 .chapter-card-glyph-accent {
   fill: var(--gold);
+  stroke: var(--gold);
+}
+
+.chapter-card-glyph-stroke {
   stroke: var(--gold);
 }
 
