@@ -104,11 +104,28 @@ describe('coquille de l’application', () => {
     }
   })
 
-  it('applique le fond zellige aux six chapitres', () => {
+  it('ouvre le chapitre 7 sur les opérations ABR', () => {
+    const previousHash = window.location.hash
+    window.location.hash = '#/chapitre-7'
+
+    try {
+      const markup = renderToStaticMarkup(<App />)
+      expect(markup).toContain(fr.chapters.abr.title)
+      expect(markup).toContain(fr.abr.operations.construireRegistre.label)
+      expect(markup).toContain(fr.abr.operations.radierEtudiant.label)
+      expect(markup).toContain(fr.abr.support.title)
+      expect(markup).toContain(fr.abr.support.inorder)
+      expect(markup).toContain(fr.abr.scenarios.registre.title)
+    } finally {
+      window.location.hash = previousHash
+    }
+  })
+
+  it('applique le fond zellige aux sept chapitres', () => {
     const previousHash = window.location.hash
 
     try {
-      for (const chapter of [1, 2, 3, 4, 5, 6]) {
+      for (const chapter of [1, 2, 3, 4, 5, 6, 7]) {
         window.location.hash = `#/chapitre-${chapter}`
         const markup = renderToStaticMarkup(<App />)
         expect(markup).toContain('viz-zellige')

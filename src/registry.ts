@@ -1,4 +1,5 @@
 import type { BaseSnapshot, StructurePlugin } from './core/types'
+import { abrPlugin } from './structures/abr'
 import { ldcPlugin } from './structures/ldc'
 import { lddcPlugin } from './structures/lddc'
 import { lscPlugin } from './structures/lsc'
@@ -13,6 +14,7 @@ export const plugins = [
   ldcPlugin,
   lddcPlugin,
   treesPlugin,
+  abrPlugin,
 ] as const
 export const defaultPlugin = ldcPlugin
 
