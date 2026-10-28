@@ -1,0 +1,55 @@
+/*
+ * Hero scene: a 3D binary search tree painted on a canvas. The canvas fills a
+ * square that scales with the hero column; the drawing itself adapts to the
+ * measured size.
+ */
+
+.menu-scene {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+
+.menu-scene-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.menu-scene-canvas:active {
+  cursor: grabbing;
+}
+
+.menu-scene-hint {
+  position: absolute;
+  right: 0;
+  bottom: 1%;
+  left: 0;
+  margin: 0;
+  color: rgba(238, 241, 255, 0.52);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-align: center;
+  pointer-events: none;
+}
+
+@media (max-width: 980px) {
+  .menu-scene {
+    max-width: 440px;
+  }
+}
+
+@media (max-width: 520px) {
+  .menu-scene {
+    max-width: 340px;
+  }
+
+  .menu-scene-hint {
+    bottom: 1%;
+    font-size: 11px;
+  }
+}

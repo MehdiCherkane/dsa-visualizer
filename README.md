@@ -1,6 +1,6 @@
 # DS Visualizer — Structures de données en C
 
-A single-page, fully offline French teaching platform for data structures in C (`Structures de données`), built with Vite + React + TypeScript. Each chapter is an independent plugin behind one shared player, visualization shell, and chapter menu. The project turns the professor's static course PDFs into interactive, step-by-step demos, with the handouts one click away in a side drawer.
+Teaching platform for data structures in C (`Structures de données`), built with Vite + React + TypeScript. Each chapter is an independent plugin behind one shared player, visualization shell, and chapter menu. The project turns the professor's static course PDFs into interactive, step-by-step demos, with the handouts one click away in a side drawer.
 
 **All six chapters are available:** static stacks and queues (`piles-files-statiques`), singly linked lists (`lsc`), dynamic stacks and queues (`pile` / `file`), doubly linked lists (`ldc`), circular doubly linked lists (`lddc`), and binary trees (`trees`).
 

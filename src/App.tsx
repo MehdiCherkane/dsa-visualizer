@@ -3,7 +3,7 @@ import { fr } from './i18n/fr'
 import { pluginForChapter, plugins } from './registry'
 import { DemoApp } from './ui/App'
 import { MainMenu } from './ui/MainMenu'
-import { SiteBackdrop, ZelligeBackdrop } from './ui/SiteBackdrop'
+import { ZelligeBackdrop } from './ui/SiteBackdrop'
 import { MENU_HASH, navigate, useHashRoute } from './ui/useHashRoute'
 
 export default function App() {
@@ -27,7 +27,7 @@ export default function App() {
   if (!plugin) {
     return (
       <>
-        <SiteBackdrop />
+        <ZelligeBackdrop />
         <MainMenu plugins={plugins} theme={theme} onTheme={toggleTheme} />
       </>
     )

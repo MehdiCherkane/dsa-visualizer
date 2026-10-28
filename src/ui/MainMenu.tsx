@@ -2,9 +2,12 @@ import type { JSX } from 'react'
 import { config } from '../config'
 import { fr } from '../i18n/fr'
 import { BrandMark } from './BrandMark'
+import { ChapterIcon } from './ChapterIcon'
 import { CreditsMenu } from './CreditsMenu'
+import { MenuScene } from './MenuScene'
 import { SiteFooter } from './SiteFooter'
 import { ThemeToggle } from './ThemeToggle'
+import { ZelligeFrieze } from './ZelligeFrieze'
 import { chapterHash, navigate } from './useHashRoute'
 import './MainMenu.css'
 
@@ -22,8 +25,29 @@ interface MainMenuProps {
   onTheme: () => void
 }
 
+function ArrowIcon(): JSX.Element {
+  return (
+    <svg viewBox="0 0 16 16" focusable="false">
+      <path
+        d="M3 8h10M9 4l4 4-4 4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function scrollToChapters(): void {
+  document.getElementById('menu-chapters')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Element {
   const open = (chapter: number): void => navigate(chapterHash(chapter))
+  const [titleLead, ...titleRest] = fr.menu.title.split(' ')
+  const titleAccent = titleRest.join(' ')
   const entries = [
     ...plugins.map((plugin) => ({
       kind: 'plugin' as const,
@@ -59,19 +83,32 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
 
       <main className="menu-main" aria-labelledby="menu-title">
         <section className="menu-hero">
+          <ZelligeFrieze />
           <div className="menu-hero-copy">
             <p className="menu-eyebrow">{fr.menu.eyebrow}</p>
             <h1 id="menu-title" className="menu-title">
-              {fr.menu.title}
+              <span>{titleLead}</span>{' '}
+              {titleAccent ? <span className="menu-title-accent">{titleAccent}</span> : null}
             </h1>
             <p className="menu-subtitle">{fr.menu.subtitle}</p>
+            <button type="button" className="menu-hero-cta" onClick={scrollToChapters}>
+              {fr.menu.explore}
+              <ArrowIcon />
+            </button>
           </div>
+          <MenuScene />
         </section>
 
         <section className="menu-section" aria-labelledby="menu-chapters">
-          <h2 id="menu-chapters" className="menu-section-title">
-            {fr.menu.chapters}
-          </h2>
+          <div className="menu-section-head">
+            <div>
+              <p className="menu-section-eyebrow">{fr.menu.chapters}</p>
+              <h2 id="menu-chapters" className="menu-section-title">
+                {fr.menu.choose}
+              </h2>
+            </div>
+            <p className="menu-section-note">{fr.menu.chooseHint}</p>
+          </div>
           <ul className="chapter-grid">
             {entries.map((entry) =>
               entry.kind === 'plugin' ? (
@@ -90,17 +127,23 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
                       open(entry.plugin.chapter)
                     }}
                   >
-                    <span className="chapter-card-head">
+                    <span className="chapter-card-num" aria-hidden="true">
+                      {String(entry.plugin.chapter).padStart(2, '0')}
+                    </span>
+                    <ChapterIcon chapter={entry.plugin.chapter} />
+                    <div className="chapter-card-body">
                       <span className="chapter-chip">
                         {fr.menu.chapterLabel(entry.plugin.chapter)}
                       </span>
-                      <span className="chapter-card-open" aria-hidden="true">
-                        {fr.menu.open}
+                      <h3 className="chapter-card-title">{entry.plugin.title}</h3>
+                      <p className="chapter-card-description">{entry.plugin.description}</p>
+                    </div>
+                    <div className="chapter-card-foot">
+                      <span className="chapter-card-cta">{fr.menu.open}</span>
+                      <span className="chapter-card-go" aria-hidden="true">
+                        <ArrowIcon />
                       </span>
-                    </span>
-                    <span className="chapter-card-title">{entry.plugin.title}</span>
-                    <span className="chapter-card-description">{entry.plugin.description}</span>
-                    <span className="chapter-card-hint">{fr.menu.cardHint}</span>
+                    </div>
                   </a>
                 </li>
               ) : (
@@ -110,14 +153,23 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
                     aria-disabled="true"
                     aria-label={fr.menu.soonAria(entry.item.title)}
                   >
-                    <span className="chapter-card-head">
+                    <span className="chapter-card-num" aria-hidden="true">
+                      {String(entry.item.chapter).padStart(2, '0')}
+                    </span>
+                    <ChapterIcon chapter={entry.item.chapter} />
+                    <div className="chapter-card-body">
                       <span className="chapter-chip">
                         {fr.menu.chapterLabel(entry.item.chapter)}
                       </span>
-                      <span className="chapter-card-soon">{fr.menu.soon}</span>
-                    </span>
-                    <span className="chapter-card-title">{entry.item.title}</span>
-                    <span className="chapter-card-description">{entry.item.description}</span>
+                      <h3 className="chapter-card-title">{entry.item.title}</h3>
+                      <p className="chapter-card-description">{entry.item.description}</p>
+                    </div>
+                    <div className="chapter-card-foot">
+                      <span className="chapter-card-cta">{fr.menu.soon}</span>
+                      <span className="chapter-card-go" aria-hidden="true">
+                        <ArrowIcon />
+                      </span>
+                    </div>
                   </div>
                 </li>
               ),
