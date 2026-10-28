@@ -18,7 +18,13 @@ export interface TreeTraversalState {
   activeNodeId: number | null
 }
 
-export type TreeCallPhaseName = 'visite' | 'gauche' | 'droit'
+export type TreeCallPhaseName =
+  | 'visite'
+  | 'gauche'
+  | 'droit'
+  | 'comparaison'
+  | 'suppression'
+  | 'minimum'
 export type TreeCallPhaseState = 'pending' | 'current' | 'done'
 export type TreeCallStatus = 'active' | 'wait-left' | 'wait-right'
 

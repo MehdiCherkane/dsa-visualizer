@@ -19,6 +19,7 @@ import type {
 
 interface StepExtras {
   cond?: { expr: string; result: boolean }
+  badge?: 'cas-particulier' | 'debut-modifie'
 }
 
 export class TreeRecorder {
@@ -132,6 +133,10 @@ export class TreeRecorder {
     this.traversed += 1
   }
 
+  incrementComparisons(): void {
+    this.comparisons += 1
+  }
+
   beginTraversal(): void {
     this.state.traversal = { visitedNodeIds: [], activeNodeId: null }
     this.state.callStack = { frames: [], maxDepth: 0, maxNonNullDepth: 0 }
@@ -192,19 +197,40 @@ export class TreeRecorder {
   }
 
   beginCallPhase(name: Exclude<TreeCallPhaseName, 'visite'>, line: number): void {
+    this.beginPhase(name, line, name === 'gauche' ? 'wait-left' : 'wait-right')
+  }
+
+  completeCallPhase(name: Exclude<TreeCallPhaseName, 'visite'>): void {
+    this.completePhase(name)
+  }
+
+  beginPhase(
+    name: TreeCallPhaseName,
+    line: number,
+    status: TreeCallFrame['status'] = 'active',
+  ): void {
     const frame = this.callStack.frames.at(-1)
     if (!frame) return
     frame.line = line
-    frame.status = name === 'gauche' ? 'wait-left' : 'wait-right'
+    frame.status = status
     const phase = frame.phases.find((entry) => entry.name === name)
     if (phase) phase.state = 'current'
   }
 
-  completeCallPhase(name: Exclude<TreeCallPhaseName, 'visite'>): void {
+  completePhase(name: TreeCallPhaseName): void {
     const frame = this.callStack.frames.at(-1)
     const phase = frame?.phases.find((entry) => entry.name === name)
     if (phase) phase.state = 'done'
     if (frame) frame.status = 'active'
+  }
+
+  /** Keeps a loop-based helper frame focused on the node it currently examines. */
+  setCallNode(nodeId: number, line: number): void {
+    const frame = this.callStack.frames.at(-1)
+    if (!frame) return
+    frame.nodeId = nodeId
+    frame.line = line
+    frame.status = 'active'
   }
 
   beginVisit(line: number): void {
@@ -240,6 +266,7 @@ export class TreeRecorder {
       counters: { traversed: this.traversed, comparisons: this.comparisons },
       console: { output: this.output },
       ...(extras.cond ? { cond: extras.cond } : {}),
+      ...(extras.badge ? { badge: extras.badge } : {}),
     }
     this.collected.push(deepFreeze(step))
     this.pending = []

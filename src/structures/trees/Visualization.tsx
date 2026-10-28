@@ -78,12 +78,19 @@ function useCanvasSize(): [RefObject<HTMLDivElement | null>, CanvasSize] {
   return [ref, size]
 }
 
+interface TreeVisualizationProps extends VisualizationProps<TreeSnapshot> {
+  ariaLabel?: string
+  visitedLabel?: string
+}
+
 export default function TreeVisualization({
   snapshot,
   step,
   cameraResetKey,
   highlightedNodeId,
-}: VisualizationProps<TreeSnapshot>): JSX.Element {
+  ariaLabel = fr.chapters.trees.title,
+  visitedLabel = fr.trees.viz.visited,
+}: TreeVisualizationProps): JSX.Element {
   const layout = useMemo(() => layoutTree(snapshot), [snapshot])
   const [canvasRef, canvas] = useCanvasSize()
   const [viewState, setViewState] = useState<ViewState | null>(null)
@@ -283,7 +290,7 @@ export default function TreeVisualization({
         className="tree-viz-svg"
         viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
         role="img"
-        aria-label={fr.chapters.trees.title}
+        aria-label={ariaLabel}
         onWheel={onWheel}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -442,7 +449,7 @@ export default function TreeVisualization({
                 {node.payload.kind === 'int' ? node.payload.value : '…'}
               </text>
               {visitedAt ? (
-                <g className="tree-visit-badge" aria-label={`${fr.trees.viz.visited} ${visitedAt}`}>
+                <g className="tree-visit-badge" aria-label={`${visitedLabel} ${visitedAt}`}>
                   <circle cx={visitBadgeX} cy={visitBadgeY} r={visitBadgeRadius} />
                   <text
                     x={visitBadgeX}
