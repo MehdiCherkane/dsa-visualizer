@@ -8,6 +8,21 @@ import { inorderValues } from '../memory'
 
 const intValue = (value: number) => ({ kind: 'int' as const, value })
 
+interface AbrSearchMessages {
+  found: (value: number) => string
+  absent: (value: number) => string
+}
+
+const GENERIC_SEARCH_MESSAGES: AbrSearchMessages = {
+  found: fr.abr.console.foundValue,
+  absent: fr.abr.console.absentValue,
+}
+
+const STUDENT_SEARCH_MESSAGES: AbrSearchMessages = {
+  found: fr.abr.console.found,
+  absent: fr.abr.console.absent,
+}
+
 function liveNode(recorder: TreeRecorder, pointer: PointerValue): TreeNode | null {
   if (pointer.kind !== 'node') return null
   const node = getNode(recorder.state, pointer.id)
@@ -26,7 +41,7 @@ function samePointer(a: PointerValue, b: PointerValue): boolean {
 function createNode(recorder: TreeRecorder, value: number): number {
   recorder.pushFrame(
     'creerNoeud',
-    { numero: intValue(value), nouveau: { kind: 'uninit' } },
+    { valeur: intValue(value), nouveau: { kind: 'uninit' } },
     `creerNoeud(${value})`,
   )
   recorder.step('creerNoeud', 0, fr.abr.captions.createEntry(value))
@@ -49,6 +64,7 @@ function rechercherABR(
   pointer: PointerValue,
   wanted: number,
   nullSlot: TreeCallSlot | null = null,
+  messages: AbrSearchMessages = GENERIC_SEARCH_MESSAGES,
 ): boolean {
   const isNull = pointer.kind !== 'node'
   recorder.pushFrame(
@@ -64,7 +80,7 @@ function rechercherABR(
     cond: { expr: 'n == NULL', result: isNull },
   })
   if (isNull) {
-    recorder.addConsole(fr.abr.console.absent(wanted))
+    recorder.addConsole(messages.absent(wanted))
     recorder.step('rechercherABR', 1, fr.abr.captions.searchAbsent(wanted))
     recorder.popCallFrame()
     recorder.popFrame()
@@ -88,7 +104,7 @@ function rechercherABR(
   })
   recorder.completePhase('comparaison')
   if (equal) {
-    recorder.addConsole(fr.abr.console.found(wanted))
+    recorder.addConsole(messages.found(wanted))
     recorder.step('rechercherABR', 2, fr.abr.captions.searchFound(wanted))
     recorder.popCallFrame()
     recorder.popFrame()
@@ -106,7 +122,7 @@ function rechercherABR(
   const line = goLeft ? 4 : 6
   recorder.pauseCall(line, goLeft ? 'wait-left' : 'wait-right')
   recorder.step('rechercherABR', line, fr.abr.captions.searchRecurse(field, value))
-  const found = rechercherABR(recorder, node[field], wanted, { parentId: node.id, field })
+  const found = rechercherABR(recorder, node[field], wanted, { parentId: node.id, field }, messages)
   recorder.pauseCall(line)
   recorder.step('rechercherABR', line, fr.abr.captions.searchReturn(wanted, found))
   recorder.popCallFrame()
@@ -240,9 +256,76 @@ export function runEstInscrit(
     return recorder.steps
   }
   recorder.step('estInscrit', 1, fr.abr.captions.searchWrapper(numero))
-  const found = rechercherABR(recorder, root, numero)
+  const found = rechercherABR(recorder, root, numero, null, STUDENT_SEARCH_MESSAGES)
   recorder.step('estInscrit', 2, fr.abr.captions.searchDone(numero, found))
   recorder.popFrame()
+  return recorder.steps
+}
+
+export function runRechercherABR(
+  state: TreeSnapshot,
+  params: ParamValues,
+): Step<TreeSnapshot>[] {
+  const recorder = new TreeRecorder(state)
+  recorder.beginTraversal()
+  const valeur = Number(params.valeur)
+  const root = rootPointer(recorder.state)
+  if (root.kind === 'node' && !liveNode(recorder, root)) {
+    recorder.step('rechercherABR', 0, fr.abr.captions.rootFreed)
+    return recorder.steps
+  }
+  const found = rechercherABR(recorder, root, valeur)
+  recorder.step('rechercherABR', 0, fr.abr.captions.searchResult(valeur, found))
+  return recorder.steps
+}
+
+export function runInsererABR(
+  state: TreeSnapshot,
+  params: ParamValues,
+): Step<TreeSnapshot>[] {
+  const recorder = new TreeRecorder(state)
+  recorder.beginTraversal()
+  const valeur = Number(params.valeur)
+  const root = rootPointer(recorder.state)
+  if (root.kind === 'node' && !liveNode(recorder, root)) {
+    recorder.step('insererABR', 0, fr.abr.captions.rootFreed)
+    return recorder.steps
+  }
+  const returned = insererABR(recorder, root, valeur)
+  if (!samePointer(root, returned)) recorder.setGlobal('racine', returned)
+  recorder.step(
+    'insererABR',
+    7,
+    fr.abr.captions.insertRoot(
+      callArgument(recorder.state, returned),
+      callArgument(recorder.state, root),
+    ),
+  )
+  return recorder.steps
+}
+
+export function runSupprimerABR(
+  state: TreeSnapshot,
+  params: ParamValues,
+): Step<TreeSnapshot>[] {
+  const recorder = new TreeRecorder(state)
+  recorder.beginTraversal()
+  const valeur = Number(params.valeur)
+  const root = rootPointer(recorder.state)
+  if (root.kind === 'node' && !liveNode(recorder, root)) {
+    recorder.step('supprimerABR', 0, fr.abr.captions.rootFreed)
+    return recorder.steps
+  }
+  const returned = supprimerABR(recorder, root, valeur)
+  if (!samePointer(root, returned)) recorder.setGlobal('racine', returned)
+  recorder.step(
+    'supprimerABR',
+    23,
+    fr.abr.captions.deleteRoot(
+      callArgument(recorder.state, returned),
+      callArgument(recorder.state, root),
+    ),
+  )
   return recorder.steps
 }
 
@@ -546,6 +629,16 @@ export function runRadierEtudiant(
   return recorder.steps
 }
 
+const valeurParam = (defaultValue: number): OperationDef<TreeSnapshot>['params'] => [
+  {
+    name: 'valeur',
+    kind: 'number',
+    label: fr.abr.params.valeur,
+    defaultValue,
+    target: true,
+  },
+]
+
 const numeroParam = (defaultValue: number): OperationDef<TreeSnapshot>['params'] => [
   {
     name: 'numero',
@@ -575,7 +668,14 @@ function defineOperation(
   }
 }
 
-export const abrOperations: OperationDef<TreeSnapshot>[] = [
+export const abrIntOperations: OperationDef<TreeSnapshot>[] = [
+  defineOperation('rechercherABR', runRechercherABR, { params: valeurParam(60) }),
+  defineOperation('insererABR', runInsererABR, { params: valeurParam(65), inserts: true }),
+  defineOperation('supprimerABR', runSupprimerABR, { params: valeurParam(60) }),
+  defineOperation('parcoursInfixe', (state) => runParcoursInfixe(state)),
+]
+
+export const abrStudentOperations: OperationDef<TreeSnapshot>[] = [
   defineOperation('construireRegistre', runConstruireRegistre, { inserts: true }),
   defineOperation('estInscrit', runEstInscrit, { params: numeroParam(180) }),
   defineOperation('inscrireEtudiant', runInscrireEtudiant, {

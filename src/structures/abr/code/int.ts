@@ -4,7 +4,7 @@ const source = (fn: string, lines: string[]): CodeSource => ({ fn, lines, labels
 
 export const abrTypes = source('types', [
   'typedef struct noeud {',
-  '    int numero;',
+  '    int valeur;',
   '    struct noeud *gauche;',
   '    struct noeud *droit;',
   '} Noeud;',
@@ -14,9 +14,9 @@ export const abrTypes = source('types', [
 
 export const abrCode: Record<string, CodeSource> = {
   creerNoeud: source('creerNoeud', [
-    'Noeud *creerNoeud(int numero) {',
+    'Noeud *creerNoeud(int valeur) {',
     '    Noeud *nouveau = malloc(sizeof(Noeud));',
-    '    nouveau->numero = numero;',
+    '    nouveau->valeur = valeur;',
     '    nouveau->gauche = NULL;',
     '    nouveau->droit = NULL;',
     '    return nouveau;',
@@ -32,11 +32,6 @@ export const abrCode: Record<string, CodeSource> = {
     '    return rechercherABR(n->droit, valeur);',
     '}',
   ]),
-  estInscrit: source('estInscrit', [
-    'int estInscrit(int numero) {',
-    '    return rechercherABR(racine, numero);',
-    '}',
-  ]),
   insererABR: source('insererABR', [
     'Noeud *insererABR(Noeud *n, int valeur) {',
     '    if (n == NULL) { return creerNoeud(valeur); }',
@@ -46,11 +41,6 @@ export const abrCode: Record<string, CodeSource> = {
     '        n->droit = insererABR(n->droit, valeur);',
     '    }',
     '    return n;',
-    '}',
-  ]),
-  inscrireEtudiant: source('inscrireEtudiant', [
-    'void inscrireEtudiant(int numero) {',
-    '    racine = insererABR(racine, numero);',
     '}',
   ]),
   trouverMin: source('trouverMin', [
@@ -82,26 +72,10 @@ export const abrCode: Record<string, CodeSource> = {
     '            return temp;',
     '        }',
     '        Noeud *successeur = trouverMin(n->droit);',
-    '        n->numero = successeur->numero;',
-    '        n->droit = supprimerABR(n->droit, successeur->numero);',
+    '        n->valeur = successeur->valeur;',
+    '        n->droit = supprimerABR(n->droit, successeur->valeur);',
     '    }',
     '    return n;',
-    '}',
-  ]),
-  radierEtudiant: source('radierEtudiant', [
-    'void radierEtudiant(int numero) {',
-    '    racine = supprimerABR(racine, numero);',
-    '}',
-  ]),
-  construireRegistre: source('construireRegistre', [
-    'void construireRegistre(void) {',
-    '    inscrireEtudiant(205);',
-    '    inscrireEtudiant(150);',
-    '    inscrireEtudiant(260);',
-    '    inscrireEtudiant(120);',
-    '    inscrireEtudiant(180);',
-    '    inscrireEtudiant(240);',
-    '    inscrireEtudiant(280);',
     '}',
   ]),
   parcoursInfixe: source('parcoursInfixe', [
@@ -110,7 +84,7 @@ export const abrCode: Record<string, CodeSource> = {
     '        return;',
     '    }',
     '    parcoursInfixe(n->gauche);',
-    '    printf("%d ", n->numero);',
+    '    printf("%d ", n->valeur);',
     '    parcoursInfixe(n->droit);',
     '}',
   ]),

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Step } from '../../core/types'
 import { getNode, rootPointer } from '../trees/memory'
 import type { TreeSnapshot } from '../trees/memory'
+import { studentAbrCode } from './code/etudiant'
 import { abrCode } from './code/int'
 import { abrPlugin } from './index'
 import {
@@ -13,13 +14,17 @@ import {
   registreSnapshot,
 } from './memory'
 import {
-  abrOperations,
+  abrIntOperations,
+  abrStudentOperations,
   runConstruireRegistre,
   runEstInscrit,
+  runInsererABR,
   runInscrireEtudiant,
   runRadierEtudiant,
+  runRechercherABR,
+  runSupprimerABR,
 } from './ops/abrOps'
-import { abrScenarios } from './scenarios'
+import { abrIntScenarios, abrStudentScenarios } from './scenarios'
 
 const last = (steps: Step<TreeSnapshot>[]): Step<TreeSnapshot> => {
   const step = steps[steps.length - 1]
@@ -71,35 +76,41 @@ describe('mémoire des ABR', () => {
 
 describe('recherche dans un ABR', () => {
   it('descend d’un seul côté et s’arrête sur la valeur trouvée', () => {
-    const steps = runEstInscrit(abrCourseSnapshot(), { numero: 60 })
+    const steps = runRechercherABR(abrCourseSnapshot(), { valeur: 60 })
     const result = last(steps)
-    expect(result.console.output).toBe('60 est inscrit\n')
+    expect(result.console.output).toBe('60 est dans l’arbre\n')
     expect(result.snapshot.traversal?.visitedNodeIds).toEqual([1, 3, 6])
     expect(result.counters.comparisons).toBe(5)
-    expect(result.caption).toBe('60 est inscrit : résultat 1.')
+    expect(result.caption).toBe('Recherche terminée : 60 est dans l’arbre.')
     expect(isAbr(result.snapshot)).toBe(true)
   })
 
   it('termine sur NULL quand la valeur est absente', () => {
-    const steps = runEstInscrit(abrCourseSnapshot(), { numero: 65 })
+    const steps = runRechercherABR(abrCourseSnapshot(), { valeur: 65 })
     const result = last(steps)
-    expect(result.console.output).toBe('65 n’est pas inscrit\n')
+    expect(result.console.output).toBe('65 n’est pas dans l’arbre\n')
     expect(result.snapshot.traversal?.visitedNodeIds).toEqual([1, 3, 6])
     expect(result.counters.comparisons).toBe(6)
-    expect(result.caption).toBe('65 n’est pas inscrit : résultat 0.')
+    expect(result.caption).toBe('Recherche terminée : 65 n’est pas dans l’arbre.')
   })
 
   it('gère l’arbre vide avec le cas de base', () => {
-    const steps = runEstInscrit(emptyAbrSnapshot(), { numero: 205 })
+    const steps = runRechercherABR(emptyAbrSnapshot(), { valeur: 205 })
     expect(steps.length).toBeGreaterThan(1)
-    expect(last(steps).console.output).toBe('205 n’est pas inscrit\n')
+    expect(last(steps).console.output).toBe('205 n’est pas dans l’arbre\n')
     expect(last(steps).snapshot.nodes).toHaveLength(0)
+  })
+
+  it('garde les messages d’inscription dans l’enveloppe étudiante', () => {
+    const steps = runEstInscrit(abrCourseSnapshot(), { numero: 60 })
+    expect(last(steps).console.output).toBe('60 est inscrit\n')
+    expect(last(steps).caption).toBe('60 est inscrit : résultat 1.')
   })
 })
 
 describe('insertion dans un ABR', () => {
   it('crée la racine d’un arbre vide et réaffecte racine', () => {
-    const steps = runInscrireEtudiant(emptyAbrSnapshot(), { numero: 205 })
+    const steps = runInsererABR(emptyAbrSnapshot(), { valeur: 205 })
     const result = last(steps)
     expect(rootValue(result.snapshot)).toBe(205)
     expect(liveCount(result.snapshot)).toBe(1)
@@ -121,13 +132,15 @@ describe('insertion dans un ABR', () => {
     )
   })
 
-  it('ignore un numéro déjà inscrit', () => {
-    const steps = runInscrireEtudiant(registreSnapshot(), { numero: 205 })
+  it('ignore une valeur déjà présente', () => {
+    const steps = runInsererABR(registreSnapshot(), { valeur: 205 })
     const result = last(steps)
     expect(liveCount(result.snapshot)).toBe(7)
     expect(inorderValues(result.snapshot)).toEqual([120, 150, 180, 205, 240, 260, 280])
     expect(steps.some((step) => step.changes.some((change) => change.kind === 'create'))).toBe(false)
-    expect(result.caption).toBe('Inscription de 205 terminée : l’invariant d’ordre est conservé.')
+    expect(steps.some((step) => step.caption === '205 est déjà présent : l’arbre reste inchangé.')).toBe(
+      true,
+    )
   })
 
   it('refuse une insertion au-delà de la capacité', () => {
@@ -154,7 +167,7 @@ describe('insertion dans un ABR', () => {
 
 describe('suppression dans un ABR', () => {
   it('cas 1 : libère une feuille et laisse l’arbre valide', () => {
-    const steps = runRadierEtudiant(registreSnapshot(), { numero: 120 })
+    const steps = runSupprimerABR(registreSnapshot(), { valeur: 120 })
     const result = last(steps)
     expect(inorderValues(result.snapshot)).toEqual([150, 180, 205, 240, 260, 280])
     expect(isAbr(result.snapshot)).toBe(true)
@@ -168,7 +181,7 @@ describe('suppression dans un ABR', () => {
       [0, 'droit', 2],
       [2, 'gauche', 3],
     ])
-    const steps = runRadierEtudiant(snapshot, { numero: 260 })
+    const steps = runSupprimerABR(snapshot, { valeur: 260 })
     const result = last(steps)
     expect(rootValue(result.snapshot)).toBe(205)
     expect(inorderValues(result.snapshot)).toEqual([150, 205, 240])
@@ -179,7 +192,7 @@ describe('suppression dans un ABR', () => {
   })
 
   it('cas 3 : le successeur 240 remplace la racine 205', () => {
-    const steps = runRadierEtudiant(registreSnapshot(), { numero: 205 })
+    const steps = runSupprimerABR(registreSnapshot(), { valeur: 205 })
     const result = last(steps)
     expect(rootValue(result.snapshot)).toBe(240)
     expect(inorderValues(result.snapshot)).toEqual([120, 150, 180, 240, 260, 280])
@@ -206,8 +219,8 @@ describe('suppression dans un ABR', () => {
     ).toBe(true)
   })
 
-  it('ne modifie rien quand le numéro est absent', () => {
-    const steps = runRadierEtudiant(registreSnapshot(), { numero: 999 })
+  it('ne modifie rien quand la valeur est absente', () => {
+    const steps = runSupprimerABR(registreSnapshot(), { valeur: 999 })
     const result = last(steps)
     expect(result.snapshot.nodes).toHaveLength(7)
     expect(result.snapshot.nodes.every((node) => !node.freed)).toBe(true)
@@ -215,52 +228,68 @@ describe('suppression dans un ABR', () => {
   })
 
   it('gère la suppression dans un arbre vide', () => {
-    const steps = runRadierEtudiant(emptyAbrSnapshot(), { numero: 205 })
+    const steps = runSupprimerABR(emptyAbrSnapshot(), { valeur: 205 })
     expect(last(steps).snapshot.nodes).toHaveLength(0)
     expect(steps.some((step) => step.caption.includes('absent'))).toBe(true)
   })
 })
 
 describe('parcours et scénarios du chapitre 7', () => {
-  it('affiche les numéros triés avec le parcours infixe', () => {
-    const operation = abrOperations.find((candidate) => candidate.id === 'parcoursInfixe')
+  it('affiche les valeurs triées avec le parcours infixe', () => {
+    const operation = abrIntOperations.find((candidate) => candidate.id === 'parcoursInfixe')
     if (!operation) throw new Error('Operation expected')
     const steps = operation.run(registreSnapshot(), {})
     expect(last(steps).console.output).toBe('120 150 180 205 240 260 280 ')
     expect(last(steps).snapshot.traversal?.visitedNodeIds).toHaveLength(7)
   })
 
-  it('déclare des scénarios dont les opérations existent', () => {
-    const ids = new Set(abrOperations.map((operation) => operation.id))
-    expect(abrScenarios.map((scenario) => scenario.id)).toEqual([
+  it('déclare des scénarios dont les opérations existent dans leur profil', () => {
+    const intIds = new Set(abrIntOperations.map((operation) => operation.id))
+    const studentIds = new Set(abrStudentOperations.map((operation) => operation.id))
+    expect(abrIntScenarios.map((scenario) => scenario.id)).toEqual(['cours', 'vide'])
+    expect(abrStudentScenarios.map((scenario) => scenario.id)).toEqual([
       'registre',
-      'cours',
       'radiations',
-      'vide',
     ])
-    for (const scenario of abrScenarios) {
+    for (const scenario of abrIntScenarios) {
       expect(scenario.profileId).toBe('int')
-      for (const step of scenario.steps) expect(ids.has(step.operationId)).toBe(true)
+      for (const step of scenario.steps) expect(intIds.has(step.operationId)).toBe(true)
+    }
+    for (const scenario of abrStudentScenarios) {
+      expect(scenario.profileId).toBe('etudiant')
+      for (const step of scenario.steps) expect(studentIds.has(step.operationId)).toBe(true)
     }
   })
 
   it('n’émet que des fonctions présentes dans le panneau de code', () => {
-    const runs = [
+    const intRuns = [
+      runRechercherABR(abrCourseSnapshot(), { valeur: 60 }),
+      runInsererABR(registreSnapshot(), { valeur: 200 }),
+      runSupprimerABR(registreSnapshot(), { valeur: 205 }),
+    ]
+    for (const steps of intRuns) {
+      for (const step of steps) expect(abrCode[step.fn], step.fn).toBeDefined()
+    }
+    const studentRuns = [
       runConstruireRegistre(emptyAbrSnapshot()),
       runEstInscrit(abrCourseSnapshot(), { numero: 60 }),
       runInscrireEtudiant(registreSnapshot(), { numero: 200 }),
       runRadierEtudiant(registreSnapshot(), { numero: 205 }),
     ]
-    for (const steps of runs) {
-      for (const step of steps) expect(abrCode[step.fn], step.fn).toBeDefined()
+    for (const steps of studentRuns) {
+      for (const step of steps) expect(studentAbrCode[step.fn], step.fn).toBeDefined()
     }
+    expect(abrCode.estInscrit).toBeUndefined()
+    expect(studentAbrCode.rechercherABR?.fn).toBe('rechercherABR')
   })
 
-  it('expose le chapitre 7 avec un maximum de douze nœuds', () => {
+  it('expose le chapitre 7 avec deux profils et un maximum de douze nœuds', () => {
     expect(abrPlugin.chapter).toBe(7)
     expect(abrPlugin.id).toBe('abr')
     expect(abrPlugin.profiles[0]?.maxNodes).toBe(12)
-    expect(abrPlugin.profiles[0]?.defaultScenarioId).toBe('registre')
+    expect(abrPlugin.profiles[0]?.defaultScenarioId).toBe('cours')
+    expect(abrPlugin.profiles[1]?.id).toBe('etudiant')
+    expect(abrPlugin.profiles[1]?.defaultScenarioId).toBe('registre')
     expect(abrPlugin.SupportingPanels).toBeDefined()
   })
 })

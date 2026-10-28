@@ -111,11 +111,12 @@ describe('coquille de l’application', () => {
     try {
       const markup = renderToStaticMarkup(<App />)
       expect(markup).toContain(fr.chapters.abr.title)
-      expect(markup).toContain(fr.abr.operations.construireRegistre.label)
-      expect(markup).toContain(fr.abr.operations.radierEtudiant.label)
+      expect(markup).toContain(fr.abr.operations.rechercherABR.label)
+      expect(markup).toContain(fr.abr.operations.supprimerABR.label)
+      expect(markup).toContain(fr.profiles.etudiant)
       expect(markup).toContain(fr.abr.support.title)
       expect(markup).toContain(fr.abr.support.inorder)
-      expect(markup).toContain(fr.abr.scenarios.registre.title)
+      expect(markup).toContain(fr.abr.scenarios.cours.title)
     } finally {
       window.location.hash = previousHash
     }

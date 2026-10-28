@@ -216,9 +216,25 @@ export const fr = {
       comparaisons: 'comparaisons',
     },
     params: {
+      valeur: 'Valeur',
       numero: 'Numéro d’étudiant',
     },
     operations: {
+      rechercherABR: {
+        label: 'Rechercher une valeur',
+        complexity: 'O(h)',
+        note: 'Recherche dirigée : une seule branche est explorée à chaque comparaison.',
+      },
+      insererABR: {
+        label: 'Insérer une valeur',
+        complexity: 'O(h)',
+        note: 'insererABR retourne un nœud et chaque appelant réaffecte son lien ; racine est réaffectée au sommet.',
+      },
+      supprimerABR: {
+        label: 'Supprimer une valeur',
+        complexity: 'O(h)',
+        note: 'Trois cas : feuille, un seul enfant, deux enfants avec le successeur (minimum du sous-arbre droit).',
+      },
       construireRegistre: {
         label: 'Construire le registre',
         complexity: 'O(n log n)',
@@ -242,7 +258,7 @@ export const fr = {
       parcoursInfixe: {
         label: 'Parcours infixe',
         complexity: 'O(n)',
-        note: 'Dans un ABR, le parcours infixe visite les numéros dans l’ordre croissant.',
+        note: 'Dans un ABR, le parcours infixe visite les valeurs dans l’ordre croissant.',
       },
     },
     scenarios: {
@@ -269,11 +285,13 @@ export const fr = {
     console: {
       found: (numero: number) => `${numero} est inscrit\n`,
       absent: (numero: number) => `${numero} n’est pas inscrit\n`,
+      foundValue: (valeur: number) => `${valeur} est dans l’arbre\n`,
+      absentValue: (valeur: number) => `${valeur} n’est pas dans l’arbre\n`,
     },
     captions: {
       createEntry: (value: number) => `Appel de creerNoeud(${value}) : allocation du futur nœud.`,
       allocated: (address: string) => `malloc réserve le nœud à l’adresse ${address}.`,
-      assignValue: (value: number) => `Le champ numero reçoit ${value}.`,
+      assignValue: (value: number) => `Le champ valeur reçoit ${value}.`,
       initChild: (field: string) => `Le champ ${field} est initialisé à NULL.`,
       returnCreated: (value: number) => `creerNoeud retourne le nouveau nœud ${value}.`,
       searchEntry: (numero: number) => `estInscrit(${numero}) : on part de la racine du registre.`,
@@ -281,11 +299,11 @@ export const fr = {
       searchCall: (target: string) => `Appel de rechercherABR avec ${target}.`,
       searchNullTest: (isNull: boolean) =>
         `On teste n == NULL ; n vaut ${isNull ? 'NULL' : 'un nœud'}.`,
-      searchAbsent: (numero: number) => `n vaut NULL : ${numero} n’est pas inscrit.`,
+      searchAbsent: (valeur: number) => `n vaut NULL : ${valeur} est absent.`,
       searchEqual: (wanted: number, value: number, equal: boolean) =>
         `On compare ${wanted} à ${value} : ${equal ? 'égalité' : 'pas encore trouvé'}.`,
-      searchFound: (numero: number) =>
-        `${numero} est inscrit : la recherche s’arrête, sans explorer l’autre sous-arbre.`,
+      searchFound: (valeur: number) =>
+        `${valeur} est trouvé : la recherche s’arrête, sans explorer l’autre sous-arbre.`,
       searchDirection: (wanted: number, value: number, goLeft: boolean) =>
         `${wanted} ${goLeft ? '<' : '>'} ${value} : on continue à ${goLeft ? 'gauche' : 'droite'}.`,
       searchRecurse: (field: string, value: number) =>
@@ -294,6 +312,8 @@ export const fr = {
         `${wanted} ${found ? 'est' : 'n’est pas'} dans ce sous-arbre ; l’appel retourne ${found ? '1' : '0'}.`,
       searchDone: (numero: number, found: boolean) =>
         `${numero} ${found ? 'est inscrit' : 'n’est pas inscrit'} : résultat ${found ? '1' : '0'}.`,
+      searchResult: (valeur: number, found: boolean) =>
+        `Recherche terminée : ${valeur} ${found ? 'est dans l’arbre' : 'n’est pas dans l’arbre'}.`,
       insertEntry: (numero: number) => `inscrireEtudiant(${numero}) : on prépare l’insertion.`,
       insertWrapper: (numero: number) =>
         `Appel initial : racine = insererABR(racine, ${numero}).`,
@@ -309,8 +329,8 @@ export const fr = {
         `${wanted} > ${value} : on descend à droite.`,
       insertDuplicateTest: (wanted: number, value: number) =>
         `${wanted} > ${value} est faux.`,
-      insertDuplicate: (numero: number) =>
-        `${numero} est déjà inscrit : l’arbre reste inchangé.`,
+      insertDuplicate: (valeur: number) =>
+        `${valeur} est déjà présent : l’arbre reste inchangé.`,
       insertRecurse: (field: string, value: number) =>
         `Appel récursif sur le lien ${field} du nœud ${value}.`,
       insertReassign: (field: string, value: number) =>
