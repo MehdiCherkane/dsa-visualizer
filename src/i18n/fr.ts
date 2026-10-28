@@ -67,6 +67,11 @@ export const fr = {
       title: 'Arbres binaires',
       description: 'Construction, parcours récursifs préfixe / infixe / postfixe et destruction en postordre.',
     },
+    abr: {
+      title: 'Les ABR (arbres binaires de recherche)',
+      description:
+        'Invariant d’ordre, recherche dirigée, insertion avec réaffectation et suppression en trois cas.',
+    },
     lddc: {
       title: 'Listes doublement chaînées circulaires',
       description:
@@ -202,6 +207,206 @@ export const fr = {
         : 'Destruction terminée : l’arbre était vide, aucun nœud n’a été libéré.',
     },
   },
+  abr: {
+    viz: {
+      visited: 'Étape',
+    },
+    counters: {
+      parcourus: 'nœuds parcourus',
+      comparaisons: 'comparaisons',
+    },
+    params: {
+      valeur: 'Valeur',
+      numero: 'Numéro d’étudiant',
+    },
+    operations: {
+      rechercherABR: {
+        label: 'Rechercher une valeur',
+        complexity: 'O(h)',
+        note: 'Recherche dirigée : une seule branche est explorée à chaque comparaison.',
+      },
+      insererABR: {
+        label: 'Insérer une valeur',
+        complexity: 'O(h)',
+        note: 'insererABR retourne un nœud et chaque appelant réaffecte son lien ; racine est réaffectée au sommet.',
+      },
+      supprimerABR: {
+        label: 'Supprimer une valeur',
+        complexity: 'O(h)',
+        note: 'Trois cas : feuille, un seul enfant, deux enfants avec le successeur (minimum du sous-arbre droit).',
+      },
+      construireRegistre: {
+        label: 'Construire le registre',
+        complexity: 'O(n log n)',
+        note: 'Les sept inscriptions de l’exercice, dans l’ordre du cours : 205, 150, 260, 120, 180, 240, 280.',
+      },
+      estInscrit: {
+        label: 'Vérifier une inscription',
+        complexity: 'O(h)',
+        note: 'Recherche dirigée : une seule branche est explorée à chaque comparaison.',
+      },
+      inscrireEtudiant: {
+        label: 'Inscrire un étudiant',
+        complexity: 'O(h)',
+        note: 'insererABR retourne un nœud et chaque appelant réaffecte son lien ; racine est réaffectée au sommet.',
+      },
+      radierEtudiant: {
+        label: 'Radier un étudiant',
+        complexity: 'O(h)',
+        note: 'Trois cas : feuille, un seul enfant, deux enfants avec le successeur (minimum du sous-arbre droit).',
+      },
+      parcoursInfixe: {
+        label: 'Parcours infixe',
+        complexity: 'O(n)',
+        note: 'Dans un ABR, le parcours infixe visite les valeurs dans l’ordre croissant.',
+      },
+    },
+    scenarios: {
+      registre: {
+        title: 'Registre des inscrits',
+        description:
+          'Construire l’ABR de l’exercice, vérifier 180, radier 205 puis afficher le parcours infixe trié.',
+      },
+      cours: {
+        title: 'Arbre du cours',
+        description:
+          'Rechercher 60 puis 65 dans l’arbre 50 / 30 / 70 / 20 / 40 / 60 / 80 : une seule branche par comparaison.',
+      },
+      radiations: {
+        title: 'Les trois cas de radiation',
+        description:
+          'Retirer 120 (feuille), 260 (un enfant), puis 205 (deux enfants, successeur 240).',
+      },
+      vide: {
+        title: 'Arbre vide',
+        description: 'Observer les cas de base de la recherche et de la suppression quand racine vaut NULL.',
+      },
+    },
+    console: {
+      found: (numero: number) => `${numero} est inscrit\n`,
+      absent: (numero: number) => `${numero} n’est pas inscrit\n`,
+      foundValue: (valeur: number) => `${valeur} est dans l’arbre\n`,
+      absentValue: (valeur: number) => `${valeur} n’est pas dans l’arbre\n`,
+    },
+    captions: {
+      createEntry: (value: number) => `Appel de creerNoeud(${value}) : allocation du futur nœud.`,
+      allocated: (address: string) => `malloc réserve le nœud à l’adresse ${address}.`,
+      assignValue: (value: number) => `Le champ valeur reçoit ${value}.`,
+      initChild: (field: string) => `Le champ ${field} est initialisé à NULL.`,
+      returnCreated: (value: number) => `creerNoeud retourne le nouveau nœud ${value}.`,
+      searchEntry: (numero: number) => `estInscrit(${numero}) : on part de la racine du registre.`,
+      searchWrapper: (numero: number) => `estInscrit délègue à rechercherABR(racine, ${numero}).`,
+      searchCall: (target: string) => `Appel de rechercherABR avec ${target}.`,
+      searchNullTest: (isNull: boolean) =>
+        `On teste n == NULL ; n vaut ${isNull ? 'NULL' : 'un nœud'}.`,
+      searchAbsent: (valeur: number) => `n vaut NULL : ${valeur} est absent.`,
+      searchEqual: (wanted: number, value: number, equal: boolean) =>
+        `On compare ${wanted} à ${value} : ${equal ? 'égalité' : 'pas encore trouvé'}.`,
+      searchFound: (valeur: number) =>
+        `${valeur} est trouvé : la recherche s’arrête, sans explorer l’autre sous-arbre.`,
+      searchDirection: (wanted: number, value: number, goLeft: boolean) =>
+        `${wanted} ${goLeft ? '<' : '>'} ${value} : on continue à ${goLeft ? 'gauche' : 'droite'}.`,
+      searchRecurse: (field: string, value: number) =>
+        `Appel récursif sur le sous-arbre ${field} du nœud ${value}.`,
+      searchReturn: (wanted: number, found: boolean) =>
+        `${wanted} ${found ? 'est' : 'n’est pas'} dans ce sous-arbre ; l’appel retourne ${found ? '1' : '0'}.`,
+      searchDone: (numero: number, found: boolean) =>
+        `${numero} ${found ? 'est inscrit' : 'n’est pas inscrit'} : résultat ${found ? '1' : '0'}.`,
+      searchResult: (valeur: number, found: boolean) =>
+        `Recherche terminée : ${valeur} ${found ? 'est dans l’arbre' : 'n’est pas dans l’arbre'}.`,
+      insertEntry: (numero: number) => `inscrireEtudiant(${numero}) : on prépare l’insertion.`,
+      insertWrapper: (numero: number) =>
+        `Appel initial : racine = insererABR(racine, ${numero}).`,
+      insertCall: (target: string) => `Appel de insererABR avec ${target}.`,
+      insertNullTest: (isNull: boolean) =>
+        `On teste n == NULL ; ${isNull ? 'la place est libre' : 'on continue la descente'}.`,
+      insertSlot: (numero: number) => `NULL : c’est la bonne place pour ${numero}.`,
+      insertCreated: (numero: number) =>
+        `Le nouveau nœud ${numero} est retourné et sera rattaché par l’appelant.`,
+      insertCompare: (wanted: number, value: number, less: boolean) =>
+        `On compare ${wanted} à ${value} : ${less ? 'il faut descendre à gauche' : 'pas à gauche'}.`,
+      insertGreaterTest: (wanted: number, value: number) =>
+        `${wanted} > ${value} : on descend à droite.`,
+      insertDuplicateTest: (wanted: number, value: number) =>
+        `${wanted} > ${value} est faux.`,
+      insertDuplicate: (valeur: number) =>
+        `${valeur} est déjà présent : l’arbre reste inchangé.`,
+      insertRecurse: (field: string, value: number) =>
+        `Appel récursif sur le lien ${field} du nœud ${value}.`,
+      insertReassign: (field: string, value: number) =>
+        `Le pointeur retourné est réaffecté à ${field} du nœud ${value}.`,
+      insertReturn: (value: number) => `insererABR retourne le nœud ${value} à son appelant.`,
+      insertRoot: (returned: string, previous: string) =>
+        `racine est réaffectée : ${previous} → ${returned}.`,
+      insertDone: (numero: number) =>
+        `Inscription de ${numero} terminée : l’invariant d’ordre est conservé.`,
+      deleteEntry: (numero: number) => `radierEtudiant(${numero}) : on prépare la radiation.`,
+      deleteWrapper: (numero: number) =>
+        `Appel initial : racine = supprimerABR(racine, ${numero}).`,
+      deleteCall: (target: string) => `Appel de supprimerABR avec ${target}.`,
+      deleteNullTest: (isNull: boolean) =>
+        `On teste n == NULL ; n vaut ${isNull ? 'NULL' : 'un nœud'}.`,
+      deleteAbsent: (numero: number) => `${numero} est absent : aucun nœud à libérer.`,
+      deleteCompare: (wanted: number, value: number, less: boolean) =>
+        `On compare ${wanted} à ${value} : ${less ? 'on descend à gauche' : 'pas à gauche'}.`,
+      deleteGreater: (wanted: number, value: number, greater: boolean) =>
+        `On teste ${wanted} > ${value} : ${greater ? 'on descend à droite' : 'faux'}.`,
+      deleteRecurse: (field: string, value: number) =>
+        `Appel récursif sur le lien ${field} du nœud ${value}.`,
+      deleteReassign: (field: string, value: number) =>
+        `Le pointeur retourné est réaffecté à ${field} du nœud ${value}.`,
+      deleteReturn: (value: number) => `supprimerABR retourne le nœud ${value} à son appelant.`,
+      deleteFound: (numero: number) => `${numero} est trouvé : on choisit le cas de suppression.`,
+      deleteLeafTest: (numero: number) =>
+        `${numero} est une feuille : aucun enfant à rattacher.`,
+      deleteFree: (numero: number) => `free libère le nœud ${numero}.`,
+      deleteReturnNull: 'L’appel retourne NULL : la place du nœud devient vide.',
+      deleteLeftNullTest:
+        'Le lien gauche est NULL : un seul enfant, le droit, reste à rattacher.',
+      deleteRightNullTest:
+        'Le lien droit est NULL : un seul enfant, le gauche, reste à rattacher.',
+      deleteTemp: (field: string) => `temp mémorise l’enfant ${field} avant la libération.`,
+      deleteReturnChild:
+        'L’appel retourne temp : l’enfant restant prend la place du nœud libéré.',
+      deleteSuccessorCall: (numero: number) =>
+        `Le nœud ${numero} a deux enfants : on cherche le successeur dans son sous-arbre droit.`,
+      deleteSuccessor: (value: number) =>
+        `Le successeur est le minimum du sous-arbre droit : ${value}.`,
+      deleteCopy: (numero: number, successor: number) =>
+        `Le nœud qui contenait ${numero} reçoit la valeur ${successor}.`,
+      deleteSuccessorRecurse: (value: number) =>
+        `On supprime maintenant l’ancien nœud ${value} de sa position d’origine.`,
+      deleteRoot: (returned: string, previous: string) =>
+        `racine est réaffectée : ${previous} → ${returned}.`,
+      deleteDone: (numero: number) =>
+        `Radiation de ${numero} terminée : le parcours infixe reste trié.`,
+      minEntry: (value: number) => `trouverMin part du nœud ${value}.`,
+      minLoop: (value: number, hasLeft: boolean) =>
+        `Tant que n->gauche existe : ${hasLeft ? 'on peut descendre' : `n = ${value} est le minimum`}.`,
+      minDescend: (value: number) => `n descend à gauche vers ${value}.`,
+      minFound: (value: number) => `Aucun enfant gauche : ${value} est le minimum.`,
+      registerEntry: 'On construit le registre de l’exercice à partir d’un arbre vide.',
+      registerCall: (numero: number) => `inscrireEtudiant(${numero}).`,
+      registerDone: (values: string) =>
+        `Registre construit. Parcours infixe : ${values}.`,
+      registerAlready:
+        'Un registre est déjà construit : réinitialisez le chapitre pour le reconstruire.',
+      rootFreed: 'racine est pendant : réinitialisez le chapitre avant de continuer.',
+      invalidNode:
+        'Le pointeur ne désigne pas un nœud vivant : l’opération s’arrête pour éviter un accès invalide.',
+      maxNodes: (maximum: number) =>
+        `Maximum de ${maximum} nœuds atteint : l’insertion est annulée.`,
+    },
+    support: {
+      title: 'Invariant d’ordre',
+      rule: 'gauche < nœud < droit',
+      inorder: 'Parcours infixe',
+      empty: 'arbre vide',
+      valid: 'Invariant respecté : les valeurs infixes sont strictement croissantes.',
+      invalid: 'Invariant rompu : les valeurs infixes ne sont pas strictement croissantes.',
+      directed: 'La recherche ne descend que d’un seul côté par comparaison.',
+    },
+  },
   header: {
     presentationOn: 'Quitter la présentation',
     presentationOff: 'Mode présentation',
@@ -295,6 +500,9 @@ export const fr = {
       gauche: 'gauche',
       visite: 'visite',
       droit: 'droit',
+      comparaison: 'comparaison',
+      suppression: 'suppression',
+      minimum: 'minimum',
     },
   },
   captionPanel: {

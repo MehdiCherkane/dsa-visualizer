@@ -1,0 +1,72 @@
+.abr-support {
+  flex: 0 0 auto;
+}
+
+.abr-support-head {
+  align-items: center;
+}
+
+.abr-support-rule {
+  color: var(--ink-2);
+  font: 700 10px var(--mono);
+  white-space: nowrap;
+}
+
+.abr-support-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px 10px;
+}
+
+.abr-support-line {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.abr-support-line code {
+  color: var(--ink);
+  font: 700 12px var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.abr-support-verdict {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.abr-support-verdict.is-ok {
+  color: var(--success);
+}
+
+.abr-support-verdict.is-bad {
+  color: var(--danger);
+}
+
+.abr-support-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.right-column:has(.abr-support) .code-panel {
+  flex: 0 1 auto;
+  max-height: min(34%, 300px);
+}
+
+.right-column:has(.abr-support) .code-body {
+  flex: 0 1 auto;
+}
+
+.right-column.has-call-stack:has(.abr-support) .code-panel {
+  max-height: min(34%, 300px);
+}
