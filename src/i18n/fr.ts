@@ -9,6 +9,10 @@ export const fr = {
     title: 'Réalisé par',
     names: ['El Mahdi Cherkane', 'Omar Moussaid', 'Hamza Agour'],
   },
+  presa: {
+    download: 'Télécharger Presa',
+    downloadHint: 'Télécharger Presa pour Android depuis GitHub (nouvel onglet)',
+  },
   app: {
     title: 'Listes doublement chaînées',
     course: 'Structures de données',
