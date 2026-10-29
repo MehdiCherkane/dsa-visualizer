@@ -2947,8 +2947,13 @@ body.is-resizing-horizontal * {
   grid-template-rows: minmax(0, 1fr) auto;
 }
 
-.app.app-embedded .site-footer {
+.app.app-embedded .workspace-sash,
+.app.app-embedded .right-column {
   display: none;
+}
+
+.app.app-embedded .workspace {
+  grid-template-columns: 1fr !important;
 }
 
 .app.presentation {
