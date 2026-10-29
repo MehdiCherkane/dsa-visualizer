@@ -783,7 +783,7 @@
   min-height: 700px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  overflow: hidden;
+  overflow-y: auto;
   background: var(--bg);
 }
 
