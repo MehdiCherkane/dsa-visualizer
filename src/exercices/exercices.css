@@ -757,8 +757,12 @@
   gap: 4px;
 }
 
-.exercices-simulation-head .exercices-solution-title {
-  font-size: 14px;
+.exercices-simulation-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .exercices-simulation-head p {
@@ -766,6 +770,11 @@
   color: var(--muted);
   font-size: 12px;
   line-height: 1.5;
+}
+
+.exercices-simulation-hint {
+  color: var(--ink-2);
+  font-size: 12.5px;
 }
 
 .exercices-simulation-frame {

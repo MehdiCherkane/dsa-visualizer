@@ -2,7 +2,7 @@ import type { JSX } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { pluginForChapter } from '../registry'
 import { fr } from '../i18n/fr'
-import { chapterHash, navigate } from '../ui/useHashRoute'
+import { navigate } from '../ui/useHashRoute'
 import { DemoApp } from '../ui/App'
 import { ExercicesShell } from './ExercicesShell'
 import { CodeBlock } from './CodeBlock'
@@ -128,7 +128,14 @@ export function ExerciseSheetPage({
               {fr.exercices.openPdf}
             </a>
             {plugin ? (
-              <a className="ghost-button" href={chapterHash(plugin.chapter)}>
+              <a
+                className="ghost-button"
+                href="#exercices-simulation"
+                onClick={(event) => {
+                  event.preventDefault()
+                  document.getElementById('exercices-simulation')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }}
+              >
                 {fr.exercices.simulate}
               </a>
             ) : null}
@@ -278,13 +285,14 @@ export function ExerciseSheetPage({
         </section>
 
         {plugin ? (
-          <section className="exercices-simulation" aria-labelledby="exercices-simulation-title">
+          <section id="exercices-simulation" className="exercices-simulation" aria-labelledby="exercices-simulation-title">
             <div className="exercices-simulation-head">
-              <h2 id="exercices-simulation-title" className="exercices-solution-title">
+              <h2 id="exercices-simulation-title" className="exercices-simulation-title">
                 {fr.exercices.simulate}
               </h2>
-              <p className="exercices-solution-notes">
-                {fr.exercices.simulateHint(plugin.chapter)}
+              <p>{fr.exercices.simulateHint(plugin.chapter)}</p>
+              <p className="exercices-simulation-hint">
+                Utilisez les contrôles ci-dessous pour manipuler la pile dynamique et observer l’effet de chaque opération.
               </p>
             </div>
             <div className="exercices-simulation-frame">
