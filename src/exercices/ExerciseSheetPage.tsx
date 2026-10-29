@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { pluginForChapter } from '../registry'
 import { fr } from '../i18n/fr'
 import { chapterHash, navigate } from '../ui/useHashRoute'
+import { DemoApp } from '../ui/App'
 import { ExercicesShell } from './ExercicesShell'
 import { CodeBlock } from './CodeBlock'
 import { RichText } from './RichText'
@@ -275,6 +276,29 @@ export function ExerciseSheetPage({
             </section>
           </div>
         </section>
+
+        {plugin ? (
+          <section className="exercices-simulation" aria-labelledby="exercices-simulation-title">
+            <div className="exercices-simulation-head">
+              <h2 id="exercices-simulation-title" className="exercices-solution-title">
+                {fr.exercices.simulate}
+              </h2>
+              <p className="exercices-solution-notes">
+                {fr.exercices.simulateHint(plugin.chapter)}
+              </p>
+            </div>
+            <div className="exercices-simulation-frame">
+              <DemoApp
+                key={`embedded-${plugin.id}`}
+                plugin={plugin}
+                theme={theme}
+                onTheme={onTheme}
+                onMenu={() => navigate('#/exercices')}
+                embedded
+              />
+            </div>
+          </section>
+        ) : null}
 
         <p className="exercices-announcer exercices-sr-only" aria-live="polite" aria-atomic="true">
           {fr.exercices.questionAnnouncement(questionNumber, total)}

@@ -87,11 +87,13 @@ export function DemoApp<S extends BaseSnapshot>({
   theme,
   onTheme,
   onMenu,
+  embedded = false,
 }: {
   plugin: StructurePlugin<S>
   theme: 'light' | 'dark'
   onTheme: () => void
   onMenu: () => void
+  embedded?: boolean
 }): JSX.Element {
   const initialProfile = plugin.profiles[0]
   if (!initialProfile) throw new Error('The plugin must declare at least one profile')
@@ -535,6 +537,7 @@ export function DemoApp<S extends BaseSnapshot>({
   ])
 
   useEffect(() => {
+    if (embedded) return
     const handler = (event: KeyboardEvent): void => {
       if (courseOpen) return
       const target = event.target as HTMLElement | null
@@ -631,11 +634,12 @@ export function DemoApp<S extends BaseSnapshot>({
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [courseOpen, finishOperation, firstStep, nextStep, stepBack, resetAll, simulationFullscreen, onMenu, togglePlayback, toggleSimulationFullscreen])
+  }, [courseOpen, finishOperation, firstStep, nextStep, stepBack, resetAll, simulationFullscreen, onMenu, togglePlayback, toggleSimulationFullscreen, embedded])
 
   const appClassName = [
     'app',
     'has-footer',
+    embedded ? 'app-embedded' : '',
     presentation ? 'presentation' : '',
     simulationFullscreen ? 'simulation-fullscreen' : '',
   ]
@@ -644,21 +648,23 @@ export function DemoApp<S extends BaseSnapshot>({
 
   return (
     <div ref={appRef} className={appClassName}>
-      <Header
-        plugin={plugin}
-        profileId={profile.id}
-        onProfile={switchProfile}
-        theme={theme}
-        onTheme={onTheme}
-        onMenu={onMenu}
-        onCourse={() => setCourseOpen(true)}
-        courseOpen={courseOpen}
-        presentation={presentation}
-        onPresentation={() => setPresentation((value) => !value)}
-        scenarios={allScenarios}
-        currentScenarioId={scenarioRun?.scenarioId}
-        onLoadScenario={loadScenario}
-      />
+      {!embedded ? (
+        <Header
+          plugin={plugin}
+          profileId={profile.id}
+          onProfile={switchProfile}
+          theme={theme}
+          onTheme={onTheme}
+          onMenu={onMenu}
+          onCourse={() => setCourseOpen(true)}
+          courseOpen={courseOpen}
+          presentation={presentation}
+          onPresentation={() => setPresentation((value) => !value)}
+          scenarios={allScenarios}
+          currentScenarioId={scenarioRun?.scenarioId}
+          onLoadScenario={loadScenario}
+        />
+      ) : null}
 
       <main ref={workspaceRef} className="workspace" style={workspaceStyle}>
         <div className="left-column" id="workspace-main">

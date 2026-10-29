@@ -737,6 +737,52 @@
   color: var(--gold);
 }
 
+/* ---------------- simulation (embedded chapter visualizer) ---------------- */
+
+.exercices-simulation {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+  padding: 16px 18px;
+  overflow: hidden;
+}
+
+.exercices-simulation-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.exercices-simulation-head .exercices-solution-title {
+  font-size: 14px;
+}
+
+.exercices-simulation-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.exercices-simulation-frame {
+  position: relative;
+  height: 640px;
+  min-height: 480px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.exercices-simulation-frame .app.app-embedded {
+  height: 100%;
+  border-radius: 14px;
+}
+
 /* ---------------- misc ---------------- */
 
 .exercices-announcer,

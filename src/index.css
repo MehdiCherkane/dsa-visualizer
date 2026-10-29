@@ -2942,6 +2942,15 @@ body.is-resizing-horizontal * {
   grid-template-rows: var(--header-h) minmax(0, 1fr) auto auto;
 }
 
+.app.app-embedded {
+  height: 640px;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.app.app-embedded .site-footer {
+  display: none;
+}
+
 .app.presentation {
   --ui-scale: 1.25;
   --header-h: 78px;
