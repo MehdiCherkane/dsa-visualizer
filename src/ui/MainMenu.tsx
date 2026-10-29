@@ -5,6 +5,7 @@ import { BrandMark } from './BrandMark'
 import { ChapterIcon } from './ChapterIcon'
 import { CreditsMenu } from './CreditsMenu'
 import { MenuScene } from './MenuScene'
+import { PresaDownload } from './PresaDownload'
 import { SiteFooter } from './SiteFooter'
 import { ThemeToggle } from './ThemeToggle'
 import { ZelligeFrieze } from './ZelligeFrieze'
@@ -76,8 +77,9 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
         </div>
 
         <div className="header-actions">
-          <CreditsMenu />
           <ThemeToggle theme={theme} onTheme={onTheme} />
+          <PresaDownload />
+          <CreditsMenu />
         </div>
       </header>
 

@@ -61,6 +61,30 @@ describe('menu principal', () => {
     expect(credits.indexOf('Omar Moussaid')).toBeLessThan(credits.indexOf('Hamza Agour'))
   })
 
+  it('place le téléchargement Presa entre le thème et les crédits', () => {
+    const actions = container.querySelector('.header-actions')
+    expect(actions).not.toBeNull()
+    const children = Array.from(actions?.children ?? [])
+    const themeIndex = children.findIndex((element) =>
+      element.classList.contains('header-icon-button'),
+    )
+    const presaIndex = children.findIndex((element) =>
+      element.classList.contains('presa-download'),
+    )
+    const creditsIndex = children.findIndex((element) =>
+      element.classList.contains('credits-menu'),
+    )
+
+    expect(themeIndex).toBeGreaterThanOrEqual(0)
+    expect(themeIndex).toBeLessThan(presaIndex)
+    expect(presaIndex).toBeLessThan(creditsIndex)
+
+    const link = children[presaIndex] as HTMLAnchorElement
+    expect(link.getAttribute('href')).toBe('https://github.com/HamzaAGOUR/Presa')
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.textContent).toContain(fr.presa.download)
+  })
+
   it('rend une carte par plugin enregistré, construite depuis le registre', () => {
     const cards = container.querySelectorAll('.chapter-card:not(.is-soon)')
     expect(cards).toHaveLength(plugins.length)
