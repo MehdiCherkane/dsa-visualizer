@@ -3,7 +3,7 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { chapterHash, MENU_HASH, parseRoute, useHashRoute } from './useHashRoute'
+import { chapterHash, MENU_HASH, parseRoute, PRESA_HASH, useHashRoute } from './useHashRoute'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -21,6 +21,12 @@ describe('parseRoute', () => {
     expect(parseRoute('#/chapitre-4')).toEqual(parseRoute(chapterHash(4)))
   })
 
+  it('reconnaît la page Presa', () => {
+    expect(parseRoute(PRESA_HASH)).toEqual({ view: 'presa' })
+    expect(parseRoute('#/presa')).toEqual({ view: 'presa' })
+    expect(parseRoute('#/presa/')).toEqual({ view: 'presa' })
+  })
+
   it('retombe sur le menu pour tout hash inconnu', () => {
     for (const hash of [
       '#/inconnu',
@@ -29,6 +35,8 @@ describe('parseRoute', () => {
       '#/chapitre-0',
       '#/chapitre-',
       '#/chapitre-4/brouillon',
+      '#/presa/brouillon',
+      '#/PresA',
       '#chapitre-4',
       '#/Chapitre-4',
     ]) {
@@ -43,9 +51,8 @@ describe('useHashRoute', () => {
 
   function Probe() {
     const route = useHashRoute()
-    return (
-      <span data-route={route.view === 'chapter' ? `chapter:${route.chapter}` : 'menu'} />
-    )
+    const view = route.view === 'chapter' ? `chapter:${route.chapter}` : route.view
+    return <span data-route={view} />
   }
 
   function currentRoute(): string | null {
@@ -81,6 +88,9 @@ describe('useHashRoute', () => {
   it('suit les changements de hash', () => {
     goTo('#/chapitre-4')
     expect(currentRoute()).toBe('chapter:4')
+
+    goTo(PRESA_HASH)
+    expect(currentRoute()).toBe('presa')
 
     goTo('#/chapitre-5')
     expect(currentRoute()).toBe('chapter:5')

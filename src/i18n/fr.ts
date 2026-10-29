@@ -11,7 +11,36 @@ export const fr = {
   },
   presa: {
     download: 'Télécharger Presa',
-    downloadHint: 'Télécharger Presa pour Android depuis GitHub (nouvel onglet)',
+    downloadHint: 'Découvrir Presa, la télécommande de présentation pour Android',
+    pageTitle: 'Presa — télécommande de présentation Bluetooth',
+    eyebrow: 'Application Android · hors ligne',
+    tagline: 'Votre téléphone devient une télécommande de présentation.',
+    lead: 'Presa pilote vos diapositives et le visualiseur DSA en Bluetooth. Rien à installer sur l’ordinateur : le téléphone se présente comme un clavier et une souris HID standard.',
+    repo: 'Ouvrir le dépôt GitHub',
+    repoHint: 'Ouvrir le dépôt Presa sur GitHub (nouvel onglet)',
+    back: 'Retour au menu',
+    sectionEyebrow: 'Télécommande',
+    featuresTitle: 'Pensée pour les présentations',
+    features: [
+      {
+        title: 'Clavier et souris Bluetooth',
+        body: 'Le téléphone se déclare comme clavier HID et souris relative : les touches et le curseur arrivent directement sur l’ordinateur.',
+      },
+      {
+        title: 'Pavé tactile intégré',
+        body: 'Déplacez le curseur, cliquez et faites défiler depuis l’écran, sans souris supplémentaire sur la table.',
+      },
+      {
+        title: 'Trois modes de commande',
+        body: 'Visualiseur, PowerPoint et PDF : chaque mode a ses raccourcis, avec pavé numérique et répétition des touches.',
+      },
+      {
+        title: 'Hors ligne et privé',
+        body: 'Aucune permission Internet, aucun compte, aucune analyse : tout reste entre le téléphone et l’ordinateur.',
+      },
+    ],
+    facts: ['Android 9+', 'Bluetooth HID', 'Licence MIT'],
+    iconAlt: 'Icône Presa : une télécommande dorée sur un fond bleu nuit étoilé',
   },
   app: {
     title: 'Listes doublement chaînées',
