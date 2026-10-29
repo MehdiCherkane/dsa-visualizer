@@ -8,7 +8,7 @@ Teaching platform for data structures in C (`Structures de données`), built wit
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (386 tests)
+npm test      # vitest suite (401 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server

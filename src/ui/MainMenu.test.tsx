@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fr } from '../i18n/fr'
 import { plugins } from '../registry'
 import { MainMenu } from './MainMenu'
-import { chapterHash, MENU_HASH } from './useHashRoute'
+import { chapterHash, MENU_HASH, PRESA_HASH } from './useHashRoute'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -80,8 +80,8 @@ describe('menu principal', () => {
     expect(presaIndex).toBeLessThan(creditsIndex)
 
     const link = children[presaIndex] as HTMLAnchorElement
-    expect(link.getAttribute('href')).toBe('https://github.com/HamzaAGOUR/Presa')
-    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('href')).toBe(PRESA_HASH)
+    expect(link.hasAttribute('target')).toBe(false)
     expect(link.textContent).toContain(fr.presa.download)
   })
 

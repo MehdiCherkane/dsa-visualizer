@@ -3,6 +3,7 @@ import { fr } from './i18n/fr'
 import { pluginForChapter, plugins } from './registry'
 import { DemoApp } from './ui/App'
 import { MainMenu } from './ui/MainMenu'
+import { PresaPage } from './ui/PresaPage'
 import { ZelligeBackdrop } from './ui/SiteBackdrop'
 import { MENU_HASH, navigate, useHashRoute } from './ui/useHashRoute'
 
@@ -19,10 +20,24 @@ export default function App() {
 
   // Unknown chapters behave like `#/`: the menu is the fallback entry point.
   const plugin = route.view === 'chapter' ? pluginForChapter(route.chapter) : undefined
+  const isPresa = route.view === 'presa'
 
   useEffect(() => {
+    if (isPresa) {
+      document.title = fr.presa.pageTitle
+      return
+    }
     document.title = plugin ? fr.menu.chapterPageTitle(plugin.title) : fr.menu.pageTitle
-  }, [plugin])
+  }, [isPresa, plugin])
+
+  if (isPresa) {
+    return (
+      <>
+        <ZelligeBackdrop />
+        <PresaPage theme={theme} onTheme={toggleTheme} />
+      </>
+    )
+  }
 
   if (!plugin) {
     return (

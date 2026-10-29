@@ -4,20 +4,28 @@ import { useMemo, useSyncExternalStore } from 'react'
  * Hand-rolled hash navigation: the app builds to a single file opened with
  * `file://`, so no history-API router (which needs a server) can be used.
  */
-export type Route = { view: 'menu' } | { view: 'chapter'; chapter: number }
+export type Route =
+  | { view: 'menu' }
+  | { view: 'chapter'; chapter: number }
+  | { view: 'presa' }
 
 export const MENU_HASH = '#/'
+export const PRESA_HASH = '#/presa'
 
 export function chapterHash(chapter: number): string {
   return `#/chapitre-${chapter}`
 }
 
 const CHAPTER_PATTERN = /^#\/chapitre-(\d+)\/?$/
+const PRESA_PATTERN = /^#\/presa\/?$/
 const MENU_ROUTE: Route = { view: 'menu' }
+const PRESA_ROUTE: Route = { view: 'presa' }
 
 /** `#/` and anything unrecognised fall back to the menu. */
 export function parseRoute(hash: string): Route {
-  const match = CHAPTER_PATTERN.exec(hash.trim())
+  const trimmed = hash.trim()
+  if (PRESA_PATTERN.test(trimmed)) return PRESA_ROUTE
+  const match = CHAPTER_PATTERN.exec(trimmed)
   if (!match) return MENU_ROUTE
   const chapter = Number(match[1])
   if (!Number.isSafeInteger(chapter) || chapter <= 0) return MENU_ROUTE
