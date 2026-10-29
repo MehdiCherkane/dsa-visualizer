@@ -779,8 +779,8 @@
 
 .exercices-simulation-frame {
   position: relative;
-  height: 640px;
-  min-height: 480px;
+  height: clamp(700px, 80vh, 1000px);
+  min-height: 700px;
   border: 1px solid var(--line);
   border-radius: 14px;
   overflow: hidden;
@@ -790,6 +790,10 @@
 .exercices-simulation-frame .app.app-embedded {
   height: 100%;
   border-radius: 14px;
+}
+
+.app.app-embedded .viz-card {
+  min-height: 420px;
 }
 
 /* ---------------- misc ---------------- */
