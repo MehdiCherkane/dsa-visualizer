@@ -1,6 +1,8 @@
 import type { JSX } from 'react'
 import { config } from '../config'
 import { fr } from '../i18n/fr'
+import { getExercices } from '../exercices'
+import type { Exercise } from '../exercices/types'
 import { BrandMark } from './BrandMark'
 import { ChapterIcon } from './ChapterIcon'
 import { CreditsMenu } from './CreditsMenu'
@@ -9,7 +11,8 @@ import { PresaDownload } from './PresaDownload'
 import { SiteFooter } from './SiteFooter'
 import { ThemeToggle } from './ThemeToggle'
 import { ZelligeFrieze } from './ZelligeFrieze'
-import { chapterHash, navigate } from './useHashRoute'
+import { chapterHash, exerciseHash, navigate, EXERCICES_HASH } from './useHashRoute'
+import { ExerciseIcon } from '../exercices/ExerciseIcon'
 import './MainMenu.css'
 
 /** Metadata-only view of a registered plugin: the menu knows nothing about snapshots. */
@@ -24,6 +27,7 @@ interface MainMenuProps {
   plugins: readonly MenuPlugin[]
   theme: 'light' | 'dark'
   onTheme: () => void
+  exercices?: readonly Exercise[]
 }
 
 function ArrowIcon(): JSX.Element {
@@ -45,8 +49,14 @@ function scrollToChapters(): void {
   document.getElementById('menu-chapters')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
-export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Element {
+export function MainMenu({
+  plugins,
+  theme,
+  onTheme,
+  exercices,
+}: MainMenuProps): JSX.Element {
   const open = (chapter: number): void => navigate(chapterHash(chapter))
+  const exercises = exercices ?? getExercices()
   const [titleLead, ...titleRest] = fr.menu.title.split(' ')
   const titleAccent = titleRest.join(' ')
   const entries = [
@@ -77,6 +87,19 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
         </div>
 
         <div className="header-actions">
+          <a
+            className="menu-exercices-link"
+            href={EXERCICES_HASH}
+            aria-label={fr.exercices.menuLinkAria}
+            title={fr.exercices.menuLinkAria}
+            onClick={(event) => {
+              event.preventDefault()
+              navigate(EXERCICES_HASH)
+            }}
+          >
+            <ExerciseIcon />
+            <span>{fr.exercices.menuLink}</span>
+          </a>
           <ThemeToggle theme={theme} onTheme={onTheme} />
           <PresaDownload />
           <CreditsMenu />
@@ -100,6 +123,60 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
           </div>
           <MenuScene />
         </section>
+
+        {exercises.length > 0 ? (
+          <section
+            className="menu-section menu-exercices-section"
+            aria-labelledby="menu-exercices-title"
+          >
+            <div className="menu-section-head">
+              <div>
+                <p className="menu-section-eyebrow">{fr.exercices.menuCardEyebrow}</p>
+                <h2 id="menu-exercices-title" className="menu-section-title">
+                  {fr.exercices.menuCardTitle}
+                </h2>
+              </div>
+              <p className="menu-section-note">{fr.exercices.menuCardDescription}</p>
+            </div>
+            <ul className="exercise-list">
+              {exercises.map((exercise) => (
+                <li key={exercise.id}>
+                  <a
+                    className="exercise-card"
+                    href={exerciseHash(exercise.id)}
+                    aria-label={fr.exercices.menuCardAria(exercise.title)}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      navigate(exerciseHash(exercise.id))
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return
+                      event.preventDefault()
+                      navigate(exerciseHash(exercise.id))
+                    }}
+                  >
+                    <span className="exercise-card-icon">
+                      <ExerciseIcon />
+                    </span>
+                    <div className="exercise-card-body">
+                      <span className="exercise-card-kicker">{fr.exercices.sheetEyebrow}</span>
+                      <h3 className="exercise-card-title">{exercise.title}</h3>
+                      <p className="exercise-card-text">
+                        {exercise.questions.length}{' '}
+                        {fr.exercices.questionCount(exercise.questions.length)} ·{' '}
+                        {fr.menu.chapterLabel(exercise.chapter)}
+                      </p>
+                    </div>
+                    <span className="exercise-card-cta">
+                      {fr.exercices.openExercise}
+                      <ArrowIcon />
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <section className="menu-section" aria-labelledby="menu-chapters">
           <div className="menu-section-head">

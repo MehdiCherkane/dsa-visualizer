@@ -2,6 +2,8 @@ import type { CSSProperties, JSX } from 'react'
 import type { BaseSnapshot, ScenarioDef, StructurePlugin } from '../core/types'
 import { config } from '../config'
 import { fr } from '../i18n/fr'
+import { ExerciseIcon } from '../exercices/ExerciseIcon'
+import { EXERCICES_HASH, navigate } from './useHashRoute'
 import { BrandMark } from './BrandMark'
 import { ScenariosMenu } from './ScenariosMenu'
 import { Shortcuts } from './Shortcuts'
@@ -120,6 +122,19 @@ export function Header<S extends BaseSnapshot>({
           />
         </div>
         <span className="header-divider" aria-hidden="true" />
+        <a
+          className="header-exercices-link"
+          href="#/exercices"
+          onClick={(event) => {
+            event.preventDefault()
+            navigate(EXERCICES_HASH)
+          }}
+          title={fr.exercices.menuLinkAria}
+          aria-label={fr.exercices.menuLinkAria}
+        >
+          <ExerciseIcon />
+          <span>{fr.exercices.menuLink}</span>
+        </a>
         <button
           type="button"
           className={presentation ? 'secondary-button presentation-button active' : 'secondary-button presentation-button'}

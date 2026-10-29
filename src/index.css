@@ -299,6 +299,58 @@ select:focus-visible,
   margin-left: auto;
 }
 
+/* Exercises entry in the chapter header. */
+.header-exercices-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--gold-soft);
+  padding: 0 11px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-soft);
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.header-exercices-link .button-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--gold);
+}
+
+.header-exercices-link:hover {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold-soft) 72%, var(--panel));
+  transform: translateY(-1px);
+}
+
+.header-exercices-link:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+@container header (max-width: 1280px) {
+  .header-exercices-link span {
+    display: none;
+  }
+
+  .header-exercices-link {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+  }
+}
+
 .ghost-button,
 .secondary-button,
 .primary-button {

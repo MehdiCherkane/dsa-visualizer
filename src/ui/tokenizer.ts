@@ -28,12 +28,64 @@ const KEYWORDS = new Set([
   'struct',
   'const',
   'NULL',
+  'do',
+  'switch',
+  'case',
+  'default',
+  'goto',
+  'static',
+  'extern',
+  'unsigned',
+  'signed',
+  'long',
+  'short',
+  'float',
+  'double',
+  'union',
+  'enum',
+  'register',
+  'volatile',
+  'inline',
+  'auto',
+  'break',
+  'continue',
 ])
-const TYPES = new Set(['void', 'int', 'char', 'Noeud', 'NoeudEtudiant', 'Etudiant'])
-const BUILTINS = new Set(['malloc', 'free', 'printf'])
-const PREV_FIELDS = new Set(['precedent'])
-const NEXT_FIELDS = new Set(['suivant'])
-const VALUE_FIELDS = new Set(['valeur', 'donnees', 'numero', 'nom', 'prenom'])
+const TYPES = new Set([
+  'void',
+  'int',
+  'char',
+  'Noeud',
+  'NoeudEtudiant',
+  'Etudiant',
+  'GrandNombre',
+  'Element',
+  'ElementPile',
+  'size_t',
+])
+const BUILTINS = new Set([
+  'malloc',
+  'free',
+  'printf',
+  'scanf',
+  'fprintf',
+  'stderr',
+  'exit',
+  'EXIT_SUCCESS',
+  'EXIT_FAILURE',
+  'strlen',
+])
+const PREV_FIELDS = new Set(['precedent', 'Precedent'])
+const NEXT_FIELDS = new Set(['suivant', 'Suivant'])
+const VALUE_FIELDS = new Set([
+  'valeur',
+  'donnees',
+  'numero',
+  'nom',
+  'prenom',
+  'Paquet',
+  'Sommet',
+  'Npaquets',
+])
 
 function classifyIdentifier(word: string): TokenKind {
   if (KEYWORDS.has(word)) return 'keyword'

@@ -7,6 +7,8 @@ import { pilesFilesPlugin } from './structures/piles-files'
 import { pilesFilesStatiquesPlugin } from './structures/piles-files-statiques'
 import { treesPlugin } from './structures/trees'
 
+export { exerciceById, getExercices } from './exercices'
+
 export const plugins = [
   pilesFilesStatiquesPlugin,
   lscPlugin,

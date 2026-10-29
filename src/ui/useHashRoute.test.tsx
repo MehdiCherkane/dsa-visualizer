@@ -3,7 +3,7 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { chapterHash, MENU_HASH, parseRoute, useHashRoute } from './useHashRoute'
+import { chapterHash, exerciseHash, MENU_HASH, parseRoute, useHashRoute } from './useHashRoute'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -19,6 +19,28 @@ describe('parseRoute', () => {
     expect(parseRoute('#/chapitre-4/')).toEqual({ view: 'chapter', chapter: 4 })
     expect(parseRoute('#/chapitre-12')).toEqual({ view: 'chapter', chapter: 12 })
     expect(parseRoute('#/chapitre-4')).toEqual(parseRoute(chapterHash(4)))
+  })
+
+  it('reconnaît les routes des exercices', () => {
+    expect(parseRoute('#/exercices')).toEqual({ view: 'exercices' })
+    expect(parseRoute('#/exercices/')).toEqual({ view: 'exercices' })
+    expect(parseRoute('#/exercices/tp3-somme-grands-nombres')).toEqual({
+      view: 'exercice',
+      exerciseId: 'tp3-somme-grands-nombres',
+    })
+    expect(parseRoute('#/exercices/tp3-somme-grands-nombres/')).toEqual({
+      view: 'exercice',
+      exerciseId: 'tp3-somme-grands-nombres',
+    })
+    expect(parseRoute('#/exercices/tp3-somme-grands-nombres')).toEqual(
+      parseRoute(exerciseHash('tp3-somme-grands-nombres')),
+    )
+  })
+
+  it('retombe sur l’erreur de route pour les hashes d’exercices inconnus', () => {
+    expect(parseRoute('#/exercices/')).toEqual({ view: 'exercices' })
+    expect(parseRoute('#/exercices/sans-numero')).toEqual({ view: 'exercice', exerciseId: 'sans-numero' })
+    expect(parseRoute('#/exercices/a-b/c')).toEqual({ view: 'menu' })
   })
 
   it('retombe sur le menu pour tout hash inconnu', () => {
