@@ -4,12 +4,15 @@ import {
   NULL_STUB,
   NODE_H,
   NODE_W,
+  STACK_SLIDE,
+  STACK_TOP,
   contentBounds,
   emptyBounds,
   emptyRingBand,
   isRingNodeFlipped,
   layoutGlobals,
   layoutNodes,
+  layoutPins,
   ringBand,
   ringGeometry,
   routeRingField,
@@ -128,7 +131,7 @@ function crossesCard(points: Point[], rect: Rect): boolean {
 
 const nodes = [node(1, 0, { kind: 'node', id: 2 }), node(2, 1, { kind: 'null' })]
 const globals: VizGlobal[] = [
-  { name: 'debut', value: { kind: 'node', id: 1 }, placement: 'top' },
+  { name: 'debut', value: { kind: 'node', id: 1 }, placement: 'top-center' },
   { name: 'fin', value: { kind: 'node', id: 2 }, placement: 'bottom' },
 ]
 
@@ -143,11 +146,11 @@ describe('géométrie partagée des listes', () => {
 
     expect(first).toBeDefined()
     expect(last).toBeDefined()
-    expect(debut?.placement).toBe('top')
-    expect(debut!.rect.y).toBeLessThan(first!.y)
-    expect(debut!.rect.x).toBeLessThan(first!.x)
+    expect(debut?.placement).toBe('top-center')
+    expect(debut!.rect.y + debut!.rect.height).toBeLessThan(first!.y)
+    expect(debut!.rect.x + debut!.rect.width / 2).toBeCloseTo(first!.x + NODE_W / 2)
     expect(fin?.placement).toBe('bottom')
-    expect(fin!.rect.x).toBeGreaterThan(last!.x)
+    expect(fin!.rect.x + fin!.rect.width / 2).toBeCloseTo(last!.x + NODE_W / 2)
     expect(fin!.rect.y).toBeGreaterThan(last!.y + NODE_H)
   })
 
@@ -207,6 +210,81 @@ describe('géométrie partagée des listes', () => {
     expect(sommet?.placement).toBe('top')
     expect(sommet!.rect.x).toBeGreaterThanOrEqual(HEAP_STACK_X)
     expect(sommet!.rect.y).toBeLessThan(layout.get(1)!.y)
+  })
+
+  it('place un nouveau sommet dans un slot négatif au-dessus de la pile', () => {
+    const heapNodes = [
+      heapNode(1, -1, { kind: 'node', id: 2 }),
+      heapNode(2, 0, { kind: 'null' }),
+    ]
+    const layout = layoutNodes(heapNodes, 'vertical')
+
+    expect(layout.get(1)!.y).toBe(STACK_TOP - STACK_SLIDE)
+    expect(layout.get(2)!.y).toBe(STACK_TOP)
+    expect(layout.get(1)!.y).toBeLessThan(layout.get(2)!.y)
+  })
+
+  it('sépare debut et fin verticalement quand la file est vide', () => {
+    const emptyGlobals: VizGlobal[] = [
+      { name: 'debut', value: { kind: 'null' }, placement: 'top-center' },
+      { name: 'fin', value: { kind: 'null' }, placement: 'bottom' },
+    ]
+    const cells = layoutGlobals(emptyGlobals, [], new Map(), 'horizontal')
+    const debut = cells.get('debut')
+    const fin = cells.get('fin')
+
+    expect(debut?.placement).toBe('top-center')
+    expect(fin?.placement).toBe('bottom')
+    expect(fin!.rect.y).toBeGreaterThan(debut!.rect.y + debut!.rect.height)
+    expect(fin!.rect.x).toBe(debut!.rect.x)
+  })
+
+  it('suit le nœud ciblé par debut et fin', () => {
+    const layout = layoutNodes(nodes, 'horizontal')
+    const target = layout.get(2)!
+    const cells = layoutGlobals(
+      [
+        { name: 'debut', value: { kind: 'node', id: 2 }, placement: 'top-center' },
+        { name: 'fin', value: { kind: 'node', id: 2 }, placement: 'bottom' },
+      ],
+      nodes,
+      layout,
+      'horizontal',
+    )
+
+    expect(cells.get('debut')!.rect.x + cells.get('debut')!.rect.width / 2).toBeCloseTo(
+      target.x + NODE_W / 2,
+    )
+    expect(cells.get('fin')!.rect.x + cells.get('fin')!.rect.width / 2).toBeCloseTo(
+      target.x + NODE_W / 2,
+    )
+  })
+
+  it('écarte les étiquettes de file à gauche et à droite des nœuds', () => {
+    const layout = layoutNodes(nodes, 'horizontal')
+    const placements = layoutPins(
+      [
+        { name: 'ancienDebut', value: { kind: 'node', id: 1 } },
+        { name: 'nouveau', value: { kind: 'node', id: 2 } },
+      ],
+      nodes,
+      layout,
+      'horizontal',
+      'right',
+    )
+    const oldTag = placements.find((placement) => placement.pin.name === 'ancienDebut')!
+    const newTag = placements.find((placement) => placement.pin.name === 'nouveau')!
+
+    expect(oldTag.tag.x + oldTag.tag.width).toBeLessThanOrEqual(layout.get(1)!.x)
+    expect(newTag.tag.x).toBeGreaterThan(layout.get(2)!.x + NODE_W)
+  })
+
+  it('peut cadrer uniquement le contenu visible', () => {
+    const heapNodes = [heapNode(1, -2, { kind: 'null' })]
+    const withEmpty = contentBounds(heapNodes, [], [], 'vertical')
+    const withoutEmpty = contentBounds(heapNodes, [], [], 'vertical', null, 'center', false)
+
+    expect(withoutEmpty.height).toBeLessThan(withEmpty.height)
   })
 })
 

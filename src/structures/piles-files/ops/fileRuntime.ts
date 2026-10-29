@@ -140,7 +140,7 @@ export class FileRecorder {
     this.node(nodeId).value = value
   }
 
-  mallocNode(targetSlot: number): number {
+  mallocNode(targetSlot: number, lane: NodeLane = 'heap'): number {
     const id = this.state.nextNodeId
     const address = formatAddress(this.state.nextAddressIndex)
     const node: FileNode = {
@@ -150,7 +150,7 @@ export class FileRecorder {
       suivant: { kind: 'uninit' },
       freed: false,
       slot: targetSlot,
-      lane: 'heap',
+      lane,
     }
     this.state.nodes.push(node)
     this.state.nextNodeId += 1

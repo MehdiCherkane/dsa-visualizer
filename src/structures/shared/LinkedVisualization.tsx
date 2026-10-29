@@ -14,6 +14,7 @@ import { ZelligeFrieze } from '../../ui/ZelligeFrieze'
 import {
   FIELD_W,
   FIT_PADDING,
+  GLOBAL_W,
   HEAP_STACK_X,
   HEAP_Y,
   MAX_K,
@@ -23,7 +24,6 @@ import {
   NODE_RX,
   PAD_L,
   ROW_Y,
-  STACK_SLIDE,
   STACK_TOP,
   STACK_X,
   VALUE_W,
@@ -33,7 +33,6 @@ import {
   emptyBounds,
   emptyRingBand,
   fitCamera,
-  globalAnchor,
   isRingNodeFlipped,
   layoutGlobals,
   layoutNodes,
@@ -52,6 +51,7 @@ import type {
   GlobalPlacement,
   LinkedModel,
   NullStub,
+  PinPlacement,
   Point,
   Rect,
   RingGeometry,
@@ -94,8 +94,10 @@ function pinColor(name: string): string {
   }
 }
 
-function pinWidth(name: string): number {
-  return Math.max(46, name.length * 8 + 20)
+function pinWidth(name: string, wide = false): number {
+  return wide
+    ? Math.max(64, name.length * 11 + 24)
+    : Math.max(46, name.length * 8 + 20)
 }
 
 function globalColor(name: string): string {
@@ -154,20 +156,13 @@ function isTypingTarget(target: EventTarget | null): boolean {
   )
 }
 
-interface PinPlacement {
-  pin: VizPin
-  tag: Rect
-  from: Point
-  to: Point | null
-  dangling: boolean
-}
-
 function layoutPins(
   pins: VizPin[],
   nodes: VizNode[],
   layout: Map<number, Point>,
   orientation: 'horizontal' | 'vertical',
   ring: RingGeometry | null = null,
+  pinAnchor: 'center' | 'right' = 'center',
 ): PinPlacement[] {
   const placements: PinPlacement[] = []
   const groups = new Map<number, VizPin[]>()
@@ -186,7 +181,8 @@ function layoutPins(
     const point = layout.get(nodeId)
     const node = nodes.find((candidate) => candidate.id === nodeId)
     if (!point || !node) continue
-    const widths = group.map((pin) => pinWidth(pin.name))
+    const wide = !ring && pinAnchor === 'right'
+    const widths = group.map((pin) => pinWidth(pin.name, wide))
 
     if (ring && orientation === 'horizontal') {
       const center = { x: point.x + NODE_W / 2, y: point.y + NODE_H / 2 }
@@ -267,23 +263,50 @@ function layoutPins(
 
     const total = widths.reduce((sum, width) => sum + width + 8, -8)
     let x = point.x + NODE_W / 2 - total / 2
-    const baseY = orientation === 'horizontal' ? point.y - 38 - (group.length - 1) * 28 : point.y + 10
+    const side: 'center' | 'right' | 'left' =
+      orientation === 'horizontal' && pinAnchor === 'right'
+        ? group.some((pin) => pin.name.startsWith('ancien'))
+          ? 'left'
+          : 'right'
+        : 'center'
+    const baseY =
+      orientation === 'horizontal'
+        ? point.y - (side === 'center' ? 38 : 58) - (group.length - 1) * 28
+        : point.y + 10
     group.forEach((pin, index) => {
       const width = widths[index] ?? 46
       const tag: Rect =
         orientation === 'horizontal'
-          ? { x, y: baseY, width, height: 24 }
+          ? {
+              x:
+                side === 'right'
+                  ? point.x + NODE_W + 12
+                  : side === 'left'
+                    ? point.x - width - 12
+                    : x,
+              y: baseY + index * 30,
+              width,
+              height: 24,
+            }
           : { x: point.x + NODE_W + 18, y: baseY + index * 30, width, height: 24 }
       placements.push({
         pin,
         tag,
         from:
           orientation === 'horizontal'
-            ? { x: tag.x + width / 2, y: tag.y + tag.height }
+            ? side === 'right'
+              ? { x: tag.x, y: tag.y + tag.height / 2 }
+              : side === 'left'
+                ? { x: tag.x + width, y: tag.y + tag.height / 2 }
+                : { x: tag.x + width / 2, y: tag.y + tag.height }
             : { x: tag.x, y: tag.y + tag.height / 2 },
         to:
           orientation === 'horizontal'
-            ? { x: point.x + NODE_W / 2, y: point.y }
+            ? side === 'right'
+              ? { x: point.x + NODE_W, y: point.y + 12 }
+              : side === 'left'
+                ? { x: point.x, y: point.y + 12 }
+                : { x: point.x + NODE_W / 2, y: point.y }
             : { x: point.x + NODE_W, y: point.y + NODE_H / 2 },
         dangling: node.freed,
       })
@@ -340,7 +363,7 @@ function layoutPins(
   }
 
   nullPins.forEach((pin, index) => {
-    const width = pinWidth(pin.name)
+    const width = pinWidth(pin.name, pinAnchor === 'right')
     const point = lastPoint
     const tag: Rect =
       orientation === 'horizontal'
@@ -371,9 +394,11 @@ function layoutPins(
 function NullGround({
   stub,
   color = 'var(--ink-2)',
+  labelScale,
 }: {
   stub: NullStub
   color?: string
+  labelScale: number
 }): JSX.Element {
   const { end, orientation } = stub
   return (
@@ -399,7 +424,7 @@ function NullGround({
           (stub.orientation === 'vertical' ? 'middle' : 'start')
         }
         className="null-label"
-        fontSize="14"
+        fontSize={14 * Math.min(labelScale, 1.8)}
         fill={color}
       >
         {fr.viz.null}
@@ -416,6 +441,10 @@ function GlobalCell({
   pulse,
   placement,
   color,
+  labelScale,
+  duration,
+  pulseKey,
+  value,
 }: {
   name: string
   legend: string
@@ -424,48 +453,74 @@ function GlobalCell({
   pulse: boolean
   placement: GlobalPlacement
   color: string
+  labelScale: number
+  duration: number
+  pulseKey: number
+  value: PointerValue
 }): JSX.Element {
+  const width = cell.width
+  const height = cell.height
+  const isNull = value.kind === 'null'
+  const isUninit = value.kind === 'uninit'
   const anchor =
     placement === 'bottom'
-      ? { x: cell.x + cell.width / 2, y: cell.y }
-      : placement === 'top'
-        ? { x: cell.x + cell.width / 2, y: cell.y + cell.height }
-        : globalAnchor(cell)
-  const captionY = placement === 'bottom' ? cell.y + cell.height + 15 : cell.y - 7
+      ? { x: width / 2, y: 0 }
+      : placement === 'top' || placement === 'top-center'
+        ? { x: width / 2, y: height }
+        : { x: width, y: height / 2 }
+  const captionY = placement === 'bottom' ? height + 15 : -7
   return (
-    <g
+    <motion.g
       className={pulse ? 'debut-cell debut-cell-pulse' : 'debut-cell'}
       style={{ '--global-color': color } as CSSProperties}
+      initial={false}
+      animate={{ x: cell.x, y: cell.y }}
+      transition={{ duration, ease: [0.22, 0.61, 0.36, 1] }}
     >
       <rect
+        key={pulse ? `pulse-${pulseKey}` : 'outline'}
         className="debut-cell-outline"
-        x={cell.x}
-        y={cell.y}
-        width={cell.width}
-        height={cell.height}
+        x={0}
+        y={0}
+        width={width}
+        height={height}
         rx="12"
       />
       <text
         className="debut-cell-label"
-        x={cell.x + cell.width / 2}
-        y={cell.y + cell.height / 2 + 6}
+        x={width / 2}
+        y={isNull || isUninit ? height / 2 - 1 : height / 2 + 6}
         textAnchor="middle"
+        style={{ fontSize: 20 * labelScale }}
       >
         {name}
       </text>
-      <circle className="debut-cell-dot" cx={anchor.x} cy={anchor.y} r="5" />
+      {isNull || isUninit ? (
+        <text
+          className="debut-cell-null"
+          x={width / 2}
+          y={height / 2 + 16}
+          textAnchor="middle"
+          style={{ fontSize: 10.5 * Math.min(labelScale, 1.35) }}
+        >
+          {isNull ? fr.viz.null : fr.common.uninit}
+        </text>
+      ) : (
+        <circle className="debut-cell-dot" cx={anchor.x} cy={anchor.y} r="5" />
+      )}
       {count > 0 ? (
         <text
           className="debut-cell-caption"
-          x={cell.x + cell.width / 2}
+          x={width / 2}
           y={captionY}
           textAnchor="middle"
+          style={{ fontSize: 12 * labelScale }}
         >
           {legend}
         </text>
       ) : null}
       <title>{`${name} · ${legend}`}</title>
-    </g>
+    </motion.g>
   )
 }
 
@@ -473,11 +528,13 @@ function NodeShape({
   node,
   fieldLabel,
   field,
+  labelScale,
   flipped = false,
 }: {
   node: VizNode
   fieldLabel: string
   field: VizField
+  labelScale: number
   flipped?: boolean
 }): JSX.Element {
   const fieldX = flipped ? 0 : VALUE_W
@@ -523,10 +580,10 @@ function NodeShape({
       />
       <text
         x={pointerX}
-        y="16"
+        y={16 * Math.min(labelScale, 1.8)}
         textAnchor="middle"
         className={`cell-label ${fieldClass}`}
-        fontSize="9.5"
+        style={{ fontSize: 9.5 * labelScale }}
       >
         {fieldLabel}
       </text>
@@ -536,7 +593,7 @@ function NodeShape({
           y={NODE_H * 0.68 + 5}
           textAnchor="middle"
           className="node-uninit"
-          fontSize="14"
+          fontSize={14 * Math.min(labelScale, 1.6)}
         >
           {fr.common.uninit}
         </text>
@@ -567,7 +624,7 @@ function NodeShape({
             y={NODE_H / 2 + 18}
             textAnchor="middle"
             className="node-subvalue"
-            fontSize="11.5"
+            fontSize={11.5 * Math.min(labelScale, 1.8)}
           >
             {node.subvalue}
           </text>
@@ -583,7 +640,7 @@ function NodeShape({
           {node.value}
         </text>
       )}
-      <text x="10" y="-10" className="node-address" fontSize="13">
+      <text x="10" y="-10" className="node-address" fontSize={13 * labelScale}>
         {node.address}
       </text>
       {node.freed ? (
@@ -595,7 +652,7 @@ function NodeShape({
             y={NODE_H / 2 + 4}
             textAnchor="middle"
             className="freed-label"
-            fontSize="12"
+            fontSize={12 * Math.min(labelScale, 1.8)}
           >
             {fr.viz.freed}
           </text>
@@ -605,7 +662,13 @@ function NodeShape({
   )
 }
 
-function PinTag({ placement }: { placement: PinPlacement }): JSX.Element {
+function PinTag({
+  placement,
+  labelScale,
+}: {
+  placement: PinPlacement
+  labelScale: number
+}): JSX.Element {
   const { pin, tag, dangling } = placement
   const color = dangling ? 'var(--alert)' : pinColor(pin.name)
   const text = pin.alias ? `${pin.name} · ${fr.viz.alias}` : pin.name
@@ -627,7 +690,7 @@ function PinTag({ placement }: { placement: PinPlacement }): JSX.Element {
         y={tag.y + tag.height * 0.7}
         textAnchor="middle"
         className="pin-text"
-        fontSize="12.5"
+        fontSize={12.5 * Math.min(labelScale, 1.2)}
         fill={color}
       >
         {text}
@@ -689,15 +752,25 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
     [globals, nodes, layout, model.orientation, ring],
   )
   const pinPlacements = useMemo(
-    () => layoutPins(pins, nodes, layout, model.orientation, ring),
-    [pins, nodes, layout, model.orientation, ring],
+    () => layoutPins(pins, nodes, layout, model.orientation, ring, model.pinAnchor),
+    [pins, nodes, layout, model.orientation, ring, model.pinAnchor],
   )
   const content = useMemo(
-    () => contentBounds(nodes, globals, pins, model.orientation, ring),
-    [nodes, globals, pins, model.orientation, ring],
+    () =>
+      contentBounds(
+        nodes,
+        globals,
+        pins,
+        model.orientation,
+        ring,
+        model.pinAnchor,
+        !model.fitContent || nodes.length === 0,
+        Boolean(model.fitContent),
+      ),
+    [nodes, globals, pins, model.orientation, ring, model.pinAnchor, model.fitContent],
   )
   const operationBounds = useMemo(() => {
-    if (!operationSteps || operationSteps.length === 0) return null
+    if (model.fitContent || !operationSteps || operationSteps.length === 0) return null
     return unionBounds(
       operationSteps.map((operationStep) => {
         const stepNodes = model.nodes(operationStep.snapshot)
@@ -711,19 +784,23 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
           model.pins(operationStep.snapshot),
           model.orientation,
           stepRing,
+          model.pinAnchor,
+          true,
+          Boolean(model.fitContent),
         )
       }),
     )
   }, [operationSteps, model])
-  const fitBounds = operationBounds ?? content
+  const fitBounds = model.fitContent ? content : operationBounds ?? content
   const empty = nodes.length === 0
+  const fitPadding = model.fitPadding ?? FIT_PADDING
 
   const autoCamera = useMemo(
     () =>
-      empty
+      empty && !model.fitContent
         ? cameraAtOne(emptyBounds(model.orientation), { width: stageW, height: stageH })
-        : fitCamera(fitBounds, { width: stageW, height: stageH }, FIT_PADDING),
-    [empty, fitBounds, model.orientation, stageW, stageH],
+        : fitCamera(fitBounds, { width: stageW, height: stageH }, fitPadding),
+    [empty, fitBounds, model.orientation, model.fitContent, fitPadding, stageW, stageH],
   )
   const [camera, setCamera] = useState<Camera>(autoCamera)
   const [mode, setMode] = useState<'auto' | 'manual'>('auto')
@@ -793,8 +870,12 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
 
   useEffect(() => {
     if (mode !== 'auto') return
-    animateTo(autoCamera, reducedMotion ? 0 : CAMERA_ANIMATION / 1000)
-  }, [animateTo, autoCamera, mode, reducedMotion])
+    const cameraSpeed = model.fitContent ? speed : 1
+    const duration = reducedMotion
+      ? 0
+      : Math.max(0.08, CAMERA_ANIMATION / 1000 / Math.max(0.5, cameraSpeed))
+    animateTo(autoCamera, duration)
+  }, [animateTo, autoCamera, mode, model.fitContent, reducedMotion, speed])
 
   useEffect(() => {
     setMode('auto')
@@ -1019,6 +1100,16 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
   }
 
   const strokeWidth = presentation ? 4 : 3
+  const labelScale = model.adaptiveLabels
+    ? clamp(1 / Math.max(camera.k, 0.01), 1, 2.2)
+    : 1
+  const globalLabelScale = model.adaptiveLabels
+    ? clamp(1 / Math.max(camera.k, 0.01), 1, 1.45)
+    : 1
+  const nodeDuration = reducedMotion
+    ? 0.001
+    : Math.max(model.fitContent ? 0.12 : 0.1, 0.38 / speed)
+  const globalDuration = reducedMotion ? 0.001 : Math.max(0.12, 0.45 / speed)
   const findNode = (pointer: PointerValue): VizNode | null => {
     if (pointer.kind !== 'node') return null
     return nodes.find((node) => node.id === pointer.id) ?? null
@@ -1049,40 +1140,62 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
       Boolean(target && target.lane === source.lane),
       target ? target.slot - source.slot : 0,
       Boolean(model.circular),
+      Boolean(model.fitContent),
     )
   }
 
   const bounds = content
   const bandX = bounds.x - 24
   const bandWidth = Math.max(320, bounds.width + 48)
+  const rowPoints = nodes
+    .filter((node) => node.lane === 'row')
+    .map((node) => layout.get(node.id))
+    .filter((point): point is Point => point !== undefined)
+  const rowTop =
+    rowPoints.length > 0 ? Math.min(...rowPoints.map((point) => point.y)) : STACK_TOP
+  const rowBottom =
+    rowPoints.length > 0
+      ? Math.max(...rowPoints.map((point) => point.y + NODE_H))
+      : STACK_TOP + NODE_H
   const rowBand: Rect =
     model.orientation === 'horizontal'
       ? { x: bandX, y: ROW_Y - 84, width: bandWidth, height: NODE_H + 150 }
       : {
-          x: STACK_X - 110,
-          y: STACK_TOP - 92,
-          width: NODE_W + 220,
-          height: Math.max(190, nodes.filter((node) => node.lane === 'row').length * STACK_SLIDE + 60),
+          x: STACK_X - GLOBAL_W - 100,
+          y: rowTop - 44,
+          width: NODE_W + GLOBAL_W + 360,
+          height: Math.max(200, rowBottom - rowTop + 134),
         }
   const ringBandGeometry = ring ? ringBand(ring) : null
   const drawnRingBand =
     ringBandGeometry ?? (model.circular && empty ? emptyRingBand() : null)
   const heapNodes = nodes.filter((node) => node.lane === 'heap')
+  const heapPoints = heapNodes
+    .map((node) => layout.get(node.id))
+    .filter((point): point is Point => Boolean(point))
+  const heapTop = heapPoints.length > 0 ? Math.min(...heapPoints.map((point) => point.y)) : STACK_TOP
+  const heapBottom =
+    heapPoints.length > 0
+      ? Math.max(...heapPoints.map((point) => point.y + NODE_H))
+      : STACK_TOP + NODE_H
+  const heapBandTop = Math.min(STACK_TOP - 92, heapTop - 58)
+  const heapBandBottom = Math.max(STACK_TOP - 92 + 190, heapBottom + 58)
   const heapBand: Rect | null =
     heapNodes.length > 0 || model.showHeap
       ? model.orientation === 'horizontal'
         ? { x: bandX, y: HEAP_Y - 66, width: bandWidth, height: NODE_H + 130 }
         : {
             x: HEAP_STACK_X - 60,
-            y: STACK_TOP - 92,
+            y: heapBandTop,
             width: NODE_W + 120,
-            height: Math.max(190, heapNodes.length * STACK_SLIDE + 60),
+            height: heapBandBottom - heapBandTop,
           }
       : null
   const pulseGlobal = step.badge === 'debut-modifie' || globalChanges.length > 0
 
   const oldGlobalRoutes = globalChanges.flatMap((change) => {
     if (change.kind !== 'variable' || !isPointerValue(change.from)) return []
+    if (change.from.kind !== 'node') return []
     const index = globals.findIndex((global) => global.name === change.name)
     const placed = globalCells.get(change.name)
     if (index < 0 || !placed) return []
@@ -1099,6 +1212,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
   })
   const newGlobalRoutes = globalChanges.flatMap((change) => {
     if (change.kind !== 'variable' || !isPointerValue(change.to)) return []
+    if (change.to.kind !== 'node') return []
     const index = globals.findIndex((global) => global.name === change.name)
     const placed = globalCells.get(change.name)
     if (index < 0 || !placed) return []
@@ -1274,10 +1388,30 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
                 <motion.g
                   key={node.id}
                   className={`node-group${node.freed ? ' node-freed' : ''}`}
-                  initial={isNew ? { opacity: 0, scale: 0.92, x: point.x, y: point.y } : false}
+                  initial={
+                    isNew
+                      ? {
+                          opacity: 0,
+                          scale: model.directionalMotion ? 0.94 : 0.92,
+                          x: point.x,
+                          y: point.y - (model.directionalMotion ? 26 : 0),
+                        }
+                      : false
+                  }
                   animate={{ opacity: 1, scale: 1, x: point.x, y: point.y }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: reducedMotion ? 0.001 : Math.max(0.1, 0.38 / speed) }}
+                  exit={{
+                    opacity: 0,
+                    scale: 0.9,
+                    x:
+                      model.directionalMotion && model.orientation === 'horizontal'
+                        ? point.x - 70
+                        : point.x,
+                    y:
+                      model.directionalMotion && model.orientation === 'vertical'
+                        ? point.y - 42
+                        : point.y,
+                  }}
+                  transition={{ duration: nodeDuration }}
                   style={node.freed ? undefined : { cursor: onNodeClick ? 'pointer' : 'default' }}
                   onClick={() => handleNode(node)}
                   onKeyDown={(event) => handleKey(event, node)}
@@ -1296,6 +1430,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
                     node={node}
                     fieldLabel={model.fieldLabel}
                     field={model.field}
+                    labelScale={labelScale}
                     flipped={ringFlips.get(node.id) ?? false}
                   />
                 </motion.g>
@@ -1317,7 +1452,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
                       className={`arrow arrow-${model.field}`}
                       style={{ strokeWidth }}
                     />
-                    <NullGround stub={route.nullStub} />
+                    <NullGround stub={route.nullStub} labelScale={labelScale} />
                     <title>{`${model.field} de ${node.address} = ${fr.viz.null}`}</title>
                   </g>,
                 ]
@@ -1413,31 +1548,34 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
             )
           })}
           {pinPlacements.map((placement, index) => (
-            <PinTag key={`pin-${placement.pin.name}-${index}`} placement={placement} />
+            <PinTag
+              key={`pin-${placement.pin.name}-${index}`}
+              placement={placement}
+              labelScale={labelScale}
+            />
           ))}
 
           {globals.map((global, index) => {
             const placed = globalCells.get(global.name)
-            if (!placed) return null
+            if (!placed || global.value.kind !== 'node') return null
             const target = findNode(global.value)
+            if (!target) return null
             const route = routeGlobal(
               placed.rect,
               target,
-              target ? layout.get(target.id) ?? null : null,
+              layout.get(target.id) ?? null,
               index,
               model.orientation,
               placed.placement,
             )
-            const color = globalColor(global.name)
             return (
               <g key={`global-${global.name}`}>
                 <path
                   d={route.path}
                   className={`arrow ${global.name === 'fin' ? 'arrow-fin' : 'arrow-gold'}`}
                   style={{ strokeWidth }}
-                  markerEnd={route.nullStub ? undefined : `url(#${globalMarker(global.name)})`}
+                  markerEnd={`url(#${globalMarker(global.name)})`}
                 />
-                {route.nullStub ? <NullGround stub={route.nullStub} color={color} /> : null}
               </g>
             )
           })}
@@ -1478,7 +1616,7 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
             if (!placed) return null
             return (
               <GlobalCell
-                key={`global-cell-${global.name}-${stepIndex}`}
+                key={`global-cell-${global.name}`}
                 name={global.name}
                 legend={globalLegendLabel(global.name)}
                 cell={placed.rect}
@@ -1486,6 +1624,10 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
                 pulse={pulseGlobal}
                 placement={placed.placement}
                 color={globalColor(global.name)}
+                labelScale={globalLabelScale}
+                duration={globalDuration}
+                pulseKey={stepIndex}
+                value={global.value}
               />
             )
           })}
@@ -1493,7 +1635,11 @@ export default function LinkedVisualization<S extends BaseSnapshot>({
       </svg>
 
       {empty ? (
-        <div className="empty-overlay empty-overlay-docked">
+        <div
+          className={`empty-overlay empty-overlay-docked${
+            model.emptyOverlay === 'center' ? ' empty-overlay-center' : ''
+          }`}
+        >
           <p className="empty-overlay-text">{model.emptyText}</p>
           <button type="button" className="primary-button empty-insert-button" onClick={onEmptyInsert}>
             {model.emptyInsert}

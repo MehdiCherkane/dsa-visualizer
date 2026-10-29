@@ -69,6 +69,39 @@ describe('chapitre 3 — pile dynamique', () => {
     expect(snapshot.globals.sommet).toEqual({ kind: 'node', id: 3 })
   })
 
+  it('conserve les slots des nœuds existants lors d’un empilement puis dépilement', () => {
+    const initial = createPile([25, 7, 12])
+    const pushed = operation(pileOperations, 'empiler').run(initial, { valeur: 15 })
+    const pushedSnapshot = pushed[pushed.length - 1]!.snapshot
+    expect(
+      pushedSnapshot.nodes
+        .slice()
+        .sort((a, b) => a.slot - b.slot)
+        .map((node) => [node.value, node.slot]),
+    ).toEqual([
+      [15, -1],
+      [25, 0],
+      [7, 1],
+      [12, 2],
+    ])
+    expect(pushedSnapshot.globals.sommet).toEqual({ kind: 'node', id: 4 })
+
+    const popped = operation(pileOperations, 'depiler').run(pushedSnapshot, {})
+    const poppedSnapshot = popped[popped.length - 1]!.snapshot
+    expect(
+      poppedSnapshot.nodes
+        .slice()
+        .sort((a, b) => a.slot - b.slot)
+        .map((node) => [node.value, node.slot]),
+    ).toEqual([
+      [25, 0],
+      [7, 1],
+      [12, 2],
+    ])
+    expect(poppedSnapshot.globals.sommet).toEqual({ kind: 'node', id: 1 })
+    expect(checkPileInvariants(poppedSnapshot)).toEqual([])
+  })
+
   it('dépile jusqu’à vider la pile', () => {
     let snapshot = createPile([12, 7, 25])
     expect(stackValues(snapshot)).toEqual([12, 7, 25])

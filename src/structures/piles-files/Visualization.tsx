@@ -26,14 +26,18 @@ const pileModel: LinkedModel<PfSnapshot> = {
   emptyText: fr.viz.emptyPile,
   emptyInsert: fr.viz.insertEmptyPile,
   ariaLabel: fr.chapters.pilesFiles.title,
-  showHeap: true,
+  showHeap: false,
+  fitContent: true,
+  fitPadding: 48,
+  adaptiveLabels: true,
+  directionalMotion: true,
   nodes(snapshot) {
     if (snapshot.profile !== 'pile') return []
     return snapshot.nodes.map<VizNode>((node) => ({
       id: node.id,
       address: node.address,
       slot: node.slot,
-      lane: 'heap',
+      lane: node.lane,
       freed: node.freed,
       value: payloadText(node),
       uninit: node.value === null,
@@ -43,7 +47,9 @@ const pileModel: LinkedModel<PfSnapshot> = {
   },
   globals(snapshot) {
     if (snapshot.profile !== 'pile') return []
-    return [{ name: 'sommet', value: snapshot.globals.sommet, placement: 'row' }]
+    // Le sommet reste à gauche de son nœud : le slot au-dessus de la pile
+    // reste libre pour le nœud que `malloc` va faire apparaître.
+    return [{ name: 'sommet', value: snapshot.globals.sommet, placement: 'left-center' }]
   },
   pins: framePins,
 }
@@ -56,6 +62,12 @@ const fileModel: LinkedModel<PfSnapshot> = {
   emptyText: fr.viz.emptyFile,
   emptyInsert: fr.viz.insertEmptyFile,
   ariaLabel: fr.chapters.pilesFiles.title,
+  pinAnchor: 'right',
+  fitContent: true,
+  fitPadding: 48,
+  adaptiveLabels: true,
+  directionalMotion: true,
+  emptyOverlay: 'center',
   nodes(snapshot) {
     if (snapshot.profile !== 'file') return []
     return snapshot.nodes.map<VizNode>((node) => ({
@@ -73,7 +85,7 @@ const fileModel: LinkedModel<PfSnapshot> = {
   globals(snapshot) {
     if (snapshot.profile !== 'file') return []
     return [
-      { name: 'debut', value: snapshot.globals.debut, placement: 'top' },
+      { name: 'debut', value: snapshot.globals.debut, placement: 'top-center' },
       { name: 'fin', value: snapshot.globals.fin, placement: 'bottom' },
     ]
   },

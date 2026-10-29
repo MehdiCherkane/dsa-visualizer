@@ -33,8 +33,11 @@ function conditionStep(
 function bodyEmpiler(r: PileRecorder, valeur: number): void {
   const fn = 'empiler'
   const fnLabels = L.empiler
-  const rowCount = r.state.nodes.filter((node) => node.lane === 'row').length
-  const id = r.mallocNode(rowCount)
+  const currentTop = r.global('sommet')
+  const topSlot = currentTop.kind === 'node' ? r.node(currentTop.id).slot : 1
+  // La pile pousse au-dessus du sommet : le nouveau slot est négatif et les
+  // nœuds existants ne bougent pas. Une pile vide démarre au slot 0.
+  const id = r.mallocNode(topSlot - 1, 'row')
   const node = r.node(id)
   const newPointer: PointerValue = { kind: 'node', id }
   r.declareLocal('nouveau', newPointer)
@@ -50,7 +53,7 @@ function bodyEmpiler(r: PileRecorder, valeur: number): void {
   })
 
   r.setGlobal('sommet', newPointer)
-  r.insertRowNode(id, 0)
+  r.dropLocal('nouveau')
   r.step(fn, fnLabels.setSommet.line, C.newTop, { badge: 'debut-modifie' })
 }
 
