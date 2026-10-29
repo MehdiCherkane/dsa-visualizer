@@ -30,6 +30,7 @@ export function ExerciseSheetPage({
   ])
   const [questionIndex, setQuestionIndex] = useState(initialProgress.question)
   const [revealedIds, setRevealedIds] = useState<string[]>(initialProgress.revealed)
+  const [simulationVisible, setSimulationVisible] = useState(false)
 
   const total = questions.length
   const question = questions[questionIndex] ?? questions[0]
@@ -54,6 +55,10 @@ export function ExerciseSheetPage({
       ids.includes(question.id) ? ids.filter((id) => id !== question.id) : [...ids, question.id],
     )
   }, [question])
+
+  const toggleSimulation = useCallback((): void => {
+    setSimulationVisible((visible) => !visible)
+  }, [])
 
   useEffect(() => {
     writeExerciseProgress(exercise.id, questionIndex, revealedIds, questions)
@@ -294,6 +299,15 @@ export function ExerciseSheetPage({
               <p className="exercices-simulation-hint">
                 Utilisez les contrôles ci-dessous pour manipuler la pile dynamique et observer l’effet de chaque opération.
               </p>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={toggleSimulation}
+                aria-expanded={simulationVisible}
+                aria-label={simulationVisible ? 'Masquer la simulation' : 'Afficher la simulation'}
+              >
+                {simulationVisible ? 'Masquer' : 'Afficher'}
+              </button>
             </div>
             <div className="exercices-simulation-frame">
               <DemoApp
