@@ -27,7 +27,7 @@ The six course handouts ship as `public/cours/chapitre-<n>.pdf` (`chapitre-1.pdf
 
 The interactive exercises come from the TP handouts: one typed data file per PDF under `src/exercices/` (TP 3: `src/exercices/tp3.ts`, 1 exercise, 5 questions) plus one `registerExercices` line in `src/exercices/index.ts`. The list lives at `#/exercices` and the sheet at `#/exercices/<id>`; the header menu card, the header link and the chapter-aware « Simuler dans le visualiseur » button all derive from the same registry, so `core/` and the demo shell are untouched. Every question shows one statement at a time (progress bar, clickable stepper, Previous / Next, `←` / `→` keys, `Échap` back to the menu), keeps the solution hidden behind « Afficher la solution », and stores the current question plus the revealed solutions under the versioned key `exercices-progress-v1` with a safe fallback.
 
-The handout itself ships as `public/exercices/tp3-somme-grands-nombres.pdf` and is linked with **Ouvrir le sujet (PDF)** from the sheet.
+The handout itself ships as `public/exercices/tp3-somme-grands-nombres.pdf` and is linked with **Ouvrir le sujet (PDF)** from the sheet. A **Question / Simulation** switch keeps both on the same page: the simulation tab embeds the chapter 3 visualizer with its operation controls and console output, no navigation required.
 
 ## Chapters
 

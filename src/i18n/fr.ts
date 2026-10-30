@@ -83,6 +83,13 @@ export const fr = {
     openPdfAria: (title: string) => `Ouvrir le sujet PDF de « ${title} »`,
     simulate: 'Simuler dans le visualiseur',
     simulateHint: (chapter: number) => `Ouvrir le chapitre ${chapter} du visualiseur`,
+    viewSwitcherLabel: 'Choisir entre la question et la simulation',
+    viewQuestion: 'Question',
+    viewSimulation: 'Simulation',
+    viewQuestionAria: 'Afficher la question et sa solution',
+    viewSimulationAria: 'Afficher la simulation du visualiseur',
+    simulationIntro:
+      'Manipulez la pile dynamique et observez la sortie du programme, sans quitter la feuille d’exercices.',
     backExercises: '← Tous les exercices',
     backExercisesAria: 'Revenir à la liste des exercices',
     backMenu: '← Menu',

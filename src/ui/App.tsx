@@ -115,7 +115,7 @@ export function DemoApp<S extends BaseSnapshot>({
   )
   const [journal, setJournal] = useState<string[]>([])
   const [dockCollapsed, setDockCollapsed] = useState(
-    () => typeof window !== 'undefined' && window.innerHeight < 800,
+    () => !embedded && typeof window !== 'undefined' && window.innerHeight < 800,
   )
   const [layout, setLayout] = useState<LayoutState>(readLayout)
   const [activeOperation, setActiveOperation] = useState<ActiveOperation<S> | null>(null)

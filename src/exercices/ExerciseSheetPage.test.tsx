@@ -78,6 +78,46 @@ describe('feuille d’exercices', () => {
     expect(container.textContent).toContain(fr.exercices.solutionWarning)
   })
 
+  it('bascule entre la question et la simulation sur la même page', () => {
+    const tabs = Array.from(
+      container.querySelectorAll<HTMLButtonElement>('.exercices-view-switch [role="tab"]'),
+    )
+    expect(tabs).toHaveLength(2)
+
+    const workspace = container.querySelector('.exercices-workspace')
+    const simulation = container.querySelector('.exercices-simulation')
+    expect(workspace?.hasAttribute('hidden')).toBe(false)
+    expect(simulation?.hasAttribute('hidden')).toBe(true)
+
+    act(() => {
+      tabs[1].click()
+    })
+    expect(tabs[1].getAttribute('aria-selected')).toBe('true')
+    expect(workspace?.hasAttribute('hidden')).toBe(true)
+    expect(simulation?.hasAttribute('hidden')).toBe(false)
+    expect(container.querySelector('.exercices-simulation .app.app-embedded')).not.toBeNull()
+
+    act(() => {
+      tabs[0].click()
+    })
+    expect(tabs[0].getAttribute('aria-selected')).toBe('true')
+    expect(workspace?.hasAttribute('hidden')).toBe(false)
+    expect(simulation?.hasAttribute('hidden')).toBe(true)
+  })
+
+  it('ouvre la simulation depuis le raccourci en haut de la feuille', () => {
+    const shortcut = Array.from(
+      container.querySelectorAll<HTMLAnchorElement>('.exercices-sheet-actions a'),
+    ).find((link) => link.textContent?.includes(fr.exercices.simulate))
+    expect(shortcut).not.toBeUndefined()
+
+    act(() => {
+      shortcut?.click()
+    })
+    expect(container.querySelector('.exercices-simulation')?.hasAttribute('hidden')).toBe(false)
+    expect(container.querySelector('.exercices-workspace')?.hasAttribute('hidden')).toBe(true)
+  })
+
   it('navigue avec le stepper, les boutons, et remet la solution à zéro', () => {
     expect(container.textContent).toContain(fr.exercices.questionProgress(1, 5))
 

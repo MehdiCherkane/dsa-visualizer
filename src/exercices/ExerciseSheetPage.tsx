@@ -30,7 +30,7 @@ export function ExerciseSheetPage({
   ])
   const [questionIndex, setQuestionIndex] = useState(initialProgress.question)
   const [revealedIds, setRevealedIds] = useState<string[]>(initialProgress.revealed)
-  const [simulationVisible, setSimulationVisible] = useState(false)
+  const [view, setView] = useState<'question' | 'simulation'>('question')
 
   const total = questions.length
   const question = questions[questionIndex] ?? questions[0]
@@ -56,8 +56,16 @@ export function ExerciseSheetPage({
     )
   }, [question])
 
-  const toggleSimulation = useCallback((): void => {
-    setSimulationVisible((visible) => !visible)
+  const showQuestion = useCallback((): void => {
+    setView('question')
+  }, [])
+
+  const showSimulation = useCallback((): void => {
+    setView('simulation')
+    const main = document.querySelector<HTMLElement>('.exercices-main')
+    if (main && typeof main.scrollTo === 'function') {
+      main.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }, [])
 
   useEffect(() => {
@@ -73,7 +81,7 @@ export function ExerciseSheetPage({
         const tag = target.tagName
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
         if (target.isContentEditable) return
-        if (target.closest('pre, textarea, input, select, [contenteditable="true"]')) return
+        if (target.closest('pre, textarea, input, select, [contenteditable="true"], [role="tablist"]')) return
       }
 
       if (event.key === 'Escape') {
@@ -83,6 +91,7 @@ export function ExerciseSheetPage({
       }
 
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        if (view === 'simulation') return
         event.preventDefault()
         const next = questionIndex + (event.key === 'ArrowRight' ? 1 : -1)
         if (next < 0 || next >= total) return
@@ -92,7 +101,7 @@ export function ExerciseSheetPage({
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [goTo, questionIndex, total])
+  }, [goTo, questionIndex, total, view])
 
   if (total === 0) {
     return (
@@ -116,7 +125,11 @@ export function ExerciseSheetPage({
       theme={theme}
       onTheme={onTheme}
     >
-      <div className="exercices-main exercices-sheet-main">
+      <div
+        className={`exercices-main exercices-sheet-main${
+          view === 'simulation' ? ' is-simulating' : ''
+        }`}
+      >
         <div className="exercices-sheet-top">
           <a
             className="exercices-back-link"
@@ -138,7 +151,7 @@ export function ExerciseSheetPage({
                 href="#exercices-simulation"
                 onClick={(event) => {
                   event.preventDefault()
-                  document.getElementById('exercices-simulation')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  showSimulation()
                 }}
               >
                 {fr.exercices.simulate}
@@ -165,9 +178,46 @@ export function ExerciseSheetPage({
           <p>{fr.exercices.callout}</p>
         </aside>
 
+        {plugin ? (
+          <div
+            className="exercices-view-switch"
+            role="tablist"
+            aria-label={fr.exercices.viewSwitcherLabel}
+          >
+            <button
+              type="button"
+              role="tab"
+              id="exercices-question-tab"
+              aria-selected={view === 'question'}
+              aria-controls="exercices-question-panel"
+              tabIndex={view === 'question' ? 0 : -1}
+              className={view === 'question' ? 'active' : ''}
+              onClick={showQuestion}
+            >
+              {fr.exercices.viewQuestion}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="exercices-simulation-tab"
+              aria-selected={view === 'simulation'}
+              aria-controls="exercices-simulation"
+              tabIndex={view === 'simulation' ? 0 : -1}
+              className={view === 'simulation' ? 'active' : ''}
+              onClick={showSimulation}
+            >
+              {fr.exercices.viewSimulation}
+            </button>
+          </div>
+        ) : null}
+
         <section
+          id="exercices-question-panel"
           className="exercices-workspace"
-          aria-label={fr.exercices.questionRegionAria(question.title)}
+          role={plugin ? 'tabpanel' : undefined}
+          aria-labelledby={plugin ? 'exercices-question-tab' : undefined}
+          aria-label={plugin ? undefined : fr.exercices.questionRegionAria(question.title)}
+          hidden={plugin ? view !== 'question' : undefined}
         >
           <div className="exercices-statement-card">
             <div className="exercices-question-head">
@@ -290,24 +340,19 @@ export function ExerciseSheetPage({
         </section>
 
         {plugin ? (
-          <section id="exercices-simulation" className="exercices-simulation" aria-labelledby="exercices-simulation-title">
+          <section
+            id="exercices-simulation"
+            className="exercices-simulation"
+            role="tabpanel"
+            aria-labelledby="exercices-simulation-title"
+            hidden={view !== 'simulation'}
+          >
             <div className="exercices-simulation-head">
               <h2 id="exercices-simulation-title" className="exercices-simulation-title">
                 {fr.exercices.simulate}
               </h2>
               <p>{fr.exercices.simulateHint(plugin.chapter)}</p>
-              <p className="exercices-simulation-hint">
-                Utilisez les contrôles ci-dessous pour manipuler la pile dynamique et observer l’effet de chaque opération.
-              </p>
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={toggleSimulation}
-                aria-expanded={simulationVisible}
-                aria-label={simulationVisible ? 'Masquer la simulation' : 'Afficher la simulation'}
-              >
-                {simulationVisible ? 'Masquer' : 'Afficher'}
-              </button>
+              <p className="exercices-simulation-hint">{fr.exercices.simulationIntro}</p>
             </div>
             <div className="exercices-simulation-frame">
               <DemoApp

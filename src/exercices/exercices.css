@@ -213,6 +213,56 @@
   line-height: 1.5;
 }
 
+/* ---------------- question / simulation switch ---------------- */
+
+.exercices-view-switch {
+  display: inline-flex;
+  align-self: flex-start;
+  flex: none;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+  box-shadow: var(--shadow-soft);
+  padding: 4px;
+}
+
+.exercices-view-switch button {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  padding: 7px 18px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.exercices-view-switch button:hover {
+  color: var(--ink);
+}
+
+.exercices-view-switch button.active {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.exercices-view-switch button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.exercices-workspace[hidden],
+.exercices-simulation[hidden] {
+  display: none;
+}
+
+.exercices-sheet-main.is-simulating .exercices-intro {
+  display: none;
+}
+
 /* ---------------- list ---------------- */
 
 .exercices-list-section {
@@ -381,6 +431,18 @@
 
 .exercices-intro-copy {
   min-width: 0;
+}
+
+.exercices-intro .exercices-hero-eyebrow {
+  margin-bottom: 10px;
+  color: var(--gold);
+}
+
+.exercices-intro .exercices-hero-title {
+  color: var(--ink);
+  font-size: clamp(26px, 3.2vw, 38px);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .exercices-intro-meta {
@@ -779,8 +841,8 @@
 
 .exercices-simulation-frame {
   position: relative;
-  height: clamp(600px, 85vh, 950px);
-  min-height: 600px;
+  height: clamp(560px, calc(100dvh - 400px), 960px);
+  min-height: 560px;
   border: 1px solid var(--line);
   border-radius: 14px;
   overflow-y: auto;
@@ -789,11 +851,37 @@
 
 .exercices-simulation-frame .app.app-embedded {
   height: 100%;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
   border-radius: 14px;
 }
 
+.exercices-simulation-frame .app.app-embedded .site-footer {
+  display: none;
+}
+
+.exercices-simulation-frame .bottom-dock {
+  height: 160px;
+  min-height: 160px;
+}
+
+.exercices-simulation-frame .bottom-dock .watch-panel,
+.exercices-simulation-frame .bottom-dock .journal-panel,
+.exercices-simulation-frame .bottom-dock .dock-sash {
+  display: none;
+}
+
+.exercices-simulation-frame .bottom-dock .dock-panels {
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+}
+
 .app.app-embedded .viz-card {
-  min-height: 380px;
+  min-height: 246px;
+}
+
+.exercices-simulation-frame .left-column {
+  gap: 6px;
 }
 
 /* ---------------- misc ---------------- */
