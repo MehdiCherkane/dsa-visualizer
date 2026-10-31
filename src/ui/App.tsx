@@ -87,11 +87,13 @@ export function DemoApp<S extends BaseSnapshot>({
   theme,
   onTheme,
   onMenu,
+  onExercices,
 }: {
   plugin: StructurePlugin<S>
   theme: 'light' | 'dark'
   onTheme: () => void
   onMenu: () => void
+  onExercices: () => void
 }): JSX.Element {
   const initialProfile = plugin.profiles[0]
   if (!initialProfile) throw new Error('The plugin must declare at least one profile')
@@ -651,6 +653,7 @@ export function DemoApp<S extends BaseSnapshot>({
         theme={theme}
         onTheme={onTheme}
         onMenu={onMenu}
+        onExercices={onExercices}
         onCourse={() => setCourseOpen(true)}
         courseOpen={courseOpen}
         presentation={presentation}

@@ -1,14 +1,16 @@
 import type { JSX } from 'react'
 import { config } from '../config'
+import { exercises, totalQuestionCount } from '../exercices/registry'
 import { fr } from '../i18n/fr'
 import { BrandMark } from './BrandMark'
 import { ChapterIcon } from './ChapterIcon'
 import { CreditsMenu } from './CreditsMenu'
+import { ExercicesIcon } from './ExercicesIcon'
 import { MenuScene } from './MenuScene'
 import { SiteFooter } from './SiteFooter'
 import { ThemeToggle } from './ThemeToggle'
 import { ZelligeFrieze } from './ZelligeFrieze'
-import { chapterHash, navigate } from './useHashRoute'
+import { chapterHash, EXERCICES_HASH, navigate } from './useHashRoute'
 import './MainMenu.css'
 
 /** Metadata-only view of a registered plugin: the menu knows nothing about snapshots. */
@@ -46,6 +48,11 @@ function scrollToChapters(): void {
 
 export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Element {
   const open = (chapter: number): void => navigate(chapterHash(chapter))
+  const openExercises = (): void => navigate(EXERCICES_HASH)
+  const exercisesSummary = fr.exercices.summary(
+    exercises.length,
+    totalQuestionCount(exercises),
+  )
   const [titleLead, ...titleRest] = fr.menu.title.split(' ')
   const titleAccent = titleRest.join(' ')
   const entries = [
@@ -76,6 +83,17 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
         </div>
 
         <div className="header-actions">
+          <a
+            className="menu-exercices-link"
+            href={EXERCICES_HASH}
+            onClick={(event) => {
+              event.preventDefault()
+              openExercises()
+            }}
+          >
+            <ExercicesIcon />
+            <span>{fr.exercices.menuLink}</span>
+          </a>
           <CreditsMenu />
           <ThemeToggle theme={theme} onTheme={onTheme} />
         </div>
@@ -175,6 +193,36 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
               ),
             )}
           </ul>
+        </section>
+
+        <section
+          className="menu-section menu-exercices-section"
+          aria-labelledby="menu-exercices-title"
+        >
+          <div className="menu-exercices-banner">
+            <span className="menu-exercices-icon" aria-hidden="true">
+              <ExercicesIcon />
+            </span>
+            <div className="menu-exercices-copy">
+              <p className="menu-section-eyebrow">{fr.exercices.eyebrow}</p>
+              <h2 id="menu-exercices-title" className="menu-exercices-title">
+                {fr.exercices.menuTitle}
+              </h2>
+              <p className="menu-exercices-hint">{fr.exercices.menuHint}</p>
+              <p className="menu-exercices-meta">{exercisesSummary}</p>
+            </div>
+            <a
+              className="menu-exercices-cta"
+              href={EXERCICES_HASH}
+              onClick={(event) => {
+                event.preventDefault()
+                openExercises()
+              }}
+            >
+              <span>{fr.exercices.menuCta}</span>
+              <ArrowIcon />
+            </a>
+          </div>
         </section>
       </main>
 

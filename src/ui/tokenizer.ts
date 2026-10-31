@@ -24,13 +24,75 @@ const KEYWORDS = new Set([
   'else',
   'while',
   'for',
+  'do',
+  'switch',
+  'case',
+  'break',
+  'continue',
+  'goto',
   'sizeof',
   'struct',
+  'union',
+  'enum',
   'const',
+  'static',
+  'extern',
+  'register',
+  'volatile',
+  'inline',
+  'restrict',
+  'include',
+  'define',
+  'ifdef',
+  'ifndef',
+  'endif',
   'NULL',
 ])
-const TYPES = new Set(['void', 'int', 'char', 'Noeud', 'NoeudEtudiant', 'Etudiant'])
-const BUILTINS = new Set(['malloc', 'free', 'printf'])
+const TYPES = new Set([
+  'void',
+  'int',
+  'char',
+  'short',
+  'long',
+  'float',
+  'double',
+  'signed',
+  'unsigned',
+  '_Bool',
+  'size_t',
+  'FILE',
+  'tableau',
+  'Noeud',
+  'NoeudEtudiant',
+  'Etudiant',
+])
+const BUILTINS = new Set([
+  'malloc',
+  'calloc',
+  'realloc',
+  'free',
+  'printf',
+  'fprintf',
+  'sprintf',
+  'scanf',
+  'fgets',
+  'getchar',
+  'puts',
+  'putchar',
+  'strlen',
+  'memcpy',
+  'memset',
+  'strcpy',
+  'strcmp',
+  'atoi',
+  'exit',
+  'fopen',
+  'fclose',
+  'stdin',
+  'stdout',
+  'stderr',
+  'EOF',
+])
 const PREV_FIELDS = new Set(['precedent'])
 const NEXT_FIELDS = new Set(['suivant'])
 const VALUE_FIELDS = new Set(['valeur', 'donnees', 'numero', 'nom', 'prenom'])
@@ -74,14 +136,15 @@ export function tokenizeC(line: string): Token[] {
       continue
     }
 
-    if (char === '"') {
+    if (char === '"' || char === "'") {
+      const quote = char
       let cursor = index + 1
       while (cursor < line.length) {
         if (line[cursor] === '\\') {
           cursor += 2
           continue
         }
-        if (line[cursor] === '"') {
+        if (line[cursor] === quote) {
           cursor += 1
           break
         }
@@ -93,7 +156,7 @@ export function tokenizeC(line: string): Token[] {
     }
 
     if (/[0-9]/.test(char)) {
-      const match = rest.match(/^[0-9]+(?:\.[0-9]+)?/)
+      const match = rest.match(/^[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?(?:[uUlLfF]+)?/)
       const text = match?.[0] ?? char
       tokens.push({ text, kind: 'number' })
       index += text.length

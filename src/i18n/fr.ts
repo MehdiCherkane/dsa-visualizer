@@ -48,6 +48,71 @@ export const fr = {
     homeLabel: 'Accueil',
     homeAria: 'Revenir au menu principal',
   },
+  exercices: {
+    menuLabel: 'Exercices',
+    menuTitle: 'Exercices guidés',
+    menuHint:
+      'Une fiche par énoncé du cours, avec une solution C à révéler seulement après avoir cherché.',
+    menuCta: 'Ouvrir les exercices',
+    menuLink: 'Voir les exercices',
+    title: 'Exercices',
+    eyebrow: 'Entraînement · Langage C',
+    heading: 'Chercher d’abord, comparer ensuite.',
+    subtitle:
+      'Les énoncés du chapitre 1, découpés en questions courtes. Chaque solution reste cachée jusqu’à ce que vous choisissiez de la consulter.',
+    pageTitle: 'Exercices — Structures de données en C',
+    exercisePageTitle: (title: string) => `${title} — Exercices · Structures de données en C`,
+    notFoundPageTitle: 'Fiche introuvable — Exercices',
+    listTitle: 'Fiches d’exercices',
+    listHint:
+      'Choisissez une fiche, puis avancez question par question. Votre progression est conservée dans ce navigateur.',
+    exerciseCount: (count: number) => plural(count, 'exercice', 'exercices'),
+    questionCount: (count: number) => plural(count, 'question', 'questions'),
+    summary: (exerciseCount: number, questionCount: number) =>
+      `${plural(exerciseCount, 'exercice', 'exercices')} · ${plural(questionCount, 'question', 'questions')}`,
+    openSheet: 'Ouvrir la fiche',
+    openSheetAria: (title: string) => `Ouvrir la fiche « ${title} »`,
+    chapterLabel: (chapter: number) => `Chapitre ${chapter}`,
+    backToExercises: 'Tous les exercices',
+    backToMenu: 'Revenir au menu',
+    pdf: 'Ouvrir le sujet (PDF)',
+    pdfAria: (chapter: number) => `Ouvrir le sujet (PDF) — chapitre ${chapter}`,
+    progressLabel: 'Progression',
+    solutionsSeen: (seen: number, total: number) =>
+      `Solutions consultées : ${seen} / ${total}`,
+    questionLabel: (index: number, total: number) => `Question ${index} / ${total}`,
+    questionAnnouncement: (index: number, total: number, title: string) =>
+      `Question ${index} sur ${total} : ${title}`,
+    progressAria: (index: number, total: number) => `Question ${index} sur ${total}`,
+    previous: 'Précédent',
+    next: 'Suivant',
+    previousAria: 'Aller à la question précédente',
+    nextAria: 'Aller à la question suivante',
+    firstAria: 'Aller à la première question',
+    lastAria: 'Aller à la dernière question',
+    stepperLabel: 'Questions de la fiche',
+    stepperPrefix: 'Question',
+    hints: 'Indices',
+    hintsHint: 'À ouvrir seulement après avoir cherché.',
+    solutionTitle: 'Solution proposée',
+    solutionIntro: 'Une solution possible, commentée.',
+    showSolution: 'Afficher la solution',
+    hideSolution: 'Masquer la solution',
+    solutionHidden:
+      'La solution est masquée. Cherchez d’abord, puis affichez-la pour comparer votre logique.',
+    codeSectionAria: (title: string) => `Solution C de la question « ${title} »`,
+    codeLines: (count: number) => plural(count, 'ligne', 'lignes'),
+    solutionNotes: 'À retenir',
+    mandatoryBefore:
+      '« Essayez de résoudre chaque question par vous-même avant d\'afficher la solution. C\'est en cherchant que l\'on apprend le mieux. »',
+    mandatoryCompare:
+      '« ⚠️ Ce code n\'est pas forcément identique à 100 % à votre solution. Il existe souvent plusieurs façons correctes de résoudre un exercice : comparez la logique, pas chaque caractère. »',
+    notFound: 'Fiche introuvable',
+    notFoundBody:
+      'Cette fiche d’exercices n’existe pas ou n’est plus enregistrée. Revenez à la liste pour choisir un exercice disponible.',
+    notFoundBack: 'Revenir à la liste des exercices',
+    empty: 'Aucune fiche d’exercices n’est encore disponible.',
+  },
   chapters: {
     staticStructures: {
       title: 'Piles et files statiques',

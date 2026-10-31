@@ -3,7 +3,14 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { chapterHash, MENU_HASH, parseRoute, useHashRoute } from './useHashRoute'
+import {
+  chapterHash,
+  exerciseHash,
+  EXERCICES_HASH,
+  MENU_HASH,
+  parseRoute,
+  useHashRoute,
+} from './useHashRoute'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -21,6 +28,31 @@ describe('parseRoute', () => {
     expect(parseRoute('#/chapitre-4')).toEqual(parseRoute(chapterHash(4)))
   })
 
+  it('reconnaît la liste et les fiches d’exercices', () => {
+    expect(parseRoute(EXERCICES_HASH)).toEqual({ view: 'exercices' })
+    expect(parseRoute('#/exercices/')).toEqual({ view: 'exercices' })
+    expect(parseRoute('#/exercices/chapitre-1-fibonacci')).toEqual({
+      view: 'exercices',
+      exerciseId: 'chapitre-1-fibonacci',
+    })
+    expect(parseRoute('#/exercices/chapitre-1-fibonacci/')).toEqual({
+      view: 'exercices',
+      exerciseId: 'chapitre-1-fibonacci',
+    })
+    expect(parseRoute(exerciseHash('chapitre-1-fibonacci'))).toEqual({
+      view: 'exercices',
+      exerciseId: 'chapitre-1-fibonacci',
+    })
+    expect(exerciseHash()).toBe(EXERCICES_HASH)
+  })
+
+  it('laisse une fiche inconnue au routeur pour afficher « Fiche introuvable »', () => {
+    expect(parseRoute('#/exercices/fiche-inconnue')).toEqual({
+      view: 'exercices',
+      exerciseId: 'fiche-inconnue',
+    })
+  })
+
   it('retombe sur le menu pour tout hash inconnu', () => {
     for (const hash of [
       '#/inconnu',
@@ -31,6 +63,9 @@ describe('parseRoute', () => {
       '#/chapitre-4/brouillon',
       '#chapitre-4',
       '#/Chapitre-4',
+      '#/exercices/fiche/invalide',
+      '#/exercices/%E0%A4%A',
+      '#/Exercices',
     ]) {
       expect(parseRoute(hash), hash).toEqual({ view: 'menu' })
     }
@@ -43,9 +78,13 @@ describe('useHashRoute', () => {
 
   function Probe() {
     const route = useHashRoute()
-    return (
-      <span data-route={route.view === 'chapter' ? `chapter:${route.chapter}` : 'menu'} />
-    )
+    const value =
+      route.view === 'chapter'
+        ? `chapter:${route.chapter}`
+        : route.view === 'exercices'
+          ? `exercices:${route.exerciseId ?? ''}`
+          : 'menu'
+    return <span data-route={value} />
   }
 
   function currentRoute(): string | null {
@@ -84,6 +123,12 @@ describe('useHashRoute', () => {
 
     goTo('#/chapitre-5')
     expect(currentRoute()).toBe('chapter:5')
+
+    goTo(EXERCICES_HASH)
+    expect(currentRoute()).toBe('exercices:')
+
+    goTo(exerciseHash('chapitre-1-fibonacci'))
+    expect(currentRoute()).toBe('exercices:chapitre-1-fibonacci')
 
     goTo('#/n-importe-quoi')
     expect(currentRoute()).toBe('menu')
