@@ -508,6 +508,418 @@
   min-width: 0;
 }
 
+/* ---------------- per-question simulation ---------------- */
+
+.exercices-question-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.exercices-sim {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse at 92% -10%, color-mix(in srgb, var(--gold) 12%, transparent), transparent 48%),
+    var(--panel);
+  box-shadow: var(--shadow-soft);
+  padding: 16px 18px;
+}
+
+.exercices-sim-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.exercices-sim-head-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.exercices-sim-kicker {
+  color: var(--gold);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.exercices-sim-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.exercices-sim-intro {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.exercices-sim-counter {
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+  padding: 4px 10px;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.exercices-sim-board {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-2);
+  padding: 12px;
+}
+
+.exercices-sim-stacks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.exercices-sim-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 150px;
+  min-width: 130px;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 8px 10px;
+}
+
+.exercices-sim-stack-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.exercices-sim-stack-label {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 750;
+}
+
+.exercices-sim-stack-count {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.exercices-sim-nodes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.exercices-sim-node {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+  padding: 5px 9px;
+}
+
+.exercices-sim-node code {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.exercices-sim-node.is-top {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.exercices-sim-node.is-bottom:not(.is-top) {
+  border-style: dashed;
+}
+
+.exercices-sim-node-tag {
+  color: var(--gold);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.exercices-sim-node.is-bottom .exercices-sim-node-tag {
+  color: var(--muted);
+}
+
+.exercices-sim-null {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+
+.exercices-sim-stack-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9.5px;
+  line-height: 1.4;
+}
+
+.exercices-sim-digits {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 9px 10px;
+}
+
+.exercices-sim-digits-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.exercices-sim-digits-hint {
+  color: var(--muted);
+  font-size: 9.5px;
+}
+
+.exercices-sim-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.exercices-sim-group {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+  padding: 5px 9px;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+}
+
+.exercices-sim-group.active {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+
+.exercices-sim-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.exercices-sim-carry,
+.exercices-sim-var {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  padding: 4px 10px;
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.exercices-sim-carry strong,
+.exercices-sim-var strong {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+
+.exercices-sim-var strong {
+  max-width: 240px;
+  overflow-wrap: anywhere;
+}
+
+.exercices-sim-carry.active {
+  border-color: color-mix(in srgb, var(--gold) 60%, var(--line));
+  background: var(--gold-soft);
+  color: var(--ink-2);
+}
+
+.exercices-sim-calls {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.exercices-sim-calls ol {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exercices-sim-calls li {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  padding: 4px 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.exercices-sim-calls li.active {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+  color: var(--ink);
+}
+
+.exercices-sim-output {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.exercices-sim-output pre {
+  min-height: 30px;
+  margin: 0;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--code-bg);
+  padding: 6px 9px;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.exercices-sim-detail {
+  margin: 0;
+  border-left: 2px solid color-mix(in srgb, var(--gold) 55%, var(--line));
+  padding-left: 9px;
+  color: var(--ink-2);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.exercices-sim-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-2);
+  padding: 7px 10px;
+}
+
+.exercices-sim-step::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.exercices-sim-step-title {
+  color: var(--ink);
+  font-size: 11.5px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.exercices-sim-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.exercices-sim-dots {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-left: auto;
+  padding: 0 2px;
+}
+
+.exercices-sim-dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.exercices-sim-dot:hover {
+  border-color: var(--gold);
+}
+
+.exercices-sim-dot.active {
+  border-color: var(--gold);
+  background: var(--gold);
+  transform: scale(1.18);
+}
+
+.exercices-sim-dot:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+
 .exercices-question-head {
   display: flex;
   align-items: center;
@@ -936,6 +1348,26 @@
 
   .exercices-hero-icon {
     display: none;
+  }
+
+  .exercices-sim {
+    padding: 12px;
+  }
+
+  .exercices-sim-head {
+    flex-direction: column;
+  }
+
+  .exercices-sim-stacks {
+    flex-direction: column;
+  }
+
+  .exercices-sim-stack {
+    width: 100%;
+  }
+
+  .exercices-sim-dots {
+    margin-left: 0;
   }
 }
 

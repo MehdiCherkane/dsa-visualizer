@@ -10,6 +10,7 @@ import { RichText } from './RichText'
 import { exercisePdfHref } from './pdf'
 import { readExerciseProgress, writeExerciseProgress } from './progress'
 import { ExerciseIcon } from './ExerciseIcon'
+import { QuestionSimulationView } from './QuestionSimulation'
 import type { Exercise } from './types'
 
 interface ExerciseSheetPageProps {
@@ -219,76 +220,89 @@ export function ExerciseSheetPage({
           aria-label={plugin ? undefined : fr.exercices.questionRegionAria(question.title)}
           hidden={plugin ? view !== 'question' : undefined}
         >
-          <div className="exercices-statement-card">
-            <div className="exercices-question-head">
-              <span className="exercices-question-count">{fr.exercices.questionProgress(questionNumber, total)}</span>
-              <h2 className="exercices-question-title">{question.title}</h2>
+          <div className="exercices-question-column">
+            <div className="exercices-statement-card">
+              <div className="exercices-question-head">
+                <span className="exercices-question-count">
+                  {fr.exercices.questionProgress(questionNumber, total)}
+                </span>
+                <h2 className="exercices-question-title">{question.title}</h2>
+              </div>
+
+              <ol className="exercices-stepper" aria-label={fr.exercices.stepperLabel}>
+                {questions.map((item, index) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      className={index === questionIndex ? 'active' : ''}
+                      onClick={() => goTo(index)}
+                      aria-current={index === questionIndex ? 'step' : undefined}
+                      aria-label={fr.exercices.stepAria(index + 1, total)}
+                    >
+                      {index + 1}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+
+              <div
+                className="exercices-progress"
+                role="progressbar"
+                aria-label={fr.exercices.progressAria}
+                aria-valuemin={1}
+                aria-valuemax={total}
+                aria-valuenow={questionNumber}
+                aria-valuetext={fr.exercices.questionProgress(questionNumber, total)}
+              >
+                <span
+                  className="exercices-progress-fill"
+                  style={{ width: `${Math.max(0, Math.min(100, (questionNumber / total) * 100))}%` }}
+                />
+              </div>
+
+              <div className="exercices-question-body">
+                <RichText text={question.statement} className="exercices-statement-text" />
+
+                {question.hints && question.hints.length > 0 ? (
+                  <details className="exercices-hints">
+                    <summary>{fr.exercices.hintsTitle}</summary>
+                    <ul>
+                      {question.hints.map((hint) => (
+                        <li key={hint}>{hint}</li>
+                      ))}
+                    </ul>
+                  </details>
+                ) : null}
+              </div>
+
+              <div className="exercices-nav">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => goTo(questionIndex - 1)}
+                  disabled={questionIndex === 0}
+                >
+                  {fr.exercices.previous}
+                </button>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() => goTo(questionIndex + 1)}
+                  disabled={questionIndex >= total - 1}
+                >
+                  {fr.exercices.next}
+                </button>
+              </div>
             </div>
 
-            <ol className="exercices-stepper" aria-label={fr.exercices.stepperLabel}>
-              {questions.map((item, index) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    className={index === questionIndex ? 'active' : ''}
-                    onClick={() => goTo(index)}
-                    aria-current={index === questionIndex ? 'step' : undefined}
-                    aria-label={fr.exercices.stepAria(index + 1, total)}
-                  >
-                    {index + 1}
-                  </button>
-                </li>
-              ))}
-            </ol>
-
-            <div
-              className="exercices-progress"
-              role="progressbar"
-              aria-label={fr.exercices.progressAria}
-              aria-valuemin={1}
-              aria-valuemax={total}
-              aria-valuenow={questionNumber}
-              aria-valuetext={fr.exercices.questionProgress(questionNumber, total)}
-            >
-              <span
-                className="exercices-progress-fill"
-                style={{ width: `${Math.max(0, Math.min(100, (questionNumber / total) * 100))}%` }}
+            {question.simulation ? (
+              <QuestionSimulationView
+                key={question.id}
+                simulation={question.simulation}
+                questionId={question.id}
+                questionTitle={question.title}
               />
-            </div>
-
-            <div className="exercices-question-body">
-              <RichText text={question.statement} className="exercices-statement-text" />
-
-              {question.hints && question.hints.length > 0 ? (
-                <details className="exercices-hints">
-                  <summary>{fr.exercices.hintsTitle}</summary>
-                  <ul>
-                    {question.hints.map((hint) => (
-                      <li key={hint}>{hint}</li>
-                    ))}
-                  </ul>
-                </details>
-              ) : null}
-            </div>
-
-            <div className="exercices-nav">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => goTo(questionIndex - 1)}
-                disabled={questionIndex === 0}
-              >
-                {fr.exercices.previous}
-              </button>
-              <button
-                type="button"
-                className="primary-button"
-                onClick={() => goTo(questionIndex + 1)}
-                disabled={questionIndex >= total - 1}
-              >
-                {fr.exercices.next}
-              </button>
-            </div>
+            ) : null}
           </div>
 
           <div className="exercices-code-column">

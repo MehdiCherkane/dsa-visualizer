@@ -174,6 +174,37 @@ describe('feuille d’exercices', () => {
     expect(container.textContent).toContain(fr.exercices.questionProgress(1, 5))
   })
 
+  it('affiche la simulation de la question courante et la réinitialise au changement', () => {
+    const first = tp3Exercise.questions[0].simulation
+    expect(first).toBeDefined()
+    expect(container.querySelector('.exercices-question-column .exercices-sim')).not.toBeNull()
+
+    const sim = container.querySelector('.exercices-sim')
+    expect(sim?.textContent).toContain(first?.title)
+    expect(sim?.textContent).toContain(fr.exercices.simulationStep(1, first?.frames.length ?? 0))
+    expect(sim?.textContent).toContain(first?.frames[0].title)
+
+    const nextStep = sim?.querySelector<HTMLButtonElement>('.exercices-sim-controls .primary-button')
+    act(() => {
+      nextStep?.click()
+    })
+    expect(sim?.textContent).toContain(fr.exercices.simulationStep(2, first?.frames.length ?? 0))
+    expect(sim?.textContent).toContain(first?.frames[1].title)
+
+    const stepper = container.querySelectorAll<HTMLButtonElement>('.exercices-stepper button')
+    act(() => {
+      stepper[1].click()
+    })
+
+    const second = tp3Exercise.questions[1].simulation
+    const secondSim = container.querySelector('.exercices-sim')
+    expect(secondSim?.textContent).toContain(second?.title)
+    expect(secondSim?.textContent).toContain(
+      fr.exercices.simulationStep(1, second?.frames.length ?? 0),
+    )
+    expect(secondSim?.textContent).toContain(second?.frames[0].title)
+  })
+
   it('retourne au menu principal avec Échap', () => {
     act(() => {
       window.dispatchEvent(

@@ -48,4 +48,46 @@ describe('données de la feuille d’exercices (TP 3)', () => {
       expect(question.title).toBe(`Question ${index + 1}`)
     })
   })
+
+  it('fournit une simulation pas à pas pour chaque question', () => {
+    for (const question of tp3Exercise.questions) {
+      const simulation = question.simulation
+      expect(simulation).toBeDefined()
+      if (!simulation) continue
+
+      expect(simulation.title.trim().length).toBeGreaterThan(0)
+      expect(simulation.frames.length).toBeGreaterThan(1)
+
+      for (const frame of simulation.frames) {
+        expect(frame.title.trim().length).toBeGreaterThan(0)
+        expect(frame.detail.trim().length).toBeGreaterThan(0)
+        const hasVisual =
+          (frame.stacks?.length ?? 0) > 0 ||
+          frame.digits !== undefined ||
+          frame.carry !== undefined ||
+          frame.output !== undefined ||
+          (frame.calls?.length ?? 0) > 0 ||
+          (frame.vars?.length ?? 0) > 0
+        expect(hasVisual).toBe(true)
+      }
+    }
+  })
+
+  it('empile les paquets de remplir du plus significatif au moins significatif', () => {
+    const lastFrame = tp3Exercise.questions[1].simulation?.frames.at(-1)
+    expect(lastFrame?.stacks?.[0].packets).toEqual([7890, 3456, 12])
+  })
+
+  it('garde le paquet des unités au sommet de la pile résultat', () => {
+    const frames = tp3Exercise.questions[2].simulation?.frames ?? []
+    const transfer = frames.find((frame) => frame.title.startsWith('Transférer'))
+    expect(transfer?.stacks?.find((stack) => stack.label === 'S')?.packets).toEqual([
+      1100,
+      1111,
+      111,
+    ])
+
+    const lastFrame = frames.at(-1)
+    expect(lastFrame?.stacks?.[0].packets).toEqual([1100, 1111, 111])
+  })
 })
