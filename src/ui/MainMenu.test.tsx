@@ -62,7 +62,7 @@ describe('menu principal', () => {
     expect(credits.indexOf('Omar Moussaid')).toBeLessThan(credits.indexOf('Hamza Agour'))
   })
 
-  it('place le téléchargement Presa entre le thème et les crédits', () => {
+  it('garde le bouton de thème tout à droite de la barre', () => {
     const actions = container.querySelector('.header-actions')
     expect(actions).not.toBeNull()
     const children = Array.from(actions?.children ?? [])
@@ -76,9 +76,10 @@ describe('menu principal', () => {
       element.classList.contains('credits-menu'),
     )
 
-    expect(themeIndex).toBeGreaterThanOrEqual(0)
-    expect(themeIndex).toBeLessThan(presaIndex)
-    expect(presaIndex).toBeLessThan(creditsIndex)
+    expect(presaIndex).toBeGreaterThanOrEqual(0)
+    expect(creditsIndex).toBeGreaterThan(presaIndex)
+    expect(themeIndex).toBeGreaterThan(creditsIndex)
+    expect(themeIndex).toBe(children.length - 1)
 
     const link = children[presaIndex] as HTMLAnchorElement
     expect(link.getAttribute('href')).toBe(PRESA_HASH)

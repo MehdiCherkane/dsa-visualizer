@@ -100,9 +100,9 @@ export function MainMenu({
             <ExerciseIcon />
             <span>{fr.exercices.menuLink}</span>
           </a>
-          <ThemeToggle theme={theme} onTheme={onTheme} />
           <PresaDownload />
           <CreditsMenu />
+          <ThemeToggle theme={theme} onTheme={onTheme} />
         </div>
       </header>
 
