@@ -3,7 +3,6 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { fr } from '../i18n/fr'
 import { PresaPage } from './PresaPage'
-import { MENU_HASH } from './useHashRoute'
 
 function renderPage(): HTMLElement {
   const host = document.createElement('div')
@@ -70,14 +69,11 @@ describe('page Presa', () => {
     for (const name of fr.credits.names) expect(text).toContain(name)
   })
 
-  it('revient au menu depuis l’en-tête', () => {
+  it('garde l’accueil mais retire le bouton Menu de l’en-tête', () => {
     const page = renderPage()
     expect(page.querySelector('.brand-institution-name')).toBeNull()
     expect(page.querySelector('.brand-credit')).toBeNull()
-    const back = page.querySelector<HTMLAnchorElement>(
-      `.exercices-header-link[href="${MENU_HASH}"]`,
-    )
-    expect(back).not.toBeNull()
-    expect(back?.textContent).toContain(fr.exercices.backMenu)
+    expect(page.querySelector('.exercices-header-link')).toBeNull()
+    expect(page.querySelector(`button[aria-label="${fr.menu.homeLabel}"]`)).not.toBeNull()
   })
 })

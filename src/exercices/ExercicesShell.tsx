@@ -1,4 +1,4 @@
-import type { JSX, MouseEvent, ReactNode } from 'react'
+import type { JSX, ReactNode } from 'react'
 import { config } from '../config'
 import { fr } from '../i18n/fr'
 import { BrandMark } from '../ui/BrandMark'
@@ -12,30 +12,7 @@ interface ExercicesShellProps {
   title: string
   theme: 'light' | 'dark'
   onTheme: () => void
-  showMenuLink?: boolean
   children: ReactNode
-}
-
-function BackIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 20 20" className="button-icon" aria-hidden="true">
-      <path
-        d="M12.5 4.5 7 10l5.5 5.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M4 10h12"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
 }
 
 function HomeIcon(): JSX.Element {
@@ -75,15 +52,10 @@ export function ExercicesShell({
   title,
   theme,
   onTheme,
-  showMenuLink = false,
   children,
 }: ExercicesShellProps): JSX.Element {
   const home = (): void => {
     navigate(MENU_HASH)
-  }
-  const goMenu = (event: MouseEvent<HTMLAnchorElement>): void => {
-    event.preventDefault()
-    home()
   }
 
   return (
@@ -114,18 +86,6 @@ export function ExercicesShell({
         </div>
 
         <div className="header-actions">
-          {showMenuLink ? (
-            <a
-              href={MENU_HASH}
-              className="exercices-header-link"
-              onClick={goMenu}
-              title={fr.exercices.backMenuAria}
-              aria-label={fr.exercices.backMenuAria}
-            >
-              <BackIcon />
-              <span>{fr.exercices.backMenu}</span>
-            </a>
-          ) : null}
           <ThemeToggle theme={theme} onTheme={onTheme} />
         </div>
       </header>

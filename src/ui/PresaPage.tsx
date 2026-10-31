@@ -142,7 +142,6 @@ export function PresaPage({ theme, onTheme }: PresaPageProps): JSX.Element {
       title={presa.headerTitle}
       theme={theme}
       onTheme={onTheme}
-      showMenuLink
     >
       <div className="presa-page">
         <section className="presa-hero" aria-labelledby="presa-hero-title">

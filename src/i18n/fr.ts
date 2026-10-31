@@ -214,8 +214,6 @@ export const fr = {
       'Manipulez la pile dynamique et observez la sortie du programme, sans quitter la feuille d’exercices.',
     backExercises: '← Tous les exercices',
     backExercisesAria: 'Revenir à la liste des exercices',
-    backMenu: '← Menu',
-    backMenuAria: 'Revenir au menu principal',
     questionProgress: (current: number, total: number) => `Question ${current} / ${total}`,
     progressAria: 'Progression dans les questions',
     stepperLabel: 'Choisir une question',
