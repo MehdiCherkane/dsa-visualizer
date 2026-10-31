@@ -11,7 +11,112 @@ export const fr = {
   },
   presa: {
     download: 'Télécharger Presa',
-    downloadHint: 'Télécharger Presa pour Android depuis GitHub (nouvel onglet)',
+    downloadHint: 'Découvrir Presa et télécharger l’application Android',
+    pageTitle: 'Presa — télécommande de présentation Android',
+    eyebrow: 'Application Android · Présentation',
+    headerTitle: 'Presa',
+    heroKicker: 'Télécommande Bluetooth · Android',
+    heroTitle: 'Presa',
+    heroLead:
+      'Transformez votre téléphone en télécommande de présentation : Presa envoie de vraies frappes clavier et les déplacements du pointeur à l’ordinateur connecté, sans installer le moindre logiciel sur ce dernier.',
+    heroNote:
+      'PowerPoint, PDF, navigateur ou DSA Visualizer : tout ce qui répond au clavier et à la souris fonctionne.',
+    meta: ['Android 9+', 'Bluetooth HID', 'Sans Internet', 'FR · EN'],
+    metaLabel: 'Caractéristiques de Presa',
+    apkCta: 'Télécharger l’APK',
+    apkHint: 'Télécharger Presa 1.0.2 (APK) depuis GitHub — nouvel onglet',
+    sourceCta: 'Code source',
+    sourceHint: 'Ouvrir le dépôt GitHub de Presa — nouvel onglet',
+    version: 'Version 1.0.2 · build de démonstration',
+    heroImageAlt:
+      'Écran principal de Presa : état de la connexion, minuteur, navigation et commandes de lecture.',
+    stats: [
+      { value: '2', label: 'périphériques HID' },
+      { value: '0', label: 'installation sur le PC' },
+      { value: '0', label: 'autorisation Internet' },
+      { value: '46', label: 'tests unitaires' },
+    ],
+    featuresTitle: 'Une vraie télécommande, pas un émulateur',
+    featuresLead:
+      'Presa se déclare auprès de l’ordinateur comme un clavier Bluetooth standard et une souris relative. Aucun agent, aucun dongle, aucun réseau.',
+    features: [
+      {
+        title: 'Clavier Bluetooth HID',
+        text: 'Flèches, Espace, Début, Fin, Échap, diapositive précédente ou suivante : les touches partent telles quelles vers l’ordinateur.',
+      },
+      {
+        title: 'Trackpad relatif',
+        text: 'Déplacez le curseur de l’hôte en glissant le doigt, puis cliquez ou faites défiler sans quitter votre téléphone.',
+      },
+      {
+        title: 'Compatible partout',
+        text: 'PowerPoint, Acrobat, Chrome, et bien sûr le DSA Visualizer de ce site. Rien à configurer côté ordinateur.',
+      },
+      {
+        title: 'Pensée pour durer',
+        text: 'Minuteur de présentation, retour haptique, thèmes clair, sombre ou système, et interface française ou anglaise.',
+      },
+    ],
+    screenshotsTitle: 'L’interface en un coup d’œil',
+    screenshotsLead:
+      'Connexion, commandes et réglages : tout tient sur un écran, avec de grandes cibles tactiles.',
+    screenshots: [
+      {
+        alt: 'Écran principal de Presa en thème clair',
+        caption: 'Pilotage — connexion, minuteur et commandes principales.',
+      },
+      {
+        alt: 'Écran de connexion Bluetooth de Presa',
+        caption: 'Connexion — association de l’ordinateur en Bluetooth.',
+      },
+      {
+        alt: 'Écran des réglages de Presa',
+        caption: 'Réglages — thème, langue, retour haptique et sensibilité.',
+      },
+      {
+        alt: 'Écran principal de Presa en thème sombre',
+        caption: 'Thème sombre — la même interface, pensée pour la pénombre.',
+      },
+    ],
+    stepsTitle: 'Trois étapes, aucune installation sur le PC',
+    stepsLead: 'De l’appairage à la première diapositive, il faut moins d’une minute.',
+    steps: [
+      {
+        title: 'Associer',
+        text: 'Activez le Bluetooth de l’ordinateur, ouvrez Presa puis choisissez l’ordinateur dans « Appareils à proximité ».',
+      },
+      {
+        title: 'Ouvrir la présentation',
+        text: 'Lancez PowerPoint, un PDF ou le visualiseur. Presa apparaît comme un clavier Bluetooth classique.',
+      },
+      {
+        title: 'Présenter',
+        text: 'Gardez le téléphone en main : avancez, reculez, lancez le diaporama et déplacez le curseur.',
+      },
+    ],
+    compatibilityTitle: 'Compatibilité',
+    compatibilityLead: 'Tout ordinateur qui accepte un clavier Bluetooth fait l’affaire.',
+    compatibility: [
+      { system: 'Windows 10 / 11', note: 'Appairage Bluetooth standard, aucun pilote.' },
+      { system: 'macOS / iPadOS', note: 'Clavier HID reconnu nativement.' },
+      { system: 'Linux', note: 'BlueZ et tout bureau compatible HID.' },
+      { system: 'Android', note: 'Application Android 9 ou plus récent (API 28).' },
+    ],
+    privacyTitle: 'Vie privée',
+    privacyText:
+      'Presa ne demande pas la permission Internet : l’application ne peut ni envoyer ni collecter vos données. Tout reste entre le téléphone et l’ordinateur, via Bluetooth.',
+    creditsTitle: 'Un projet étudiant',
+    creditsIntro:
+      'Conçu et développé à l’EST Béni Mellal, dans le cadre du module Structures de données.',
+    creditsSupervisor: 'Encadré par le Pr. M. OUTANOUTE',
+    creditsSchool: 'EST Béni Mellal · Génie informatique',
+    repoLink: 'Explorer le dépôt Presa',
+    finalTitle: 'Prêt à présenter ?',
+    finalLead:
+      'Téléchargez l’APK, activez le Bluetooth et gardez votre téléphone en main.',
+    finalNote: 'APK de démonstration signé en debug · Android 9+',
+    repoUrl: 'https://github.com/HamzaAGOUR/Presa',
+    apkUrl: 'https://github.com/HamzaAGOUR/Presa/releases/latest/download/Presa-1.0.2.apk',
   },
   app: {
     title: 'Listes doublement chaînées',

@@ -8,7 +8,7 @@ Teaching platform for data structures in C (`Structures de données`), built wit
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (412 tests)
+npm test      # vitest suite (426 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
@@ -17,7 +17,7 @@ npm run dev   # local dev server
 `npm run build` produces **one self-contained `dist/index.html`** (`vite-plugin-singlefile`). Open it by double-click: no server and no network access are required — no CDNs, no external fonts or images. The optional course PDFs are the only sibling assets (see below).
 
 To publish it, follow [DEPLOY.md](DEPLOY.md): Cloudflare Pages, free plan, static, no backend.
-Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point), `#/exercices` (exercises list) and `#/exercices/<id>` (one exercise sheet), plus `#/chapitre-1` through `#/chapitre-6` for the six chapters. Unknown hashes fall back to the menu, and the header buttons or the `A%chap` / `? Menu` header button leaves the demo.
+Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point), `#/exercices` (exercises list), `#/exercices/<id>` (one exercise sheet), `#/presa` (the Presa presentation page), plus `#/chapitre-1` through `#/chapitre-6` for the six chapters. Unknown hashes fall back to the menu, and the header buttons or the `A%chap` / `? Menu` header button leaves the demo.
 
 ### Course PDFs
 
@@ -30,6 +30,10 @@ The interactive exercises come from the TP handouts: one typed data file per PDF
 Each question also carries its own step-by-step trace, rendered inline under the statement by `QuestionSimulationView`: stacks of 4-digit packets, highlighted digit groups, carry and variables, call stack, program output and a one-line explanation for every step, with Replay, Previous / Next and clickable step dots. The simulation is plain typed data in the same handout file, so it works offline and resets when the question changes. The Q2 trace (`remplir`) is also why the corrected solution pushes the most significant packet first: the unit packet must stay on top. For the same reason, `somme` builds the result in a temporary stack and transfers it into `S`, so the units return to the top before `afficher` walks down to the most significant packet.
 
 The handout itself ships as `public/exercices/tp3-somme-grands-nombres.pdf` and is linked with **Ouvrir le sujet (PDF)** from the sheet. A **Question / Visualiseur** switch keeps both on the same page: the Visualiseur tab embeds the chapter 3 visualizer with its operation controls and console output, no navigation required.
+
+### Presa
+
+The « Télécharger Presa » button in the main-menu header no longer leaves the site: it opens `#/presa`, a French presentation page built from `src/ui/PresaPage.tsx`. The page introduces the Android presentation remote (Bluetooth HID keyboard + relative mouse), shows real screenshots, the three-step pairing flow, host compatibility, the no-Internet privacy note and the student credits, and offers both the real `Presa-1.0.2.apk` release download and the source repository on GitHub. Screenshots and the launcher icon are imported from `src/assets/presa/`, so they are inlined in the single-file build and the page stays fully offline (only the two GitHub links need a connection).
 
 ## Chapters
 

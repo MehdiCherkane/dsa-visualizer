@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App'
 import { fr } from '../i18n/fr'
-import { chapterHash, MENU_HASH } from './useHashRoute'
+import { chapterHash, MENU_HASH, PRESA_HASH } from './useHashRoute'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -65,6 +65,30 @@ describe('navigation par hash', () => {
     const markup = renderToStaticMarkup(<App />)
     expect(markup).toContain(fr.menu.title)
     expect(markup).not.toContain('ldc-svg')
+  })
+
+  it('ouvre la page Presa depuis #/presa', () => {
+    window.location.hash = PRESA_HASH
+    const markup = renderToStaticMarkup(<App />)
+    expect(markup).toContain(fr.presa.heroLead)
+    expect(markup).toContain(fr.presa.apkUrl)
+    expect(markup).not.toContain(fr.menu.subtitle)
+    expect(markup).not.toContain(fr.exercices.pageTitle)
+  })
+
+  it('ouvre la page Presa depuis le bouton du menu', () => {
+    renderApp()
+    const trigger = query<HTMLAnchorElement>('.presa-download')
+    expect(trigger).not.toBeNull()
+
+    act(() => {
+      trigger?.click()
+    })
+    goTo(window.location.hash)
+
+    expect(query('.presa-page')).not.toBeNull()
+    expect(query('.presa-hero-title')?.textContent).toBe(fr.presa.heroTitle)
+    expect(document.title).toBe(fr.presa.pageTitle)
   })
 
   it('ouvre la démonstration à partir de #/chapitre-4', () => {

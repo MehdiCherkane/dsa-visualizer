@@ -5,6 +5,7 @@ import { DemoApp } from './ui/App'
 import { ExercicesPage } from './exercices/ExercicesPage'
 import { ExerciseSheetPage } from './exercices/ExerciseSheetPage'
 import { MainMenu } from './ui/MainMenu'
+import { PresaPage } from './ui/PresaPage'
 import { ZelligeBackdrop } from './ui/SiteBackdrop'
 import { MENU_HASH, navigate, useHashRoute } from './ui/useHashRoute'
 
@@ -30,11 +31,22 @@ export default function App() {
           ? fr.exercices.pageTitle
           : route.view === 'exercice' && exercise
             ? fr.exercices.sheetPageTitle(exercise.title)
-            : fr.menu.pageTitle
+            : route.view === 'presa'
+              ? fr.presa.pageTitle
+              : fr.menu.pageTitle
     document.title = nextTitle
   }, [route, plugin, exercise])
 
   const exercices = getExercices()
+
+  if (route.view === 'presa') {
+    return (
+      <>
+        <ZelligeBackdrop />
+        <PresaPage theme={theme} onTheme={toggleTheme} />
+      </>
+    )
+  }
 
   if (route.view === 'exercices') {
     return (

@@ -1,16 +1,19 @@
-import type { JSX } from 'react'
+import type { JSX, MouseEvent } from 'react'
 import { fr } from '../i18n/fr'
+import { navigate, PRESA_HASH } from './useHashRoute'
 
-const PRESA_REPO_URL = 'https://github.com/HamzaAGOUR/Presa'
-
-/** Link from the main menu to the Presa Android remote repository. */
+/** Link from the main menu to the Presa presentation page. */
 export function PresaDownload(): JSX.Element {
+  const open = (event: MouseEvent<HTMLAnchorElement>): void => {
+    event.preventDefault()
+    navigate(PRESA_HASH)
+  }
+
   return (
     <a
       className="presa-download"
-      href={PRESA_REPO_URL}
-      target="_blank"
-      rel="noreferrer noopener"
+      href={PRESA_HASH}
+      onClick={open}
       title={fr.presa.downloadHint}
       aria-label={fr.presa.downloadHint}
     >

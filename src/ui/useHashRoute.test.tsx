@@ -3,7 +3,7 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { chapterHash, exerciseHash, MENU_HASH, parseRoute, useHashRoute } from './useHashRoute'
+import { chapterHash, exerciseHash, MENU_HASH, parseRoute, PRESA_HASH, useHashRoute } from './useHashRoute'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -35,6 +35,12 @@ describe('parseRoute', () => {
     expect(parseRoute('#/exercices/tp3-somme-grands-nombres')).toEqual(
       parseRoute(exerciseHash('tp3-somme-grands-nombres')),
     )
+  })
+
+  it('reconnaît la page Presa', () => {
+    expect(parseRoute(PRESA_HASH)).toEqual({ view: 'presa' })
+    expect(parseRoute('#/presa/')).toEqual({ view: 'presa' })
+    expect(parseRoute('#/presat')).toEqual({ view: 'menu' })
   })
 
   it('retombe sur l’erreur de route pour les hashes d’exercices inconnus', () => {

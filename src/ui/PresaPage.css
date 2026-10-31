@@ -1,0 +1,826 @@
+/* Presa presentation page: app hero, feature grid, screenshots and credits.
+   Reuses the shared design tokens and the navy/gold language of the menu. */
+
+.presa-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 8px;
+}
+
+/* ---------------- hero ---------------- */
+
+.presa-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(250px, 0.72fr);
+  align-items: center;
+  gap: 26px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #f0c56a 34%, transparent);
+  border-radius: 26px;
+  background:
+    radial-gradient(ellipse at 78% 34%, rgba(59, 111, 240, 0.38), transparent 48%),
+    radial-gradient(ellipse at 96% 92%, rgba(240, 197, 106, 0.16), transparent 42%),
+    linear-gradient(135deg, #141d52 0%, #0c123a 52%, #101747 100%);
+  box-shadow: 0 26px 70px rgba(11, 16, 52, 0.28);
+  padding: 40px 46px;
+  color: #f4f6ff;
+}
+
+[data-theme='dark'] .presa-hero {
+  background:
+    radial-gradient(ellipse at 78% 34%, rgba(59, 111, 240, 0.26), transparent 48%),
+    radial-gradient(ellipse at 96% 92%, rgba(240, 197, 106, 0.12), transparent 42%),
+    linear-gradient(135deg, #101838, #070b18 54%, #0b1230);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.45);
+}
+
+.presa-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(240, 197, 106, 0.2) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.35;
+  pointer-events: none;
+  mask-image: linear-gradient(115deg, transparent 42%, #000 100%);
+}
+
+.presa-hero-copy,
+.presa-hero-art {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.presa-hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.presa-app-icon {
+  display: inline-flex;
+  margin-bottom: 18px;
+  border: 1px solid rgba(240, 197, 106, 0.65);
+  border-radius: 18px;
+  background: rgba(8, 14, 32, 0.6);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  padding: 6px;
+}
+
+.presa-app-icon img {
+  display: block;
+  width: 58px;
+  height: 58px;
+  border-radius: 13px;
+}
+
+.presa-hero-eyebrow {
+  margin: 0 0 12px;
+  color: #f0c56a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.presa-hero-title {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(54px, 6.8vw, 86px);
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 0.92;
+}
+
+.presa-hero-lead {
+  max-width: 560px;
+  margin: 18px 0 0;
+  color: rgba(238, 241, 255, 0.78);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.presa-hero-note {
+  max-width: 560px;
+  margin: 10px 0 0;
+  color: rgba(238, 241, 255, 0.6);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.presa-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.presa-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 0 18px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+
+.presa-cta svg {
+  width: 18px;
+  height: 18px;
+}
+
+.presa-cta-primary {
+  border-color: #f0c56a;
+  background: #f0c56a;
+  color: #141d52;
+  box-shadow: 0 10px 24px rgba(240, 197, 106, 0.24);
+}
+
+.presa-cta-primary:hover {
+  background: #f7d88f;
+  border-color: #f7d88f;
+  transform: translateY(-1px);
+}
+
+.presa-cta-ghost {
+  border-color: rgba(238, 241, 255, 0.28);
+  background: rgba(238, 241, 255, 0.06);
+  color: #f4f6ff;
+}
+
+.presa-cta-ghost:hover {
+  border-color: rgba(238, 241, 255, 0.55);
+  background: rgba(238, 241, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.presa-cta:focus-visible {
+  outline: 2px solid #f0c56a;
+  outline-offset: 3px;
+}
+
+.presa-version {
+  margin: 12px 0 0;
+  color: rgba(238, 241, 255, 0.46);
+  font-size: 11px;
+}
+
+.presa-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.presa-meta li {
+  border: 1px solid rgba(240, 197, 106, 0.34);
+  border-radius: 999px;
+  background: rgba(10, 14, 40, 0.35);
+  padding: 6px 11px;
+  color: rgba(238, 241, 255, 0.78);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+/* Phone mockup */
+
+.presa-hero-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.presa-phone {
+  position: relative;
+  width: clamp(210px, 19vw, 252px);
+  border: 1px solid rgba(240, 197, 106, 0.45);
+  border-radius: 36px;
+  background: linear-gradient(160deg, #1b2547, #080d20);
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 7px rgba(8, 14, 32, 0.55),
+    0 0 60px rgba(240, 197, 106, 0.14);
+  padding: 9px;
+}
+
+.presa-phone-speaker {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  z-index: 2;
+  width: 44px;
+  height: 5px;
+  border-radius: 999px;
+  background: #050814;
+  transform: translateX(-50%);
+}
+
+.presa-phone-screen {
+  overflow: hidden;
+  border-radius: 28px;
+  background: #eef2fb;
+}
+
+.presa-phone-screen img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.presa-phone-badge {
+  position: absolute;
+  right: -14px;
+  bottom: 34px;
+  border: 1px solid rgba(240, 197, 106, 0.6);
+  border-radius: 999px;
+  background: #f0c56a;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  padding: 7px 11px;
+  color: #141d52;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* ---------------- stats ---------------- */
+
+.presa-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.presa-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+  padding: 14px 16px;
+}
+
+.presa-stat strong {
+  color: var(--gold);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.presa-stat span {
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+/* ---------------- sections ---------------- */
+
+.presa-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.presa-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.presa-section-head h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.presa-section-head p {
+  margin: 0;
+  max-width: 720px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* ---------------- features ---------------- */
+
+.presa-features {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.presa-feature {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+  padding: 20px;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.presa-feature:hover {
+  border-color: color-mix(in srgb, var(--gold) 62%, var(--line));
+  box-shadow: 0 18px 36px rgba(31, 42, 92, 0.12);
+  transform: translateY(-2px);
+}
+
+[data-theme='dark'] .presa-feature:hover {
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.4);
+}
+
+.presa-feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+
+.presa-feature-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.presa-feature h3 {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.presa-feature p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+/* ---------------- screenshots ---------------- */
+
+.presa-shots {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.presa-shot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+  padding: 10px;
+}
+
+.presa-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel-2);
+}
+
+.presa-shot figcaption {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0 4px 4px;
+  color: var(--ink-2);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.presa-shot-number {
+  flex: none;
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+/* ---------------- steps ---------------- */
+
+.presa-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: presa-step;
+}
+
+.presa-step {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--gold-soft) 48%, var(--panel)),
+      var(--panel) 58%
+    );
+  box-shadow: var(--shadow-soft);
+  padding: 22px 20px 20px;
+}
+
+.presa-step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 12px;
+  border: 1px solid color-mix(in srgb, var(--gold) 58%, var(--line));
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.presa-step h3 {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.presa-step p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+/* ---------------- compatibility + privacy ---------------- */
+
+.presa-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.presa-compat {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+  padding: 22px;
+}
+
+.presa-compat-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.presa-compat-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--line);
+  padding: 10px 0;
+}
+
+.presa-compat-list li:first-child {
+  border-top: 0;
+}
+
+.presa-compat-list strong {
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.presa-compat-list span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.presa-privacy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #f0c56a 32%, transparent);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 90% 8%, rgba(240, 197, 106, 0.18), transparent 46%),
+    linear-gradient(150deg, #141d52, #0b1230);
+  box-shadow: 0 18px 40px rgba(11, 16, 52, 0.22);
+  padding: 22px;
+  color: #f4f6ff;
+}
+
+.presa-privacy-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(240, 197, 106, 0.42);
+  border-radius: 12px;
+  background: rgba(240, 197, 106, 0.12);
+  color: #f0c56a;
+}
+
+.presa-privacy-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.presa-privacy h2 {
+  margin: 0 0 8px;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.presa-privacy p {
+  margin: 0;
+  color: rgba(238, 241, 255, 0.72);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.presa-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 14px;
+  color: #f0c56a;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.presa-text-link svg {
+  width: 13px;
+  height: 13px;
+}
+
+.presa-text-link:hover {
+  color: #f7d88f;
+  text-decoration: underline;
+}
+
+/* ---------------- credits ---------------- */
+
+.presa-credits {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) auto;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid color-mix(in srgb, var(--gold) 44%, var(--line));
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--gold-soft) 58%, var(--panel));
+  box-shadow: var(--shadow-soft);
+  padding: 24px 26px;
+}
+
+.presa-credits-copy .presa-hero-eyebrow {
+  margin-bottom: 8px;
+  color: var(--gold);
+}
+
+.presa-credits h2 {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.presa-credits p {
+  margin: 0;
+  max-width: 560px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.presa-credits .presa-credits-supervisor {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.presa-credits-names {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+  max-width: 290px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.presa-credits-names li {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  padding: 7px 12px;
+  color: var(--ink);
+  font-size: 11.5px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+/* ---------------- final call to action ---------------- */
+
+.presa-final {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #f0c56a 32%, transparent);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 92% 30%, rgba(240, 197, 106, 0.2), transparent 42%),
+    linear-gradient(120deg, #141d52, #0a1029 70%);
+  box-shadow: 0 20px 44px rgba(11, 16, 52, 0.24);
+  padding: 26px 30px;
+  color: #f4f6ff;
+}
+
+.presa-final h2 {
+  margin: 0 0 4px;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.presa-final p {
+  margin: 0;
+  color: rgba(238, 241, 255, 0.68);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.presa-final-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 9px;
+  flex: none;
+}
+
+.presa-final-note {
+  color: rgba(238, 241, 255, 0.5);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+/* ---------------- responsive ---------------- */
+
+@media (max-width: 1120px) {
+  .presa-features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .presa-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 980px) {
+  .presa-hero {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 32px 30px;
+  }
+
+  .presa-hero-art {
+    display: none;
+  }
+
+  .presa-final {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .presa-final-actions {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 900px) {
+  .presa-shots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .presa-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .presa-page {
+    gap: 14px;
+  }
+
+  .presa-hero {
+    padding: 26px 22px;
+    border-radius: 20px;
+  }
+
+  .presa-hero-title {
+    font-size: clamp(46px, 15vw, 64px);
+  }
+
+  .presa-hero-lead {
+    font-size: 14px;
+  }
+
+  .presa-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .presa-features {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .presa-section-head h2 {
+    font-size: 21px;
+  }
+
+  .presa-credits {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 20px;
+  }
+
+  .presa-credits-names {
+    justify-content: flex-start;
+  }
+
+  .presa-compat-list li {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .presa-compat-list span {
+    text-align: left;
+  }
+
+  .presa-final {
+    padding: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .presa-feature,
+  .presa-feature:hover,
+  .presa-cta,
+  .presa-cta:hover {
+    transform: none;
+    transition: none;
+  }
+}

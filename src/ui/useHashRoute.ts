@@ -9,9 +9,11 @@ export type Route =
   | { view: 'chapter'; chapter: number }
   | { view: 'exercices' }
   | { view: 'exercice'; exerciseId: string }
+  | { view: 'presa' }
 
 export const MENU_HASH = '#/'
 export const EXERCICES_HASH = '#/exercices'
+export const PRESA_HASH = '#/presa'
 
 export function chapterHash(chapter: number): string {
   return `#/chapitre-${chapter}`
@@ -24,12 +26,15 @@ export function exerciseHash(exerciseId: string): string {
 const CHAPTER_PATTERN = /^#\/chapitre-(\d+)\/?$/
 const EXERCICES_PATTERN = /^#\/exercices\/?$/
 const EXERCICE_PATTERN = /^#\/exercices\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/
+const PRESA_PATTERN = /^#\/presa\/?$/
 const MENU_ROUTE: Route = { view: 'menu' }
 const EXERCICES_ROUTE: Route = { view: 'exercices' }
+const PRESA_ROUTE: Route = { view: 'presa' }
 
 /** `#/` and anything unrecognised fall back to the menu. */
 export function parseRoute(hash: string): Route {
   const trimmed = hash.trim()
+  if (PRESA_PATTERN.test(trimmed)) return PRESA_ROUTE
   if (EXERCICES_PATTERN.test(trimmed)) return EXERCICES_ROUTE
   const exerciseMatch = EXERCICE_PATTERN.exec(trimmed)
   if (exerciseMatch) return { view: 'exercice', exerciseId: exerciseMatch[1] }
