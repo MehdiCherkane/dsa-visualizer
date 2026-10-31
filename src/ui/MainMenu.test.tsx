@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fr } from '../i18n/fr'
+import { getExercices } from '../exercices'
 import { plugins } from '../registry'
 import { MainMenu } from './MainMenu'
 import { chapterHash, MENU_HASH, PRESA_HASH } from './useHashRoute'
@@ -88,6 +89,21 @@ describe('menu principal', () => {
       link.click()
     })
     expect(window.location.hash).toBe(PRESA_HASH)
+  })
+
+  it('place la section Exercices sous les chapitres', () => {
+    const chapters = container.querySelector('[aria-labelledby="menu-chapters"]')
+    const exercises = container.querySelector('.menu-exercices-section')
+    expect(chapters).not.toBeNull()
+    expect(exercises).not.toBeNull()
+    expect(
+      chapters!.compareDocumentPosition(exercises!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+
+    const exercise = getExercices()[0]
+    const count = exercise.questions.length
+    expect(exercises?.textContent).toContain(fr.exercices.questionCount(count))
+    expect(exercises?.textContent).not.toContain(`${count} ${fr.exercices.questionCount(count)}`)
   })
 
   it('rend une carte par plugin enregistré, construite depuis le registre', () => {

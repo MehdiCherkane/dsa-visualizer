@@ -124,60 +124,6 @@ export function MainMenu({
           <MenuScene />
         </section>
 
-        {exercises.length > 0 ? (
-          <section
-            className="menu-section menu-exercices-section"
-            aria-labelledby="menu-exercices-title"
-          >
-            <div className="menu-section-head">
-              <div>
-                <p className="menu-section-eyebrow">{fr.exercices.menuCardEyebrow}</p>
-                <h2 id="menu-exercices-title" className="menu-section-title">
-                  {fr.exercices.menuCardTitle}
-                </h2>
-              </div>
-              <p className="menu-section-note">{fr.exercices.menuCardDescription}</p>
-            </div>
-            <ul className="exercise-list">
-              {exercises.map((exercise) => (
-                <li key={exercise.id}>
-                  <a
-                    className="exercise-card"
-                    href={exerciseHash(exercise.id)}
-                    aria-label={fr.exercices.menuCardAria(exercise.title)}
-                    onClick={(event) => {
-                      event.preventDefault()
-                      navigate(exerciseHash(exercise.id))
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return
-                      event.preventDefault()
-                      navigate(exerciseHash(exercise.id))
-                    }}
-                  >
-                    <span className="exercise-card-icon">
-                      <ExerciseIcon />
-                    </span>
-                    <div className="exercise-card-body">
-                      <span className="exercise-card-kicker">{fr.exercices.sheetEyebrow}</span>
-                      <h3 className="exercise-card-title">{exercise.title}</h3>
-                      <p className="exercise-card-text">
-                        {exercise.questions.length}{' '}
-                        {fr.exercices.questionCount(exercise.questions.length)} ·{' '}
-                        {fr.menu.chapterLabel(exercise.chapter)}
-                      </p>
-                    </div>
-                    <span className="exercise-card-cta">
-                      {fr.exercices.openExercise}
-                      <ArrowIcon />
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
         <section className="menu-section" aria-labelledby="menu-chapters">
           <div className="menu-section-head">
             <div>
@@ -255,6 +201,59 @@ export function MainMenu({
             )}
           </ul>
         </section>
+
+        {exercises.length > 0 ? (
+          <section
+            className="menu-section menu-exercices-section"
+            aria-labelledby="menu-exercices-title"
+          >
+            <div className="menu-section-head">
+              <div>
+                <p className="menu-section-eyebrow">{fr.exercices.menuCardEyebrow}</p>
+                <h2 id="menu-exercices-title" className="menu-section-title">
+                  {fr.exercices.menuCardTitle}
+                </h2>
+              </div>
+              <p className="menu-section-note">{fr.exercices.menuCardDescription}</p>
+            </div>
+            <ul className="exercise-list">
+              {exercises.map((exercise) => (
+                <li key={exercise.id}>
+                  <a
+                    className="exercise-card"
+                    href={exerciseHash(exercise.id)}
+                    aria-label={fr.exercices.menuCardAria(exercise.title)}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      navigate(exerciseHash(exercise.id))
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return
+                      event.preventDefault()
+                      navigate(exerciseHash(exercise.id))
+                    }}
+                  >
+                    <span className="exercise-card-icon">
+                      <ExerciseIcon />
+                    </span>
+                    <div className="exercise-card-body">
+                      <span className="exercise-card-kicker">{fr.exercices.sheetEyebrow}</span>
+                      <h3 className="exercise-card-title">{exercise.title}</h3>
+                      <p className="exercise-card-text">
+                        {fr.exercices.questionCount(exercise.questions.length)} ·{' '}
+                        {fr.menu.chapterLabel(exercise.chapter)}
+                      </p>
+                    </div>
+                    <span className="exercise-card-cta">
+                      {fr.exercices.openExercise}
+                      <ArrowIcon />
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
       </main>
 
       <SiteFooter />
