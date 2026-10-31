@@ -12,6 +12,7 @@ interface ExercicesShellProps {
   title: string
   theme: 'light' | 'dark'
   onTheme: () => void
+  showMenuLink?: boolean
   children: ReactNode
 }
 
@@ -74,6 +75,7 @@ export function ExercicesShell({
   title,
   theme,
   onTheme,
+  showMenuLink = false,
   children,
 }: ExercicesShellProps): JSX.Element {
   const home = (): void => {
@@ -121,16 +123,18 @@ export function ExercicesShell({
         </div>
 
         <div className="header-actions">
-          <a
-            href={MENU_HASH}
-            className="exercices-header-link"
-            onClick={goMenu}
-            title={fr.exercices.backMenuAria}
-            aria-label={fr.exercices.backMenuAria}
-          >
-            <BackIcon />
-            <span>{fr.exercices.backMenu}</span>
-          </a>
+          {showMenuLink ? (
+            <a
+              href={MENU_HASH}
+              className="exercices-header-link"
+              onClick={goMenu}
+              title={fr.exercices.backMenuAria}
+              aria-label={fr.exercices.backMenuAria}
+            >
+              <BackIcon />
+              <span>{fr.exercices.backMenu}</span>
+            </a>
+          ) : null}
           <ThemeToggle theme={theme} onTheme={onTheme} />
         </div>
       </header>

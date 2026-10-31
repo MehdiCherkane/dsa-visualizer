@@ -175,6 +175,7 @@ export const fr = {
     menuCardCta: 'Ouvrir les exercices',
     menuCardAria: (title: string) => `Ouvrir « ${title} »`,
     menuCardCount: (count: number) => plural(count, 'TP disponible', 'TP disponibles'),
+    menuCardCountLabel: (count: number) => (count <= 1 ? 'TP disponible' : 'TP disponibles'),
     callout:
       'Essayez de résoudre chaque question par vous-même avant d’afficher la solution. C’est en cherchant que l’on apprend le mieux.',
     solutionWarning:
@@ -183,6 +184,7 @@ export const fr = {
     openExercise: 'Ouvrir le TP',
     openExerciseAria: (title: string) => `Ouvrir « ${title} »`,
     questionCount: (count: number) => plural(count, 'question', 'questions'),
+    questionCountLabel: (count: number) => (count <= 1 ? 'question' : 'questions'),
     sheetEyebrow: 'Feuille d’exercices',
     openPdf: 'Ouvrir le sujet (PDF)',
     openPdfAria: (title: string) => `Ouvrir le sujet PDF de « ${title} »`,

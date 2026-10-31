@@ -43,6 +43,11 @@ afterEach(() => {
 })
 
 describe('feuille d’exercices', () => {
+  it('garde l’accueil mais retire le bouton Menu coloré de l’en-tête', () => {
+    expect(container.querySelector('.exercices-header-link')).toBeNull()
+    expect(container.querySelector(`button[aria-label="${fr.menu.homeLabel}"]`)).not.toBeNull()
+  })
+
   it('cache la solution par défaut derrière le bouton d’affichage', () => {
     expect(container.textContent).toContain(fr.exercices.callout)
     expect(container.textContent).toContain(fr.exercices.solutionHiddenText)

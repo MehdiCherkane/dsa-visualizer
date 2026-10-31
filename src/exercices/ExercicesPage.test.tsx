@@ -41,6 +41,15 @@ describe('page des exercices', () => {
     expect(container.textContent).toContain(fr.exercices.title)
     expect(container.textContent).toContain(fr.exercices.callout)
     expect(container.textContent).toContain(fr.exercices.questionCount(5))
+    expect(container.textContent).not.toContain(
+      `${getExercices().length} ${fr.exercices.menuCardCount(getExercices().length)}`,
+    )
+    expect(container.textContent).not.toContain(`5 ${fr.exercices.questionCount(5)}`)
+  })
+
+  it('garde l’accueil mais retire le bouton Menu coloré de l’en-tête', () => {
+    expect(container.querySelector('.exercices-header-link')).toBeNull()
+    expect(container.querySelector(`button[aria-label="${fr.menu.homeLabel}"]`)).not.toBeNull()
   })
 
   it('rend une carte par exercice enregistré et ouvre la feuille', () => {

@@ -76,10 +76,12 @@ export function ExercicesPage({ exercises, theme, onTheme }: ExercicesPageProps)
           <p className="exercices-hero-lead">{fr.exercices.lead}</p>
           <div className="exercices-hero-stats">
             <span className="exercices-stat">
-              <strong>{exercises.length}</strong> {fr.exercices.menuCardCount(exercises.length)}
+              <strong>{exercises.length}</strong>{' '}
+              {fr.exercices.menuCardCountLabel(exercises.length)}
             </span>
             <span className="exercices-stat">
-              <strong>{totalQuestions}</strong> {fr.exercices.questionCount(totalQuestions)}
+              <strong>{totalQuestions}</strong>{' '}
+              {fr.exercices.questionCountLabel(totalQuestions)}
             </span>
           </div>
         </div>
