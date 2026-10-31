@@ -72,6 +72,8 @@ describe('page Presa', () => {
 
   it('revient au menu depuis l’en-tête', () => {
     const page = renderPage()
+    expect(page.querySelector('.brand-institution-name')).toBeNull()
+    expect(page.querySelector('.brand-credit')).toBeNull()
     const back = page.querySelector<HTMLAnchorElement>(
       `.exercices-header-link[href="${MENU_HASH}"]`,
     )

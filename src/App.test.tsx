@@ -40,6 +40,10 @@ describe('coquille de l’application', () => {
     expect(markup).toContain('site-footer-logo')
     expect(markup).toContain(fr.footer.logoAlt)
     expect(markup).not.toContain('DUT GI S3')
+    expect(markup).not.toContain(fr.app.subtitle)
+    expect(markup).not.toContain('brand-institution-name')
+    expect(markup).not.toContain('brand-credit')
+    expect(markup).not.toContain(fr.app.professor)
   })
 
   it('affiche les paramètres de l’opération par défaut', () => {
@@ -99,6 +103,10 @@ describe('coquille de l’application', () => {
       expect(markup).toContain('site-footer-logo')
       expect(markup).toContain(fr.footer.logoAlt)
       expect(markup).not.toContain('DUT GI S3')
+      expect(markup).not.toContain(fr.app.subtitle)
+      expect(markup).not.toContain('brand-institution-name')
+      expect(markup).not.toContain('brand-credit')
+      expect(markup).not.toContain(fr.app.professor)
     } finally {
       window.location.hash = previousHash
     }

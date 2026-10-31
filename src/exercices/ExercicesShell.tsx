@@ -106,18 +106,9 @@ export function ExercicesShell({
             <div className="brand-meta">
               <span className="chapter-chip exercices-chip">{eyebrow}</span>
               <span className="brand-course">{config.course}</span>
-              <span className="brand-sep brand-institution-sep" aria-hidden="true">
-                ·
-              </span>
-              <span className="brand-institution-name">{config.institutionName}</span>
             </div>
             <div className="brand-title-row">
               <span className="exercices-brand-title">{title}</span>
-              <span className="brand-rule" aria-hidden="true" />
-              <span className="brand-credit">
-                <span className="credit-prefix">{config.creditPrefix} </span>
-                <span className="credit-name">{config.professor}</span>
-              </span>
             </div>
           </div>
         </div>

@@ -69,18 +69,9 @@ export function Header<S extends BaseSnapshot>({
           <div className="brand-meta">
             <span className="chapter-chip">{fr.menu.chapterLabel(plugin.chapter)}</span>
             <span className="brand-course">{config.course}</span>
-            <span className="brand-sep brand-institution-sep" aria-hidden="true">
-              ·
-            </span>
-            <span className="brand-institution-name">{config.institutionName}</span>
           </div>
           <div className="brand-title-row">
             <h1>{plugin.title}</h1>
-            <span className="brand-rule" aria-hidden="true" />
-            <span className="brand-credit">
-              <span className="credit-prefix">{config.creditPrefix} </span>
-              <span className="credit-name">{config.professor}</span>
-            </span>
           </div>
         </div>
       </div>

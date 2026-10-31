@@ -81,7 +81,7 @@ export function MainMenu({
           </span>
           <div className="brand-copy">
             <div className="brand-meta menu-brand-meta">
-              {config.course} · {config.institutionName}
+              {config.course}
             </div>
           </div>
         </div>
