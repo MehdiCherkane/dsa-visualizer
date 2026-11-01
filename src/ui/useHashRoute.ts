@@ -7,9 +7,11 @@ import { useMemo, useSyncExternalStore } from 'react'
 export type Route =
   | { view: 'menu' }
   | { view: 'chapter'; chapter: number }
+  | { view: 'presa' }
   | { view: 'exercices'; exerciseId?: string }
 
 export const MENU_HASH = '#/'
+export const PRESA_HASH = '#/presa'
 export const EXERCICES_HASH = '#/exercices'
 
 export function chapterHash(chapter: number): string {
@@ -21,8 +23,10 @@ export function exerciseHash(id?: string): string {
 }
 
 const CHAPTER_PATTERN = /^#\/chapitre-(\d+)\/?$/
+const PRESA_PATTERN = /^#\/presa\/?$/
 const EXERCICES_PATTERN = /^#\/exercices(?:\/([^/]+))?\/?$/
 const MENU_ROUTE: Route = { view: 'menu' }
+const PRESA_ROUTE: Route = { view: 'presa' }
 
 function decodeId(value: string): string | undefined {
   try {
@@ -35,6 +39,8 @@ function decodeId(value: string): string | undefined {
 /** `#/` and anything unrecognised fall back to the menu. */
 export function parseRoute(hash: string): Route {
   const normalized = hash.trim()
+  if (PRESA_PATTERN.test(normalized)) return PRESA_ROUTE
+
   const chapterMatch = CHAPTER_PATTERN.exec(normalized)
   if (chapterMatch) {
     const chapter = Number(chapterMatch[1])

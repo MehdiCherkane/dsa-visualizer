@@ -9,6 +9,7 @@ import {
   EXERCICES_HASH,
   MENU_HASH,
   parseRoute,
+  PRESA_HASH,
   useHashRoute,
 } from './useHashRoute'
 
@@ -26,6 +27,12 @@ describe('parseRoute', () => {
     expect(parseRoute('#/chapitre-4/')).toEqual({ view: 'chapter', chapter: 4 })
     expect(parseRoute('#/chapitre-12')).toEqual({ view: 'chapter', chapter: 12 })
     expect(parseRoute('#/chapitre-4')).toEqual(parseRoute(chapterHash(4)))
+  })
+
+  it('reconnaît la page Presa', () => {
+    expect(parseRoute(PRESA_HASH)).toEqual({ view: 'presa' })
+    expect(parseRoute('#/presa')).toEqual({ view: 'presa' })
+    expect(parseRoute('#/presa/')).toEqual({ view: 'presa' })
   })
 
   it('reconnaît la liste et les fiches d’exercices', () => {
@@ -61,6 +68,8 @@ describe('parseRoute', () => {
       '#/chapitre-0',
       '#/chapitre-',
       '#/chapitre-4/brouillon',
+      '#/presa/brouillon',
+      '#/PresA',
       '#chapitre-4',
       '#/Chapitre-4',
       '#/exercices/fiche/invalide',
@@ -83,7 +92,7 @@ describe('useHashRoute', () => {
         ? `chapter:${route.chapter}`
         : route.view === 'exercices'
           ? `exercices:${route.exerciseId ?? ''}`
-          : 'menu'
+          : route.view
     return <span data-route={value} />
   }
 
@@ -120,6 +129,9 @@ describe('useHashRoute', () => {
   it('suit les changements de hash', () => {
     goTo('#/chapitre-4')
     expect(currentRoute()).toBe('chapter:4')
+
+    goTo(PRESA_HASH)
+    expect(currentRoute()).toBe('presa')
 
     goTo('#/chapitre-5')
     expect(currentRoute()).toBe('chapter:5')

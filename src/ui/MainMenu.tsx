@@ -7,6 +7,7 @@ import { ChapterIcon } from './ChapterIcon'
 import { CreditsMenu } from './CreditsMenu'
 import { ExercicesIcon } from './ExercicesIcon'
 import { MenuScene } from './MenuScene'
+import { PresaDownload } from './PresaDownload'
 import { SiteFooter } from './SiteFooter'
 import { ThemeToggle } from './ThemeToggle'
 import { ZelligeFrieze } from './ZelligeFrieze'
@@ -94,8 +95,9 @@ export function MainMenu({ plugins, theme, onTheme }: MainMenuProps): JSX.Elemen
             <ExercicesIcon />
             <span>{fr.exercices.menuLink}</span>
           </a>
-          <CreditsMenu />
           <ThemeToggle theme={theme} onTheme={onTheme} />
+          <PresaDownload />
+          <CreditsMenu />
         </div>
       </header>
 

@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App'
 import { fr } from '../i18n/fr'
-import { chapterHash, MENU_HASH } from './useHashRoute'
+import { chapterHash, MENU_HASH, PRESA_HASH } from './useHashRoute'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -73,6 +73,27 @@ describe('navigation par hash', () => {
     expect(markup).toContain('ldc-svg')
     expect(markup).toContain(fr.menu.homeLabel)
     expect(markup).not.toContain(fr.menu.subtitle)
+  })
+
+  it('ouvre la page Presa depuis le menu, puis revient au menu', () => {
+    renderApp()
+    const download = query<HTMLAnchorElement>('.presa-download')
+    expect(download).not.toBeNull()
+    expect(download?.getAttribute('href')).toBe(PRESA_HASH)
+    expect(download?.hasAttribute('target')).toBe(false)
+
+    goTo(PRESA_HASH)
+    expect(document.title).toBe(fr.presa.pageTitle)
+    expect(query('.presa-app')).not.toBeNull()
+    expect(query('.menu-app')).toBeNull()
+    expect(query('.presa-back')?.getAttribute('href')).toBe(MENU_HASH)
+    const cta = query<HTMLAnchorElement>('.presa-cta')
+    expect(cta?.getAttribute('href')).toBe('https://github.com/HamzaAGOUR/Presa')
+    expect(cta?.getAttribute('target')).toBe('_blank')
+
+    goTo(MENU_HASH)
+    expect(query('.menu-app')).not.toBeNull()
+    expect(query('.presa-app')).toBeNull()
   })
 
   it('ouvre le chapitre 5 sur le scénario Liste vide', () => {

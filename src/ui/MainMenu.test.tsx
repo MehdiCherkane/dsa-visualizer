@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fr } from '../i18n/fr'
 import { plugins } from '../registry'
 import { MainMenu } from './MainMenu'
-import { chapterHash, MENU_HASH } from './useHashRoute'
+import { chapterHash, MENU_HASH, PRESA_HASH } from './useHashRoute'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -59,6 +59,30 @@ describe('menu principal', () => {
     for (const name of fr.credits.names) expect(credits).toContain(name)
     expect(credits.indexOf('El Mahdi Cherkane')).toBeLessThan(credits.indexOf('Omar Moussaid'))
     expect(credits.indexOf('Omar Moussaid')).toBeLessThan(credits.indexOf('Hamza Agour'))
+  })
+
+  it('place le téléchargement Presa entre le thème et les crédits', () => {
+    const actions = container.querySelector('.header-actions')
+    expect(actions).not.toBeNull()
+    const children = Array.from(actions?.children ?? [])
+    const themeIndex = children.findIndex((element) =>
+      element.classList.contains('header-icon-button'),
+    )
+    const presaIndex = children.findIndex((element) =>
+      element.classList.contains('presa-download'),
+    )
+    const creditsIndex = children.findIndex((element) =>
+      element.classList.contains('credits-menu'),
+    )
+
+    expect(themeIndex).toBeGreaterThanOrEqual(0)
+    expect(themeIndex).toBeLessThan(presaIndex)
+    expect(presaIndex).toBeLessThan(creditsIndex)
+
+    const link = children[presaIndex] as HTMLAnchorElement
+    expect(link.getAttribute('href')).toBe(PRESA_HASH)
+    expect(link.hasAttribute('target')).toBe(false)
+    expect(link.textContent).toContain(fr.presa.download)
   })
 
   it('rend une carte par plugin enregistré, construite depuis le registre', () => {

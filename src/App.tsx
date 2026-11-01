@@ -5,6 +5,7 @@ import { pluginForChapter, plugins } from './registry'
 import { DemoApp } from './ui/App'
 import { ExercicesPage } from './ui/ExercicesPage'
 import { MainMenu } from './ui/MainMenu'
+import { PresaPage } from './ui/PresaPage'
 import { ZelligeBackdrop } from './ui/SiteBackdrop'
 import { EXERCICES_HASH, MENU_HASH, navigate, useHashRoute } from './ui/useHashRoute'
 
@@ -23,6 +24,7 @@ export default function App() {
   const plugin = route.view === 'chapter' ? pluginForChapter(route.chapter) : undefined
   const exerciseId = route.view === 'exercices' ? route.exerciseId : undefined
   const exercise = exerciseId ? exerciseById(exerciseId) : undefined
+  const isPresa = route.view === 'presa'
 
   useEffect(() => {
     if (route.view === 'exercices') {
@@ -33,8 +35,12 @@ export default function App() {
         : fr.exercices.pageTitle
       return
     }
+    if (isPresa) {
+      document.title = fr.presa.pageTitle
+      return
+    }
     document.title = plugin ? fr.menu.chapterPageTitle(plugin.title) : fr.menu.pageTitle
-  }, [exercise, exerciseId, plugin, route.view])
+  }, [exercise, exerciseId, isPresa, plugin, route.view])
 
   if (route.view === 'exercices') {
     return (
@@ -46,6 +52,15 @@ export default function App() {
           onTheme={toggleTheme}
           onMenu={() => navigate(MENU_HASH)}
         />
+      </>
+    )
+  }
+
+  if (isPresa) {
+    return (
+      <>
+        <ZelligeBackdrop />
+        <PresaPage theme={theme} onTheme={toggleTheme} />
       </>
     )
   }

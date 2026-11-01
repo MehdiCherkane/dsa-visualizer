@@ -1,0 +1,331 @@
+/* Presa presentation page, reached from the menu's download button. */
+
+.presa-main {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 4px 0 20px;
+}
+
+.presa-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 0 13px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-soft);
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.presa-back svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.presa-back:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.presa-back:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ---------------- hero ---------------- */
+
+.presa-hero {
+  position: relative;
+  display: grid;
+  flex: none;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  align-items: center;
+  gap: 12px 28px;
+  margin: 0 0.45cm;
+  padding: 46px 48px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #f0c56a 34%, transparent);
+  border-radius: 26px;
+  background:
+    radial-gradient(ellipse at 76% 34%, rgba(63, 92, 214, 0.42), transparent 52%),
+    radial-gradient(ellipse at 12% 108%, rgba(240, 197, 106, 0.16), transparent 46%),
+    linear-gradient(135deg, #111a4c 0%, #0a0f2e 54%, #0e1640 100%);
+  color: #f4f6ff;
+  box-shadow: 0 26px 70px rgba(11, 16, 52, 0.28);
+}
+
+[data-theme='dark'] .presa-hero {
+  background:
+    radial-gradient(ellipse at 76% 34%, rgba(63, 92, 214, 0.34), transparent 52%),
+    radial-gradient(ellipse at 12% 108%, rgba(240, 197, 106, 0.13), transparent 46%),
+    linear-gradient(135deg, #0e1740 0%, #060a1c 56%, #0a112e 100%);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.45);
+}
+
+.presa-hero-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.presa-eyebrow {
+  margin: 0 0 14px;
+  color: #f0c56a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.presa-title {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(56px, 6.6vw, 92px);
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 0.92;
+}
+
+.presa-tagline {
+  margin: 20px 0 0;
+  color: #ffe9b0;
+  font-size: clamp(17px, 1.7vw, 21px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+
+.presa-lead {
+  max-width: 520px;
+  margin: 14px 0 0;
+  color: rgba(238, 241, 255, 0.76);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.presa-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  margin-top: 28px;
+  border-radius: 13px;
+  background: linear-gradient(180deg, #f5d27c, #e0b04a);
+  padding: 0 24px;
+  color: #0b1034;
+  font-size: 14.5px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 12px 26px rgba(240, 197, 106, 0.25);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.presa-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(240, 197, 106, 0.32);
+}
+
+.presa-cta:focus-visible {
+  outline: 2px solid #ffe9b0;
+  outline-offset: 3px;
+}
+
+.presa-cta svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+
+.presa-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.presa-facts li {
+  border: 1px solid rgba(240, 197, 106, 0.34);
+  border-radius: 999px;
+  background: rgba(240, 197, 106, 0.09);
+  padding: 5px 12px;
+  color: #f0c56a;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.presa-hero-art {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+}
+
+.presa-art-glow {
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 197, 106, 0.3), transparent 62%);
+  filter: blur(8px);
+}
+
+.presa-art-icon {
+  position: relative;
+  width: clamp(180px, 21vw, 250px);
+  height: auto;
+  border-radius: 28%;
+  box-shadow:
+    0 30px 60px rgba(3, 7, 24, 0.55),
+    0 0 0 1px rgba(240, 197, 106, 0.32);
+  transform: rotate(-5deg);
+}
+
+/* ---------------- features ---------------- */
+
+.presa-features {
+  flex: none;
+  width: 100%;
+  padding: 0 44px;
+}
+
+.presa-features-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.presa-section-eyebrow {
+  margin: 0;
+  color: var(--gold);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.presa-section-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(20px, 2.4vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.presa-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.presa-feature {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-soft);
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+
+.presa-feature:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+}
+
+.presa-feature-num {
+  color: var(--gold);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.presa-feature h3 {
+  margin: 8px 0 6px;
+  color: var(--ink);
+  font-size: 15.5px;
+  font-weight: 760;
+  letter-spacing: -0.015em;
+}
+
+.presa-feature p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* ---------------- responsive ---------------- */
+
+@media (max-width: 900px) {
+  .presa-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    padding: 34px 30px;
+  }
+
+  .presa-hero-art {
+    justify-content: flex-start;
+    min-height: 0;
+  }
+
+  .presa-art-icon {
+    width: 170px;
+  }
+
+  .presa-art-glow {
+    left: -20px;
+    width: 260px;
+    height: 260px;
+  }
+}
+
+@media (max-width: 680px) {
+  .presa-hero {
+    margin: 0 12px;
+    padding: 28px 22px;
+  }
+
+  .presa-features {
+    padding: 0 24px;
+  }
+
+  .presa-feature-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .presa-back {
+    width: 40px;
+    padding: 0;
+  }
+
+  .presa-back span {
+    display: none;
+  }
+}
