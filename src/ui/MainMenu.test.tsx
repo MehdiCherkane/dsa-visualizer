@@ -45,6 +45,11 @@ describe('menu principal', () => {
   it('affiche le titre et le sous-titre', () => {
     expect(container.textContent).toContain(fr.menu.title)
     expect(container.textContent).toContain(fr.menu.subtitle)
+
+    const title = container.querySelector('#menu-title')
+    const eyebrow = container.querySelector('.menu-eyebrow')
+    expect(eyebrow?.textContent).toBe(fr.menu.eyebrow)
+    expect(title?.nextElementSibling).toBe(eyebrow)
   })
 
   it('ouvre les crédits depuis la barre et affiche les noms dans l’ordre', () => {

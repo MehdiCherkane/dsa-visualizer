@@ -110,11 +110,11 @@ export function MainMenu({
         <section className="menu-hero">
           <ZelligeFrieze />
           <div className="menu-hero-copy">
-            <p className="menu-eyebrow">{fr.menu.eyebrow}</p>
             <h1 id="menu-title" className="menu-title">
               <span>{titleLead}</span>{' '}
               {titleAccent ? <span className="menu-title-accent">{titleAccent}</span> : null}
             </h1>
+            <p className="menu-eyebrow menu-eyebrow-under-title">{fr.menu.eyebrow}</p>
             <p className="menu-subtitle">{fr.menu.subtitle}</p>
             <button type="button" className="menu-hero-cta" onClick={scrollToChapters}>
               {fr.menu.explore}
