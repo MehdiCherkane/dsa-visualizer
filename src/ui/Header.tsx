@@ -3,6 +3,7 @@ import type { BaseSnapshot, ScenarioDef, StructurePlugin } from '../core/types'
 import { config } from '../config'
 import { fr } from '../i18n/fr'
 import { BrandMark } from './BrandMark'
+import { ExercicesIcon } from './ExercicesIcon'
 import { ScenariosMenu } from './ScenariosMenu'
 import { Shortcuts } from './Shortcuts'
 import { ThemeToggle } from './ThemeToggle'
@@ -14,6 +15,7 @@ interface HeaderProps<S extends BaseSnapshot> {
   theme: 'light' | 'dark'
   onTheme: () => void
   onMenu: () => void
+  onExercices: () => void
   onCourse: () => void
   courseOpen: boolean
   presentation: boolean
@@ -30,6 +32,7 @@ export function Header<S extends BaseSnapshot>({
   theme,
   onTheme,
   onMenu,
+  onExercices,
   onCourse,
   courseOpen,
   presentation,
@@ -134,6 +137,15 @@ export function Header<S extends BaseSnapshot>({
           <span className="keycap">P</span>
         </button>
         <span className="header-divider" aria-hidden="true" />
+        <button
+          type="button"
+          className="header-icon-button"
+          onClick={onExercices}
+          title={fr.exercices.menuLabel}
+          aria-label={fr.exercices.menuLabel}
+        >
+          <ExercicesIcon />
+        </button>
         <button
           type="button"
           className={courseOpen ? 'header-icon-button active' : 'header-icon-button'}

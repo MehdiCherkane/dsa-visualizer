@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
+import { exerciseById } from './exercices/registry'
 import { fr } from './i18n/fr'
 import { pluginForChapter, plugins } from './registry'
 import { DemoApp } from './ui/App'
+import { ExercicesPage } from './ui/ExercicesPage'
 import { MainMenu } from './ui/MainMenu'
 import { PresaPage } from './ui/PresaPage'
 import { ZelligeBackdrop } from './ui/SiteBackdrop'
-import { MENU_HASH, navigate, useHashRoute } from './ui/useHashRoute'
+import { EXERCICES_HASH, MENU_HASH, navigate, useHashRoute } from './ui/useHashRoute'
 
 export default function App() {
   const route = useHashRoute()
@@ -20,15 +22,39 @@ export default function App() {
 
   // Unknown chapters behave like `#/`: the menu is the fallback entry point.
   const plugin = route.view === 'chapter' ? pluginForChapter(route.chapter) : undefined
+  const exerciseId = route.view === 'exercices' ? route.exerciseId : undefined
+  const exercise = exerciseId ? exerciseById(exerciseId) : undefined
   const isPresa = route.view === 'presa'
 
   useEffect(() => {
+    if (route.view === 'exercices') {
+      document.title = exerciseId
+        ? exercise
+          ? fr.exercices.exercisePageTitle(exercise.title)
+          : fr.exercices.notFoundPageTitle
+        : fr.exercices.pageTitle
+      return
+    }
     if (isPresa) {
       document.title = fr.presa.pageTitle
       return
     }
     document.title = plugin ? fr.menu.chapterPageTitle(plugin.title) : fr.menu.pageTitle
-  }, [isPresa, plugin])
+  }, [exercise, exerciseId, isPresa, plugin, route.view])
+
+  if (route.view === 'exercices') {
+    return (
+      <>
+        <ZelligeBackdrop />
+        <ExercicesPage
+          exerciseId={exerciseId}
+          theme={theme}
+          onTheme={toggleTheme}
+          onMenu={() => navigate(MENU_HASH)}
+        />
+      </>
+    )
+  }
 
   if (isPresa) {
     return (
@@ -57,6 +83,7 @@ export default function App() {
         theme={theme}
         onTheme={toggleTheme}
         onMenu={() => navigate(MENU_HASH)}
+        onExercices={() => navigate(EXERCICES_HASH)}
       />
     </>
   )
