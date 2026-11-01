@@ -8,7 +8,7 @@ Teaching platform for data structures in C (`Structures de données`), built wit
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (429 tests)
+npm test      # vitest suite (431 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
@@ -34,6 +34,8 @@ The handout itself ships as `public/exercices/tp3-somme-grands-nombres.pdf` and 
 ### Presa
 
 The « Télécharger Presa » button in the main-menu header no longer leaves the site: it opens `#/presa`, a French presentation page built from `src/ui/PresaPage.tsx`. The page introduces the Android presentation remote (Bluetooth HID keyboard + relative mouse), shows real screenshots, the three-step pairing flow, host compatibility, the no-Internet privacy note and the student credits, and offers both the real `Presa-1.0.2.apk` release download and the source repository on GitHub. Screenshots and the launcher icon are imported from `src/assets/presa/`, so they are inlined in the single-file build and the page stays fully offline (only the two GitHub links need a connection).
+
+On a phone, the visualizer remains behind the full-screen « Cette application n’est pas faite pour les téléphones » notice, but the notice now offers a **Découvrir Presa** button. It opens `#/presa` without the gate, so the presentation page is reachable from a phone; `#/presa` is also the only route that bypasses the notice on a direct load. The page uses a compact header, full-width call-to-action buttons and a single-column screenshot gallery below 520 px, and returns to the notice when the home button goes back to the menu.
 
 ## Chapters
 

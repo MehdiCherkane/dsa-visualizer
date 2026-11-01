@@ -1333,6 +1333,16 @@
   }
 }
 
+@media (max-width: 520px) {
+  .exercices-header .brand-meta {
+    display: none;
+  }
+
+  .exercices-header .brand-title-row {
+    white-space: normal;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .exercise-card,
   .exercise-card:hover {

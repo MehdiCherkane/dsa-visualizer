@@ -815,6 +815,25 @@
   }
 }
 
+@media (max-width: 520px) {
+  .presa-hero {
+    padding: 24px 18px;
+  }
+
+  .presa-actions {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .presa-cta {
+    width: 100%;
+  }
+
+  .presa-shots {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .presa-feature,
   .presa-feature:hover,

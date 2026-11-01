@@ -12,7 +12,14 @@ function readPhoneDetector(): (width: number, height: number) => boolean {
   ) => boolean
 }
 
+function readPresaRoute(): (hash: string) => boolean {
+  const match = html.match(/function isPresaRoute\(hash\) \{\s*return ([^\n]+)\n\s*\}/)
+  if (!match) throw new Error('isPresaRoute introuvable dans index.html')
+  return new Function('hash', `return ${match[1].trim()}`) as (hash: string) => boolean
+}
+
 const isPhoneScreen = readPhoneDetector()
+const isPresaRoute = readPresaRoute()
 
 const cases = [
   { label: 'iPhone SE portrait', width: 375, height: 667, phone: true },
@@ -33,5 +40,20 @@ const cases = [
 describe('détection téléphone', () => {
   it.each(cases)('$label : $width×$height → $phone', ({ width, height, phone }) => {
     expect(isPhoneScreen(width, height)).toBe(phone)
+  })
+
+  it('laisse la page Presa accessible depuis un téléphone', () => {
+    expect(isPresaRoute('#/presa')).toBe(true)
+    expect(isPresaRoute('#/presa/')).toBe(true)
+    expect(isPresaRoute('#/')).toBe(false)
+    expect(isPresaRoute('#/chapitre-4')).toBe(false)
+    expect(isPresaRoute('#/exercices/tp3-somme-grands-nombres')).toBe(false)
+  })
+
+  it('propose un lien vers la présentation Presa depuis l’avis téléphone', () => {
+    expect(html).toContain(
+      '<a id="phone-notice-presa" class="phone-notice-presa" href="#/presa">',
+    )
+    expect(html).toContain('Découvrir Presa')
   })
 })
