@@ -2,13 +2,27 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { fr } from '../i18n/fr'
+import { exercisePdfHref } from './pdf'
 import { EXERCICES_STORAGE_KEY, readExerciseProgress } from './progress'
 import { ExerciseSheetPage } from './ExerciseSheetPage'
 import { tp3Exercise } from './tp3'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+
+// jsdom does not implement the native <dialog> methods.
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+    this.setAttribute('open', '')
+  }
+  HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
+    this.removeAttribute('open')
+  }
+  HTMLElement.prototype.setPointerCapture = () => {}
+  HTMLElement.prototype.releasePointerCapture = () => {}
+  HTMLElement.prototype.hasPointerCapture = () => true
+})
 
 let container: HTMLDivElement
 let root: Root
@@ -23,6 +37,31 @@ function revealButton(): HTMLButtonElement {
   const button = container.querySelector<HTMLButtonElement>('.exercices-solution-head button')
   expect(button).not.toBeNull()
   return button as HTMLButtonElement
+}
+
+function pdfTrigger(): HTMLButtonElement {
+  const trigger = container.querySelector<HTMLButtonElement>(
+    `button[aria-label="${fr.exercices.openPdfAria(tp3Exercise.title)}"]`,
+  )
+  expect(trigger).not.toBeNull()
+  return trigger as HTMLButtonElement
+}
+
+function openPdfDrawer(): { trigger: HTMLButtonElement; dialog: HTMLDialogElement } {
+  const trigger = pdfTrigger()
+  trigger.focus()
+  act(() => {
+    trigger.click()
+  })
+  const dialog = container.querySelector<HTMLDialogElement>('dialog.course-drawer')
+  expect(dialog).not.toBeNull()
+  return { trigger, dialog: dialog as HTMLDialogElement }
+}
+
+function finishClosingAnimation(dialog: HTMLDialogElement): void {
+  act(() => {
+    dialog.dispatchEvent(new Event('animationend', { bubbles: true }))
+  })
 }
 
 beforeEach(() => {
@@ -221,6 +260,85 @@ describe('feuille d’exercices', () => {
       )
     })
     expect(window.location.hash).toBe('#/')
+  })
+
+  it('ouvre le sujet PDF dans le même tiroir latéral que les chapitres', () => {
+    expect(pdfTrigger().tagName).toBe('BUTTON')
+    expect(container.querySelector('.exercices-sheet-actions a[href$=".pdf"]')).toBeNull()
+
+    const { dialog } = openPdfDrawer()
+    const src = exercisePdfHref(tp3Exercise.id)
+
+    expect(dialog.open).toBe(true)
+    expect(dialog.getAttribute('aria-label')).toBe(fr.exercices.pdfAria(tp3Exercise.title))
+    expect(dialog.querySelector('.course-drawer-title')?.textContent).toContain(
+      fr.exercices.pdfTitle,
+    )
+    expect(dialog.querySelector('.course-drawer-chapter')?.textContent).toBe(tp3Exercise.title)
+    expect(dialog.querySelector('.course-drawer-body iframe')?.getAttribute('src')).toBe(src)
+    expect(dialog.querySelector('.course-drawer-body iframe')?.getAttribute('title')).toBe(
+      fr.exercices.pdfAria(tp3Exercise.title),
+    )
+
+    const fallback = dialog.querySelector<HTMLAnchorElement>('.course-drawer-foot a')
+    expect(fallback?.getAttribute('href')).toBe(src)
+    expect(fallback?.getAttribute('target')).toBe('_blank')
+    expect(fallback?.textContent).toContain(fr.pdfViewer.openInTab)
+  })
+
+  it('ferme le tiroir avec Échap sans quitter la feuille et rend le focus au bouton', () => {
+    const { trigger, dialog } = openPdfDrawer()
+
+    act(() => {
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(dialog.classList.contains('is-closing')).toBe(true)
+
+    finishClosingAnimation(dialog)
+    expect(container.querySelector('dialog.course-drawer')).toBeNull()
+    expect(window.location.hash).toBe('#/exercices')
+    expect(document.activeElement).toBe(trigger)
+  })
+
+  it('ferme le tiroir avec son bouton Fermer', () => {
+    const { dialog } = openPdfDrawer()
+    const close = dialog.querySelector<HTMLButtonElement>(
+      `button[aria-label="${fr.exercices.pdfCloseAria}"]`,
+    )
+    expect(close).not.toBeNull()
+
+    act(() => {
+      close?.click()
+    })
+    expect(dialog.classList.contains('is-closing')).toBe(true)
+    finishClosingAnimation(dialog)
+    expect(container.querySelector('dialog.course-drawer')).toBeNull()
+  })
+
+  it('redimensionne le sujet PDF au clavier et garde la largeur à la réouverture', () => {
+    const { dialog } = openPdfDrawer()
+    const resizer = dialog.querySelector<HTMLElement>('.course-drawer-resizer')
+    expect(resizer).not.toBeNull()
+    resizer!.focus()
+
+    act(() => {
+      resizer!.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(dialog.style.getPropertyValue('--course-width')).toBe('734px')
+    expect(resizer!.getAttribute('aria-valuenow')).toBe('734')
+
+    act(() => {
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      )
+    })
+    finishClosingAnimation(dialog)
+
+    expect(openPdfDrawer().dialog.style.getPropertyValue('--course-width')).toBe('734px')
   })
 
   it('persiste la question courante et les solutions révélées', () => {

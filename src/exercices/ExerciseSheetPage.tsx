@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { pluginForChapter } from '../registry'
 import { fr } from '../i18n/fr'
 import { navigate } from '../ui/useHashRoute'
+import { PdfDrawer } from '../ui/PdfDrawer'
 import { DemoApp } from '../ui/App'
 import { ExercicesShell } from './ExercicesShell'
 import { CodeBlock } from './CodeBlock'
@@ -32,6 +33,10 @@ export function ExerciseSheetPage({
   const [questionIndex, setQuestionIndex] = useState(initialProgress.question)
   const [revealedIds, setRevealedIds] = useState<string[]>(initialProgress.revealed)
   const [view, setView] = useState<'question' | 'simulation'>('question')
+  const [pdfOpen, setPdfOpen] = useState(false)
+  const [pdfWidth, setPdfWidth] = useState(720)
+  const openPdf = useCallback(() => setPdfOpen(true), [])
+  const closePdf = useCallback(() => setPdfOpen(false), [])
 
   const total = questions.length
   const question = questions[questionIndex] ?? questions[0]
@@ -76,6 +81,7 @@ export function ExerciseSheetPage({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.defaultPrevented) return
+      if (pdfOpen) return
       if (event.altKey || event.ctrlKey || event.metaKey) return
       const target = event.target
       if (target instanceof HTMLElement) {
@@ -102,7 +108,7 @@ export function ExerciseSheetPage({
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [goTo, questionIndex, total, view])
+  }, [goTo, pdfOpen, questionIndex, total, view])
 
   if (total === 0) {
     return (
@@ -143,9 +149,14 @@ export function ExerciseSheetPage({
             {fr.exercices.backExercises}
           </a>
           <div className="exercices-sheet-actions">
-            <a className="ghost-button" href={exercisePdfHref(exercise.id)} target="_blank" rel="noreferrer">
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={openPdf}
+              aria-label={fr.exercices.openPdfAria(exercise.title)}
+            >
               {fr.exercices.openPdf}
-            </a>
+            </button>
             {plugin ? (
               <a
                 className="ghost-button"
@@ -379,6 +390,26 @@ export function ExerciseSheetPage({
               />
             </div>
           </section>
+        ) : null}
+
+        {pdfOpen ? (
+          <PdfDrawer
+            src={exercisePdfHref(exercise.id)}
+            labels={{
+              title: fr.exercices.pdfTitle,
+              subtitle: exercise.title,
+              ariaLabel: fr.exercices.pdfAria(exercise.title),
+              close: fr.pdfViewer.close,
+              closeAria: fr.exercices.pdfCloseAria,
+              resize: fr.exercices.pdfResize,
+              openInTab: fr.pdfViewer.openInTab,
+              hint: fr.pdfViewer.hint,
+              pixelValue: fr.pdfViewer.pixelValue,
+            }}
+            initialWidth={pdfWidth}
+            onWidthChange={setPdfWidth}
+            onClose={closePdf}
+          />
         ) : null}
 
         <p className="exercices-announcer exercices-sr-only" aria-live="polite" aria-atomic="true">

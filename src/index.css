@@ -2311,17 +2311,23 @@ body.is-resizing-horizontal * {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
 }
 
 .course-drawer-title .panel-title {
+  flex: none;
   color: var(--ink);
   font-size: 10.5px;
 }
 
 .course-drawer-chapter {
+  min-width: 0;
+  overflow: hidden;
   color: var(--muted);
   font-size: 10px;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

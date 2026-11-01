@@ -8,7 +8,7 @@ Teaching platform for data structures in C (`Structures de données`), built wit
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (431 tests)
+npm test      # vitest suite (435 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
@@ -29,7 +29,7 @@ The interactive exercises come from the TP handouts: one typed data file per PDF
 
 Each question also carries its own step-by-step trace, rendered inline under the statement by `QuestionSimulationView`: stacks of 4-digit packets, highlighted digit groups, carry and variables, call stack, program output and a one-line explanation for every step, with Replay, Previous / Next and clickable step dots. The simulation is plain typed data in the same handout file, so it works offline and resets when the question changes. The Q2 trace (`remplir`) is also why the corrected solution pushes the most significant packet first: the unit packet must stay on top. For the same reason, `somme` builds the result in a temporary stack and transfers it into `S`, so the units return to the top before `afficher` walks down to the most significant packet.
 
-The handout itself ships as `public/exercices/tp3-somme-grands-nombres.pdf` and is linked with **Ouvrir le sujet (PDF)** from the sheet. A **Question / Visualiseur** switch keeps both on the same page: the Visualiseur tab embeds the chapter 3 visualizer with its operation controls and console output, no navigation required.
+The handout itself ships as `public/exercices/tp3-somme-grands-nombres.pdf` and **Ouvrir le sujet (PDF)** opens it in the same right-side drawer as the course handouts: same width, resize handle, close animation and **Ouvrir dans un nouvel onglet** fallback, with `Échap` closing only the drawer. A **Question / Visualiseur** switch keeps both on the same page: the Visualiseur tab embeds the chapter 3 visualizer with its operation controls and console output, no navigation required.
 
 ### Presa
 
