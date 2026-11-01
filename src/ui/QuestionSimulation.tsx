@@ -1,7 +1,7 @@
 import type { JSX } from 'react'
 import { useCallback, useState } from 'react'
 import { fr } from '../i18n/fr'
-import type { QuestionSimulation, SimulationDigits, SimulationStack } from './types'
+import type { QuestionSimulation, SimulationDigits, SimulationStack } from '../exercices/types'
 
 interface QuestionSimulationProps {
   simulation: QuestionSimulation

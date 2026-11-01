@@ -1,4 +1,4 @@
-import type { Exercise } from './types'
+import type { Exercise } from '../types'
 
 /**
  * TP 3 — Somme de deux grands nombres.
@@ -7,8 +7,8 @@ import type { Exercise } from './types'
  * capacity (`MAX_PAQUETS = 8`) is an explicit choice because the handout asks
  * for `pilePleine` on a dynamic stack without giving a maximum.
  */
-export const tp3Exercise: Exercise = {
-  id: 'tp3-somme-grands-nombres',
+const tp3Exercise: Exercise = {
+  id: 'chapitre-3-somme-grands-nombres',
   title: 'TP 3 — Somme de deux grands nombres',
   chapter: 3,
   intro:
@@ -29,7 +29,7 @@ export const tp3Exercise: Exercise = {
     'Le sommet de chaque pile contient le paquet le moins significatif (unités, milliers, etc.). Les fonctions sont paramétrées par un pointeur vers la pile afin de pouvoir traiter plusieurs nombres.',
   questions: [
     {
-      id: 'ex1-q1',
+      id: 'primitives-pile',
       title: 'Question 1',
       statement:
         'Écrire les fonctions `initialiser`, `pileVide`, `pilePleine`, `empiler` et `depiler` associées à une pile.\n\n' +
@@ -183,7 +183,7 @@ int depiler(GrandNombre *N)
       },
     },
     {
-      id: 'ex1-q2',
+      id: 'remplir-paquets',
       title: 'Question 2',
       statement:
         'Écrire la fonction `remplir(char *ch, GrandNombre *N)` qui permet de lire et charger une chaîne de caractères représentant le grand nombre par paquets de 4 chiffres dans la pile d’entiers.\n\n' +
@@ -319,7 +319,7 @@ void remplir(char *ch, GrandNombre *N)
       },
     },
     {
-      id: 'ex1-q3',
+      id: 'somme-paquets',
       title: 'Question 3',
       statement:
         'Écrire la fonction `somme(GrandNombre *N1, GrandNombre *N2, GrandNombre *S)` qui permet d’additionner deux grands nombres chargés chacun dans une pile.\n\n' +
@@ -455,7 +455,7 @@ void somme(GrandNombre *N1, GrandNombre *N2, GrandNombre *S)
       },
     },
     {
-      id: 'ex1-q4',
+      id: 'afficher-somme',
       title: 'Question 4',
       statement:
         'Écrire la fonction `afficher(GrandNombre *N)` qui permet d’afficher correctement un grand nombre entier chargé dans une pile d’entiers.\n\n' +
@@ -567,7 +567,7 @@ void afficher(GrandNombre *N)
       },
     },
     {
-      id: 'ex1-q5',
+      id: 'lire-deux-nombres',
       title: 'Question 5',
       statement:
         'Écrire la fonction `main()` dont on trouve la lecture des deux grands nombres (`ch1` et `ch2`) et l’affichage du résultat de leur somme.\n\n' +
@@ -695,3 +695,5 @@ int main(void)
     },
   ],
 }
+
+export const chapitre3Exercises: Exercise[] = [tp3Exercise]

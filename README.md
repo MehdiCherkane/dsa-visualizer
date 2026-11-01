@@ -8,7 +8,7 @@ Teaching platform for data structures in C (`Structures de données`), built wit
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (436 tests)
+npm test      # vitest suite (417 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
@@ -17,25 +17,22 @@ npm run dev   # local dev server
 `npm run build` produces **one self-contained `dist/index.html`** (`vite-plugin-singlefile`). Open it by double-click: no server and no network access are required — no CDNs, no external fonts or images. The optional course PDFs are the only sibling assets (see below).
 
 To publish it, follow [DEPLOY.md](DEPLOY.md): Cloudflare Pages, free plan, static, no backend.
-Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point), `#/exercices` (exercises list), `#/exercices/<id>` (one exercise sheet), `#/presa` (the Presa presentation page), plus `#/chapitre-1` through `#/chapitre-6` for the six chapters. Unknown hashes fall back to the menu, and the header buttons or the `A%chap` / `? Menu` header button leaves the demo.
+
+Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point), `#/exercices` (exercise sheets), `#/exercices/<id>` (one sheet), and `#/chapitre-1` through `#/chapitre-6` for the six chapters. Unknown hashes fall back to the menu, and `Échap` or the `← Menu` header button leaves the demo.
 
 ### Course PDFs
 
 The six course handouts ship as `public/cours/chapitre-<n>.pdf` (`chapitre-1.pdf` … `chapitre-6.pdf`, ~5.4 MB total). The document button in the header opens the matching PDF in a right-side drawer, with a direct **Ouvrir dans un nouvel onglet** fallback. Drag the drawer's left edge (or focus it and use `←`/`→`) to widen or narrow it; double-click resets the width, which is kept while the app stays open. The PDFs are copied to `dist/cours/`; they are never inlined, so the HTML stays around 1 MB whatever their size. Missing files do not break the app or the build, but the drawer has nothing to display for that chapter. Some browsers refuse to embed PDFs from `file://`; the new-tab link still opens the document.
 
-### Exercices
+### Exercices (TP)
 
-The interactive exercises come from the TP handouts: one typed data file per PDF under `src/exercices/` (TP 3: `src/exercices/tp3.ts`, 1 exercise, 5 questions) plus one `registerExercices` line in `src/exercices/index.ts`. The list lives at `#/exercices` and the sheet at `#/exercices/<id>`; the header menu card, the header link and the chapter-aware « Simuler dans le visualiseur » button all derive from the same registry, so `core/` and the demo shell are untouched. Every question shows one statement at a time (progress bar, clickable stepper, Previous / Next, `←` / `→` keys, `Échap` back to the menu), keeps the solution hidden behind « Afficher la solution », and stores the current question plus the revealed solutions under the versioned key `exercices-progress-v1` with a safe fallback.
+The interactive exercise sheets follow one standard: one typed data file per handout under `src/exercices/data/chapitre-<n>.ts`, spread into `src/exercices/registry.ts`. Adding a new TP is deliberately two steps — create the data file, then add its exported array to the registry. The list lives at `#/exercices` and each sheet at `#/exercices/<id>`; the main-menu card, the header link and the chapter-aware **Simuler dans le visualiseur** button all derive from the same registry.
 
-Each question also carries its own step-by-step trace, rendered inline under the statement by `QuestionSimulationView`: stacks of 4-digit packets, highlighted digit groups, carry and variables, call stack, program output and a one-line explanation for every step, with Replay, Previous / Next and clickable step dots. The simulation is plain typed data in the same handout file, so it works offline and resets when the question changes. The Q2 trace (`remplir`) is also why the corrected solution pushes the most significant packet first: the unit packet must stay on top. For the same reason, `somme` builds the result in a temporary stack and transfers it into `S`, so the units return to the top before `afficher` walks down to the most significant packet.
+Each sheet shows one question at a time (progress bar, clickable stepper, Previous / Next, `←` / `→`, `Échap` back to the menu), keeps the solution hidden behind **Afficher la solution**, and stores the current question plus revealed solutions under the versioned key `ldc-exercices-v1` with a safe fallback. Statements support inline backticks and fenced `c` code blocks, so longer course snippets stay in the typed data file.
 
-The handout itself ships as `public/exercices/tp3-somme-grands-nombres.pdf` and **Ouvrir le sujet (PDF)** opens it in the same right-side drawer as the course handouts: same width, resize handle, close animation and **Ouvrir dans un nouvel onglet** fallback, with `Échap` closing only the drawer. A **Question / Visualiseur** switch keeps both on the same page: the Visualiseur tab embeds the chapter 3 visualizer with its operation controls and console output, no navigation required.
+A question may also carry an optional `simulation`: a list of frames with stacks of 4-digit packets, highlighted digit groups, carry, variables, call stack and program output. `src/ui/QuestionSimulation.tsx` renders it inline under the statement with Replay, Previous / Next and clickable step dots. The data stays offline and resets when the question changes.
 
-### Presa
-
-The « Télécharger Presa » button in the main-menu header no longer leaves the site: it opens `#/presa`, a French presentation page built from `src/ui/PresaPage.tsx`. The page introduces the Android presentation remote (Bluetooth HID keyboard + relative mouse), shows real screenshots, the three-step pairing flow, host compatibility, the no-Internet privacy note and the student credits, and offers both the real `Presa-1.0.2.apk` release download and the source repository on GitHub. Screenshots and the launcher icon are imported from `src/assets/presa/`, so they are inlined in the single-file build and the page stays fully offline (only the two GitHub links need a connection).
-
-On a phone, the visualizer remains behind the full-screen « Cette application n’est pas faite pour les téléphones » notice, but the notice now offers a **Découvrir Presa** button. It opens `#/presa` without the gate, so the presentation page is reachable from a phone; `#/presa` is also the only route that bypasses the notice on a direct load. The page uses a compact header, full-width call-to-action buttons and a single-column screenshot gallery below 520 px, and returns to the notice when the home button goes back to the menu.
+Chapter 1 ships three sheets (`src/exercices/data/chapitre1.ts`, 7 questions). Chapter 3 ships the TP 3 handout **Somme de deux grands nombres** (`src/exercices/data/chapitre3.ts`, 5 questions, one step-by-step simulation per question), with its PDF at `public/exercices/chapitre-3.pdf`.
 
 ## Chapters
 
@@ -112,8 +109,7 @@ src/
                          C sources + symbolic line labels, steps, scenarios
   structures/shared/     shared linked-node SVG renderer, camera and geometry
   ui/                    shared shell, layout, panels, main menu, hash routing
-  exercices/              typed TP handouts: data, registry, progress, pages
-  registry.ts            registers each chapter and resolves #/chapitre-<n>
+  exercices/             typed TP data, registry and progress persistence
   registry.ts            registers each chapter and resolves #/chapitre-<n>
 c/
   chapitre-5/lddc.c      standalone C11 program for the circular list

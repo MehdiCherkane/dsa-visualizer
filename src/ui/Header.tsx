@@ -2,9 +2,8 @@ import type { CSSProperties, JSX } from 'react'
 import type { BaseSnapshot, ScenarioDef, StructurePlugin } from '../core/types'
 import { config } from '../config'
 import { fr } from '../i18n/fr'
-import { ExerciseIcon } from '../exercices/ExerciseIcon'
-import { EXERCICES_HASH, navigate } from './useHashRoute'
 import { BrandMark } from './BrandMark'
+import { ExercicesIcon } from './ExercicesIcon'
 import { ScenariosMenu } from './ScenariosMenu'
 import { Shortcuts } from './Shortcuts'
 import { ThemeToggle } from './ThemeToggle'
@@ -16,6 +15,7 @@ interface HeaderProps<S extends BaseSnapshot> {
   theme: 'light' | 'dark'
   onTheme: () => void
   onMenu: () => void
+  onExercices: () => void
   onCourse: () => void
   courseOpen: boolean
   presentation: boolean
@@ -32,6 +32,7 @@ export function Header<S extends BaseSnapshot>({
   theme,
   onTheme,
   onMenu,
+  onExercices,
   onCourse,
   courseOpen,
   presentation,
@@ -69,9 +70,18 @@ export function Header<S extends BaseSnapshot>({
           <div className="brand-meta">
             <span className="chapter-chip">{fr.menu.chapterLabel(plugin.chapter)}</span>
             <span className="brand-course">{config.course}</span>
+            <span className="brand-sep brand-institution-sep" aria-hidden="true">
+              ·
+            </span>
+            <span className="brand-institution-name">{config.institutionName}</span>
           </div>
           <div className="brand-title-row">
             <h1>{plugin.title}</h1>
+            <span className="brand-rule" aria-hidden="true" />
+            <span className="brand-credit">
+              <span className="credit-prefix">{config.creditPrefix} </span>
+              <span className="credit-name">{config.professor}</span>
+            </span>
           </div>
         </div>
       </div>
@@ -113,19 +123,6 @@ export function Header<S extends BaseSnapshot>({
           />
         </div>
         <span className="header-divider" aria-hidden="true" />
-        <a
-          className="header-exercices-link"
-          href="#/exercices"
-          onClick={(event) => {
-            event.preventDefault()
-            navigate(EXERCICES_HASH)
-          }}
-          title={fr.exercices.menuLinkAria}
-          aria-label={fr.exercices.menuLinkAria}
-        >
-          <ExerciseIcon />
-          <span>{fr.exercices.menuLink}</span>
-        </a>
         <button
           type="button"
           className={presentation ? 'secondary-button presentation-button active' : 'secondary-button presentation-button'}
@@ -140,6 +137,15 @@ export function Header<S extends BaseSnapshot>({
           <span className="keycap">P</span>
         </button>
         <span className="header-divider" aria-hidden="true" />
+        <button
+          type="button"
+          className="header-icon-button"
+          onClick={onExercices}
+          title={fr.exercices.menuLabel}
+          aria-label={fr.exercices.menuLabel}
+        >
+          <ExercicesIcon />
+        </button>
         <button
           type="button"
           className={courseOpen ? 'header-icon-button active' : 'header-icon-button'}

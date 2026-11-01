@@ -1,5 +1,6 @@
 import type { JSX } from 'react'
 import estbmLogo from '../assets/estbm-logo.svg'
+import { config } from '../config'
 import { fr } from '../i18n/fr'
 import './SiteFooter.css'
 
@@ -16,6 +17,10 @@ export function SiteFooter(): JSX.Element {
           width={26}
           height={26}
         />
+        <span className="site-footer-credit">
+          {config.institution}
+          <span className="site-footer-source"> · {config.source}</span>
+        </span>
       </span>
       <span className="site-footer-contact">
         {fr.footer.contact} :{' '}

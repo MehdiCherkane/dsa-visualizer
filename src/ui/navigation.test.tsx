@@ -67,30 +67,6 @@ describe('navigation par hash', () => {
     expect(markup).not.toContain('ldc-svg')
   })
 
-  it('ouvre la page Presa depuis #/presa', () => {
-    window.location.hash = PRESA_HASH
-    const markup = renderToStaticMarkup(<App />)
-    expect(markup).toContain(fr.presa.heroLead)
-    expect(markup).toContain(fr.presa.apkUrl)
-    expect(markup).not.toContain(fr.menu.subtitle)
-    expect(markup).not.toContain(fr.exercices.pageTitle)
-  })
-
-  it('ouvre la page Presa depuis le bouton du menu', () => {
-    renderApp()
-    const trigger = query<HTMLAnchorElement>('.presa-download')
-    expect(trigger).not.toBeNull()
-
-    act(() => {
-      trigger?.click()
-    })
-    goTo(window.location.hash)
-
-    expect(query('.presa-page')).not.toBeNull()
-    expect(query('.presa-hero-title')?.textContent).toBe(fr.presa.heroTitle)
-    expect(document.title).toBe(fr.presa.pageTitle)
-  })
-
   it('ouvre la démonstration à partir de #/chapitre-4', () => {
     window.location.hash = '#/chapitre-4'
     const markup = renderToStaticMarkup(<App />)
@@ -108,16 +84,16 @@ describe('navigation par hash', () => {
 
     goTo(PRESA_HASH)
     expect(document.title).toBe(fr.presa.pageTitle)
-    expect(query('.presa-page')).not.toBeNull()
+    expect(query('.presa-app')).not.toBeNull()
     expect(query('.menu-app')).toBeNull()
-    expect(query(`button[aria-label="${fr.menu.homeLabel}"]`)).not.toBeNull()
+    expect(query('.presa-back')?.getAttribute('href')).toBe(MENU_HASH)
     const cta = query<HTMLAnchorElement>('.presa-cta')
-    expect(cta?.getAttribute('href')).toBe(fr.presa.apkUrl)
+    expect(cta?.getAttribute('href')).toBe('https://github.com/HamzaAGOUR/Presa')
     expect(cta?.getAttribute('target')).toBe('_blank')
 
     goTo(MENU_HASH)
     expect(query('.menu-app')).not.toBeNull()
-    expect(query('.presa-page')).toBeNull()
+    expect(query('.presa-app')).toBeNull()
   })
 
   it('ouvre le chapitre 5 sur le scénario Liste vide', () => {

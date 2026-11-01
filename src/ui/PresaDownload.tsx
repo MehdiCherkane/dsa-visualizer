@@ -1,19 +1,13 @@
-import type { JSX, MouseEvent } from 'react'
+import type { JSX } from 'react'
 import { fr } from '../i18n/fr'
-import { navigate, PRESA_HASH } from './useHashRoute'
+import { PRESA_HASH } from './useHashRoute'
 
-/** Link from the main menu to the Presa presentation page. */
+/** Menu link to the Presa presentation page. */
 export function PresaDownload(): JSX.Element {
-  const open = (event: MouseEvent<HTMLAnchorElement>): void => {
-    event.preventDefault()
-    navigate(PRESA_HASH)
-  }
-
   return (
     <a
       className="presa-download"
       href={PRESA_HASH}
-      onClick={open}
       title={fr.presa.downloadHint}
       aria-label={fr.presa.downloadHint}
     >

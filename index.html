@@ -15,9 +15,6 @@
       function isPhoneScreen(width, height) {
         return Math.min(width, height) < 600
       }
-      function isPresaRoute(hash) {
-        return /^#\/presa\/?$/.test(hash)
-      }
       ;(function () {
         var continued = false
         if (ALLOW_CONTINUE) {
@@ -25,8 +22,7 @@
             continued = window.sessionStorage.getItem(PHONE_NOTICE_CONTINUE_KEY) === '1'
           } catch (error) {}
         }
-        var presa = isPresaRoute(window.location.hash)
-        if (isPhoneScreen(window.screen.width, window.screen.height) && !continued && !presa) {
+        if (isPhoneScreen(window.screen.width, window.screen.height) && !continued) {
           document.documentElement.classList.add('is-phone')
         }
       })()
@@ -273,34 +269,10 @@
       }
 
       .phone-notice-primary:focus-visible,
-      .phone-notice-presa:focus-visible,
       .phone-notice-continue:focus-visible,
       .phone-notice-url:focus-visible {
         outline: 3px solid var(--pn-focus);
         outline-offset: 2px;
-      }
-
-      .phone-notice-presa {
-        box-sizing: border-box;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 48px;
-        margin-top: 8px;
-        padding: 12px 18px;
-        border: 1px solid var(--pn-gold-line);
-        border-radius: 12px;
-        background: var(--pn-panel);
-        color: var(--pn-ink);
-        font-size: 15px;
-        font-weight: 800;
-        line-height: 1;
-        text-decoration: none;
-        touch-action: manipulation;
-      }
-
-      .phone-notice-presa:hover {
-        background: var(--pn-input-bg);
       }
 
       .phone-notice-status {
@@ -546,9 +518,6 @@
             <button id="phone-notice-primary" class="phone-notice-primary" type="button">
               Copier le lien
             </button>
-            <a id="phone-notice-presa" class="phone-notice-presa" href="#/presa">
-              Découvrir Presa
-            </a>
             <p
               id="phone-notice-status"
               class="phone-notice-status"
@@ -568,60 +537,30 @@
             </a>
           </div>
         </div>
+
+        <footer class="phone-notice-footer">
+          <span>Visualiseur de structures de données · DUT GI S3 · EST Béni Mellal</span>
+          <span>d’après le cours du Pr. M. OUTANOUTE</span>
+        </footer>
       </div>
     </section>
 
     <script>
       ;(function () {
         var html = document.documentElement
-        var isPhone = isPhoneScreen(window.screen.width, window.screen.height)
-        if (!isPhone) return
-
-        var continued = false
-        if (ALLOW_CONTINUE) {
-          try {
-            continued = window.sessionStorage.getItem(PHONE_NOTICE_CONTINUE_KEY) === '1'
-          } catch (error) {}
-        }
-        if (continued) return
+        if (!html.classList.contains('is-phone')) return
 
         var root = document.getElementById('root')
         var notice = document.getElementById('phone-notice')
         var primary = document.getElementById('phone-notice-primary')
-        var presaLink = document.getElementById('phone-notice-presa')
         var status = document.getElementById('phone-notice-status')
         var input = document.getElementById('phone-notice-url')
         var continueLink = document.getElementById('phone-notice-continue')
 
-        if (!root || !notice || !primary || !presaLink || !status || !input || !continueLink) {
-          return
-        }
+        if (!root || !notice || !primary || !status || !input || !continueLink) return
 
-        function setGate(active, moveFocus) {
-          if (active) {
-            html.classList.add('is-phone')
-            notice.hidden = false
-            root.setAttribute('inert', '')
-            root.setAttribute('aria-hidden', 'true')
-            if (moveFocus) primary.focus({ preventScroll: true })
-            return
-          }
-          html.classList.remove('is-phone')
-          notice.hidden = true
-          root.removeAttribute('inert')
-          root.removeAttribute('aria-hidden')
-          window.requestAnimationFrame(function () {
-            var heading = root.querySelector('h1')
-            if (!heading) return
-            heading.setAttribute('tabindex', '-1')
-            heading.focus({ preventScroll: true })
-          })
-        }
-
-        function syncGate() {
-          var active = !isPresaRoute(window.location.hash)
-          setGate(active, active)
-        }
+        root.setAttribute('inert', '')
+        root.setAttribute('aria-hidden', 'true')
 
         var canShare = typeof navigator.share === 'function'
         primary.textContent = canShare ? 'Partager le lien' : 'Copier le lien'
@@ -686,14 +625,16 @@
             try {
               window.sessionStorage.setItem(PHONE_NOTICE_CONTINUE_KEY, '1')
             } catch (error) {}
-            setGate(false, false)
+            html.classList.remove('is-phone')
+            root.removeAttribute('inert')
+            root.removeAttribute('aria-hidden')
+            notice.hidden = true
             var target = root.querySelector('button, a[href], input, select, textarea, [tabindex]')
             if (target) target.focus({ preventScroll: true })
           })
         }
 
-        window.addEventListener('hashchange', syncGate)
-        syncGate()
+        primary.focus({ preventScroll: true })
       })()
     </script>
 

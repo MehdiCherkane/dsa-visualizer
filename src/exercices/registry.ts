@@ -1,21 +1,23 @@
+import { chapitre1Exercises } from './data/chapitre1'
+import { chapitre3Exercises } from './data/chapitre3'
 import type { Exercise } from './types'
 
-const registered: Exercise[] = []
+/**
+ * Adding a new PDF is deliberately a two-step operation: create a typed data
+ * file under `data/`, then spread its exercises into this list.
+ */
+const registeredExercises: Exercise[] = [...chapitre1Exercises, ...chapitre3Exercises]
 
-/** Adds sheets to the exercise registry. Duplicate identifiers are refused. */
-export function registerExercices(...exercises: Exercise[]): void {
-  for (const exercise of exercises) {
-    if (registered.some((candidate) => candidate.id === exercise.id)) {
-      throw new Error(`Exercice déjà enregistré : ${exercise.id}`)
-    }
-    registered.push(exercise)
-  }
+export const exercises: readonly Exercise[] = registeredExercises
+
+export function exerciseById(id: string): Exercise | undefined {
+  return registeredExercises.find((exercise) => exercise.id === id)
 }
 
-export function getExercices(): readonly Exercise[] {
-  return registered
+export function exercisesForChapter(chapter: number): readonly Exercise[] {
+  return registeredExercises.filter((exercise) => exercise.chapter === chapter)
 }
 
-export function exerciceById(id: string): Exercise | undefined {
-  return registered.find((exercise) => exercise.id === id)
+export function totalQuestionCount(list: readonly Exercise[] = registeredExercises): number {
+  return list.reduce((total, exercise) => total + exercise.questions.length, 0)
 }

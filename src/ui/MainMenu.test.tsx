@@ -4,7 +4,6 @@ import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fr } from '../i18n/fr'
-import { getExercices } from '../exercices'
 import { plugins } from '../registry'
 import { MainMenu } from './MainMenu'
 import { chapterHash, MENU_HASH, PRESA_HASH } from './useHashRoute'
@@ -45,11 +44,6 @@ describe('menu principal', () => {
   it('affiche le titre et le sous-titre', () => {
     expect(container.textContent).toContain(fr.menu.title)
     expect(container.textContent).toContain(fr.menu.subtitle)
-
-    const title = container.querySelector('#menu-title')
-    const eyebrow = container.querySelector('.menu-eyebrow')
-    expect(eyebrow?.textContent).toBe(fr.menu.eyebrow)
-    expect(title?.nextElementSibling).toBe(eyebrow)
   })
 
   it('ouvre les crédits depuis la barre et affiche les noms dans l’ordre', () => {
@@ -67,7 +61,7 @@ describe('menu principal', () => {
     expect(credits.indexOf('Omar Moussaid')).toBeLessThan(credits.indexOf('Hamza Agour'))
   })
 
-  it('garde le bouton de thème tout à droite de la barre', () => {
+  it('place le téléchargement Presa entre le thème et les crédits', () => {
     const actions = container.querySelector('.header-actions')
     expect(actions).not.toBeNull()
     const children = Array.from(actions?.children ?? [])
@@ -81,35 +75,14 @@ describe('menu principal', () => {
       element.classList.contains('credits-menu'),
     )
 
-    expect(presaIndex).toBeGreaterThanOrEqual(0)
-    expect(creditsIndex).toBeGreaterThan(presaIndex)
-    expect(themeIndex).toBeGreaterThan(creditsIndex)
-    expect(themeIndex).toBe(children.length - 1)
+    expect(themeIndex).toBeGreaterThanOrEqual(0)
+    expect(themeIndex).toBeLessThan(presaIndex)
+    expect(presaIndex).toBeLessThan(creditsIndex)
 
     const link = children[presaIndex] as HTMLAnchorElement
     expect(link.getAttribute('href')).toBe(PRESA_HASH)
     expect(link.hasAttribute('target')).toBe(false)
     expect(link.textContent).toContain(fr.presa.download)
-
-    act(() => {
-      link.click()
-    })
-    expect(window.location.hash).toBe(PRESA_HASH)
-  })
-
-  it('place la section Exercices sous les chapitres', () => {
-    const chapters = container.querySelector('[aria-labelledby="menu-chapters"]')
-    const exercises = container.querySelector('.menu-exercices-section')
-    expect(chapters).not.toBeNull()
-    expect(exercises).not.toBeNull()
-    expect(
-      chapters!.compareDocumentPosition(exercises!) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-
-    const exercise = getExercices()[0]
-    const count = exercise.questions.length
-    expect(exercises?.textContent).toContain(fr.exercices.questionCount(count))
-    expect(exercises?.textContent).not.toContain(`${count} ${fr.exercices.questionCount(count)}`)
   })
 
   it('rend une carte par plugin enregistré, construite depuis le registre', () => {

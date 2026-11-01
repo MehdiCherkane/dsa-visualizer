@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
+import { exerciseById } from './exercices/registry'
 import { fr } from './i18n/fr'
-import { exerciceById, getExercices, pluginForChapter, plugins } from './registry'
+import { pluginForChapter, plugins } from './registry'
 import { DemoApp } from './ui/App'
-import { ExercicesPage } from './exercices/ExercicesPage'
-import { ExerciseSheetPage } from './exercices/ExerciseSheetPage'
+import { ExercicesPage } from './ui/ExercicesPage'
 import { MainMenu } from './ui/MainMenu'
 import { PresaPage } from './ui/PresaPage'
 import { ZelligeBackdrop } from './ui/SiteBackdrop'
-import { MENU_HASH, navigate, useHashRoute } from './ui/useHashRoute'
+import { EXERCICES_HASH, MENU_HASH, navigate, useHashRoute } from './ui/useHashRoute'
 
 export default function App() {
   const route = useHashRoute()
@@ -20,56 +20,47 @@ export default function App() {
     document.documentElement.dataset.theme = theme
   }, [theme])
 
+  // Unknown chapters behave like `#/`: the menu is the fallback entry point.
   const plugin = route.view === 'chapter' ? pluginForChapter(route.chapter) : undefined
-  const exercise = route.view === 'exercice' ? exerciceById(route.exerciseId) : undefined
+  const exerciseId = route.view === 'exercices' ? route.exerciseId : undefined
+  const exercise = exerciseId ? exerciseById(exerciseId) : undefined
+  const isPresa = route.view === 'presa'
 
   useEffect(() => {
-    const nextTitle =
-      route.view === 'chapter' && plugin
-        ? fr.menu.chapterPageTitle(plugin.title)
-        : route.view === 'exercices'
-          ? fr.exercices.pageTitle
-          : route.view === 'exercice' && exercise
-            ? fr.exercices.sheetPageTitle(exercise.title)
-            : route.view === 'presa'
-              ? fr.presa.pageTitle
-              : fr.menu.pageTitle
-    document.title = nextTitle
-  }, [route, plugin, exercise])
-
-  const exercices = getExercices()
-
-  if (route.view === 'presa') {
-    return (
-      <>
-        <ZelligeBackdrop />
-        <PresaPage theme={theme} onTheme={toggleTheme} />
-      </>
-    )
-  }
+    if (route.view === 'exercices') {
+      document.title = exerciseId
+        ? exercise
+          ? fr.exercices.exercisePageTitle(exercise.title)
+          : fr.exercices.notFoundPageTitle
+        : fr.exercices.pageTitle
+      return
+    }
+    if (isPresa) {
+      document.title = fr.presa.pageTitle
+      return
+    }
+    document.title = plugin ? fr.menu.chapterPageTitle(plugin.title) : fr.menu.pageTitle
+  }, [exercise, exerciseId, isPresa, plugin, route.view])
 
   if (route.view === 'exercices') {
     return (
       <>
         <ZelligeBackdrop />
-        <ExercicesPage exercises={exercices} theme={theme} onTheme={toggleTheme} />
+        <ExercicesPage
+          exerciseId={exerciseId}
+          theme={theme}
+          onTheme={toggleTheme}
+          onMenu={() => navigate(MENU_HASH)}
+        />
       </>
     )
   }
 
-  if (route.view === 'exercice') {
-    if (!exercise) {
-      return (
-        <>
-          <ZelligeBackdrop />
-          <ExercicesPage exercises={exercices} theme={theme} onTheme={toggleTheme} />
-        </>
-      )
-    }
+  if (isPresa) {
     return (
       <>
         <ZelligeBackdrop />
-        <ExerciseSheetPage key={exercise.id} exercise={exercise} theme={theme} onTheme={toggleTheme} />
+        <PresaPage theme={theme} onTheme={toggleTheme} />
       </>
     )
   }
@@ -92,6 +83,7 @@ export default function App() {
         theme={theme}
         onTheme={toggleTheme}
         onMenu={() => navigate(MENU_HASH)}
+        onExercices={() => navigate(EXERCICES_HASH)}
       />
     </>
   )

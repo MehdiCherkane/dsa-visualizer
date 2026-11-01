@@ -1,484 +1,1137 @@
-/* Exercices pages: shared shell, hero, callout, list cards and the one-question
-   sheet, reusing the design tokens and the monospaced code language of the demo. */
+/* Exercise sheets: list, question navigation and hidden C solutions. */
 
-.exercices-app.app.has-footer {
-  grid-template-rows: var(--header-h) minmax(0, 1fr) auto;
+.exercices-app {
+  --header-h: 64px;
+  --gold-ink: var(--gold);
+  --muted-ink: var(--muted);
+  grid-template-rows: var(--header-h) minmax(0, 1fr) auto auto;
 }
 
-.exercices-main {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 6px 44px 24px;
+/* Text-only overrides: the shared light palette is too pale for small copy. */
+[data-theme='light'] .exercices-app {
+  --gold-ink: #7a5f0a;
+  --muted-ink: #59658a;
 }
 
-.exercices-main.exercices-sheet-main {
-  gap: 16px;
+.exercices-app .chapter-chip {
+  color: var(--gold-ink);
 }
 
-/* ---------------- header ---------------- */
+.exercices-app .brand-course,
+.exercices-app .brand-institution-name,
+.exercices-app .brand-credit,
+.exercices-app .brand-sep {
+  color: var(--muted-ink);
+}
 
-.exercices-brand-title {
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: -0.015em;
-  line-height: 1.25;
-  color: var(--ink);
-  white-space: nowrap;
+.exercices-app .site-footer-contact a {
+  color: var(--gold-ink);
+}
+
+.exercices-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.exercices-header .brand-institution-name {
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.exercices-chip {
-  align-self: flex-start;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--panel-2);
-  padding: 3px 9px;
-  color: var(--ink-2);
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
+.exercices-header-link {
+  height: 40px;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 11.5px;
+  text-decoration: none;
 }
 
-/* ---------------- hero (list page) ---------------- */
-
-.exercices-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-  align-items: center;
-  gap: 8px 24px;
-  flex: none;
-  width: auto;
-  margin: 0 0.45cm;
-  padding: 38px 44px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, #f0c56a 34%, transparent);
-  border-radius: 26px;
-  background:
-    radial-gradient(ellipse at 74% 46%, rgba(37, 99, 235, 0.32), transparent 46%),
-    radial-gradient(ellipse at 88% 88%, rgba(240, 197, 106, 0.12), transparent 40%),
-    linear-gradient(135deg, #141d52 0%, #0c123a 52%, #101747 100%);
-  color: #f4f6ff;
-  box-shadow: 0 26px 70px rgba(11, 16, 52, 0.28);
+.exercices-header-link .button-icon {
+  width: 16px;
+  height: 16px;
 }
 
-[data-theme='dark'] .exercices-hero {
-  background:
-    radial-gradient(ellipse at 74% 46%, rgba(37, 99, 235, 0.26), transparent 46%),
-    radial-gradient(ellipse at 88% 88%, rgba(240, 197, 106, 0.1), transparent 40%),
-    linear-gradient(135deg, #101838, #070b18 54%, #0b1230);
-  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.45);
+.exercices-main {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 4px 0 24px;
+  scrollbar-color: var(--line-strong) transparent;
 }
 
-.exercices-hero-copy,
-.exercices-hero-art {
-  position: relative;
-  z-index: 1;
-}
-
-.exercices-hero-copy {
+.exercices-wrap {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  min-width: 0;
+  gap: 18px;
+  width: min(1500px, 100%);
+  margin: 0 auto;
+  padding: 0 44px;
 }
 
-.exercices-hero-eyebrow {
-  margin: 0 0 14px;
-  color: #f0c56a;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.exercices-hero-title {
-  margin: 0;
-  color: #ffffff;
-  font-size: clamp(38px, 4.6vw, 62px);
-  font-weight: 800;
-  letter-spacing: -0.045em;
-  line-height: 0.96;
-}
-
-.exercices-hero-lead {
-  max-width: 460px;
-  margin: 18px 0 0;
-  color: rgba(238, 241, 255, 0.76);
-  font-size: 17px;
-  line-height: 1.5;
-}
-
-.exercices-hero-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 20px;
-}
-
-.exercices-stat {
-  display: inline-flex;
-  align-items: baseline;
+.exercices-mandatory {
+  display: grid;
   gap: 6px;
-  border: 1px solid rgba(240, 197, 106, 0.35);
-  border-radius: 999px;
-  background: rgba(10, 14, 40, 0.35);
-  padding: 6px 12px;
-  color: rgba(238, 241, 255, 0.78);
-  font-size: 10.5px;
-  font-weight: 700;
-}
-
-.exercices-stat strong {
-  color: #ffffff;
-  font-size: 13px;
-}
-
-.exercices-hero-art {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.exercices-hero-icon {
-  width: 128px;
-  height: 128px;
-  color: #f0c56a;
-}
-
-/* ---------------- callout ---------------- */
-
-.exercices-callout {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  flex: none;
-  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
-  border-left: 3px solid var(--gold);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--gold-soft) 60%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--gold) 50%, var(--line));
+  border-left: 4px solid var(--gold);
+  border-radius: 13px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-soft) 72%, transparent), transparent 78%),
+    var(--panel);
+  padding: 11px 16px;
   box-shadow: var(--shadow-soft);
-  padding: 12px 14px;
 }
 
-.exercices-callout p {
+.exercices-mandatory p {
   margin: 0;
   color: var(--ink);
   font-size: 12.5px;
-  font-weight: 650;
+  font-weight: 560;
   line-height: 1.5;
 }
 
-/* ---------------- question / simulation switch ---------------- */
-
-.exercices-view-switch {
-  display: inline-flex;
-  align-self: flex-start;
-  flex: none;
-  gap: 4px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--panel-2);
-  box-shadow: var(--shadow-soft);
-  padding: 4px;
-}
-
-.exercices-view-switch button {
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  padding: 7px 18px;
+.exercices-mandatory .exercices-mandatory-compare {
   color: var(--ink-2);
-  font-size: 12px;
-  font-weight: 750;
-  line-height: 1;
-  cursor: pointer;
-  transition: background 140ms ease, color 140ms ease;
+  font-weight: 500;
 }
 
-.exercices-view-switch button:hover {
-  color: var(--ink);
-}
-
-.exercices-view-switch button.active {
-  background: var(--gold);
-  color: var(--ink);
-}
-
-.exercices-view-switch button:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 2px;
-}
-
-.exercices-workspace[hidden],
-.exercices-simulation[hidden] {
-  display: none;
-}
-
-.exercices-sheet-main.is-simulating .exercices-intro {
-  display: none;
+.exercices-eyebrow {
+  margin: 0 0 7px;
+  color: var(--gold-ink);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 /* ---------------- list ---------------- */
 
-.exercices-list-section {
-  flex: none;
+.exercices-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--gold) 17%, transparent), transparent 34%),
+    radial-gradient(circle at 8% 92%, color-mix(in srgb, var(--navy) 10%, transparent), transparent 38%),
+    var(--panel);
+  padding: 30px 34px;
+  box-shadow: var(--shadow-soft);
 }
 
-.exercise-list {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+.exercices-hero-copy {
+  min-width: 0;
+  max-width: 720px;
+}
+
+.exercices-hero h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(30px, 3.3vw, 46px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+}
+
+.exercices-subtitle {
+  max-width: 640px;
+  margin: 14px 0 0;
+  color: var(--ink-2);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.exercices-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 18px;
+}
+
+.exercices-hero-meta span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+  padding: 4px 10px;
+  color: var(--ink-2);
+  font-size: 10.5px;
+  font-weight: 750;
+}
+
+.exercices-hero-actions {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.exercices-hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 84px;
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  border-radius: 24px;
+  background: var(--gold-soft);
+  color: var(--gold);
+  transform: rotate(-4deg);
+}
+
+.exercices-hero-icon .button-icon {
+  width: 42px;
+  height: 42px;
+}
+
+.exercices-pdf-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+  padding: 0 12px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 750;
+  text-decoration: none;
+  box-shadow: var(--shadow-soft);
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.exercices-pdf-link:hover {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+  transform: translateY(-1px);
+}
+
+.exercices-pdf-link .button-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--gold);
+}
+
+.exercices-list-section {
+  display: flex;
+  flex-direction: column;
   gap: 14px;
+}
+
+.exercices-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 28px;
+}
+
+.exercices-section-head h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(23px, 2.4vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.exercices-section-note {
+  max-width: 470px;
+  margin: 0 0 2px;
+  color: var(--muted-ink);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.exercices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 16px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.exercise-card {
+.exercice-card {
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
+  flex-direction: column;
+  gap: 14px;
   height: 100%;
-  min-height: 190px;
+  min-height: 280px;
   border: 1.5px solid var(--line);
-  border-radius: 22px;
+  border-radius: 19px;
   background: var(--panel);
-  box-shadow: var(--shadow-soft);
-  padding: 22px;
+  padding: 20px;
   color: var(--ink);
   text-decoration: none;
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  box-shadow: var(--shadow-soft);
+  transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
 }
 
-.exercise-card:hover {
+.exercice-card:hover {
   border-color: var(--gold);
-  box-shadow: 0 22px 44px rgba(16, 22, 63, 0.18);
-  transform: translateY(-3px);
+  box-shadow: 0 20px 40px rgba(16, 22, 63, 0.16);
+  transform: translateY(-4px);
 }
 
-[data-theme='dark'] .exercise-card:hover {
-  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.45);
+[data-theme='dark'] .exercice-card:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.42);
 }
 
-.exercise-card:focus-visible {
+.exercice-card:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
 
-.exercise-card-icon {
-  flex: none;
+.exercice-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.exercice-card-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border: 1px solid color-mix(in srgb, var(--gold) 42%, var(--line));
+  border-radius: 12px;
   background: var(--gold-soft);
   color: var(--gold);
 }
 
-.exercise-card-icon svg {
-  width: 26px;
-  height: 26px;
+.exercice-card-icon .button-icon {
+  width: 21px;
+  height: 21px;
 }
 
-.exercise-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.exercice-card-body {
   min-width: 0;
-  flex: 1;
 }
 
-.exercise-card-kicker {
-  align-self: flex-start;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--panel-2);
-  padding: 3px 9px;
-  color: var(--ink-2);
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.exercise-card-title {
+.exercice-card-body h3 {
   margin: 0;
   color: var(--ink);
   font-size: 20px;
   font-weight: 800;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
   line-height: 1.2;
 }
 
-.exercise-card-text {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13.5px;
-  line-height: 1.55;
+.exercice-card-body p {
+  display: -webkit-box;
+  margin: 8px 0 0;
+  overflow: hidden;
+  color: var(--muted-ink);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
-.exercise-card-meta {
+.exercice-card-meta {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
+  flex-wrap: wrap;
+  gap: 5px 12px;
   color: var(--ink-2);
   font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
-.exercise-card-cta {
-  flex: none;
-  display: inline-flex;
+.exercice-card-foot {
+  display: flex;
   align-items: center;
-  gap: 7px;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 800;
 }
 
-.exercise-card-cta svg {
-  width: 14px;
-  height: 14px;
-  color: var(--gold);
+.exercice-card-go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--navy);
+  color: var(--panel);
+  transition: transform 170ms ease, background 170ms ease;
+}
+
+.exercice-card-go .button-icon {
+  width: 15px;
+  height: 15px;
+}
+
+[data-theme='dark'] .exercice-card-go {
+  background: #c9d4ff;
+  color: #0b1020;
+}
+
+.exercice-card:hover .exercice-card-go {
+  background: var(--navy-hi);
+  transform: translateX(4px);
+}
+
+[data-theme='dark'] .exercice-card:hover .exercice-card-go {
+  background: #e3e9ff;
+}
+
+.exercices-empty {
+  margin: 0;
+  border: 1px dashed var(--line-strong);
+  border-radius: 14px;
+  background: var(--panel-2);
+  padding: 22px;
+  color: var(--muted-ink);
+  font-size: 13px;
 }
 
 /* ---------------- sheet ---------------- */
 
-.exercices-sheet-top {
+.exercices-breadcrumb {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
+  gap: 7px;
+  min-width: 0;
+  color: var(--muted-ink);
+  font-size: 11px;
 }
 
-.exercices-back-link {
-  color: var(--ink-2);
-  font-size: 12.5px;
+.exercices-breadcrumb a {
+  color: var(--gold-ink);
   font-weight: 750;
   text-decoration: none;
 }
 
-.exercices-back-link:hover {
-  color: var(--ink);
+.exercices-breadcrumb a:hover {
   text-decoration: underline;
 }
 
-.exercices-sheet-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.exercices-breadcrumb > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.exercices-intro {
-  display: flex;
-  justify-content: flex-start;
+.exercise-sheet-head {
   border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--panel);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--gold) 13%, transparent), transparent 38%),
+    var(--panel);
+  padding: 24px 28px;
   box-shadow: var(--shadow-soft);
-  padding: 22px 24px;
 }
 
-.exercices-intro-copy {
+.exercise-sheet-copy {
   min-width: 0;
 }
 
-.exercices-intro .exercices-hero-eyebrow {
-  margin-bottom: 10px;
-  color: var(--gold);
-}
-
-.exercices-intro .exercices-hero-title {
+.exercise-sheet-head h2 {
+  max-width: 1000px;
+  margin: 10px 0 0;
   color: var(--ink);
-  font-size: clamp(26px, 3.2vw, 38px);
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+  font-size: clamp(26px, 2.8vw, 39px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
 }
 
-.exercices-intro-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 12px 0 14px;
+.exercise-sheet-intro {
+  max-width: 980px;
+  margin: 12px 0 0;
   color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.exercise-sheet-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px 14px;
+  margin-top: 16px;
+  color: var(--muted-ink);
   font-size: 10.5px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+}
+
+.exercise-sheet-meta > span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+  padding: 4px 9px;
+}
+
+.exercise-sheet-meta .exercices-pdf-link {
+  min-height: 31px;
+  padding: 0 10px;
+  box-shadow: none;
+  font-size: 10.5px;
+}
+
+/* clickable question stepper */
+
+.exercise-stepper ol {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exercise-step {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 7px 10px;
+  color: var(--ink-2);
+  text-align: left;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.exercise-step:hover {
+  border-color: var(--line-strong);
+  background: var(--panel-2);
+  color: var(--ink);
+}
+
+.exercise-step.is-active {
+  border-color: var(--gold);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-soft) 88%, transparent), transparent 100%),
+    var(--panel);
+  color: var(--ink);
+  box-shadow: var(--shadow-soft);
+}
+
+.exercise-step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel-2);
+  color: var(--muted-ink);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.exercise-step.is-active .exercise-step-number {
+  border-color: var(--gold);
+  background: var(--gold);
+  color: #1f2a5c;
+}
+
+.exercise-step-title {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 11.5px;
+  font-weight: 650;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* question and solution side by side, like the visualizer workspace */
+
+.exercise-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.exercise-question {
+  min-height: 430px;
+}
+
+.exercise-question-head {
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px;
+}
+
+.exercise-question-heading {
+  min-width: 0;
+}
+
+.exercise-question-count {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--gold-ink);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
-.exercices-intro-text,
-.exercices-statement-text {
+.exercise-question-head h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(19px, 1.7vw, 25px);
+  font-weight: 780;
+  letter-spacing: -0.025em;
+  line-height: 1.16;
+}
+
+.exercise-question-total {
+  flex: none;
+  color: var(--muted-ink);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.exercise-progress {
+  height: 8px;
+  flex: none;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.exercise-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(90deg, var(--gold), color-mix(in srgb, var(--gold) 55%, var(--success)));
+  transition: width 220ms ease;
+}
+
+.exercise-question-body {
+  flex: 1 1 auto;
+  padding: 24px;
+}
+
+.exercise-statement {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.72;
+  text-wrap: pretty;
+}
+
+.inline-code {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--panel-2);
+  padding: 1px 5px;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.88em;
+  font-weight: 650;
+  white-space: break-spaces;
+}
+
+.question-hints {
+  margin-top: 24px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--panel-2);
+}
+
+.question-hints summary {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 10px;
+  padding: 10px 13px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 750;
+  list-style: none;
+}
+
+.question-hints summary::-webkit-details-marker {
+  display: none;
+}
+
+.question-hints summary::before {
+  content: '+';
+  margin-right: 7px;
+  color: var(--gold-ink);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.question-hints[open] summary::before {
+  content: '−';
+}
+
+.question-hints summary span {
+  margin-right: auto;
+}
+
+.question-hints summary small {
+  color: var(--muted-ink);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.question-hints ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0 16px 14px 31px;
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: 12.5px;
   line-height: 1.55;
 }
 
-.exercices-intro-text p,
-.exercices-statement-text p {
-  margin: 0;
-  white-space: pre-line;
+.question-hints li::marker {
+  color: var(--gold-ink);
 }
 
-.exercices-intro-text code,
-.exercices-statement-text code {
+.exercise-question-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  padding: 12px 14px;
+}
+
+.exercise-question-nav .secondary-button,
+.exercise-question-nav .primary-button {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.exercise-question-nav .button-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.exercise-question-position {
+  color: var(--muted-ink);
   font-family: var(--mono);
-  font-size: 0.92em;
-  background: var(--panel-3);
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 1px 5px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* solution card */
+
+.solution-panel {
+  min-width: 0;
+}
+
+.solution-header {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.solution-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.solution-panel .code-lang-badge {
+  color: var(--gold-ink);
+}
+
+.solution-title {
+  margin: 0;
   color: var(--ink);
+  font-size: 14px;
+  font-weight: 780;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
-.exercices-workspace {
+.solution-subtitle {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted-ink);
+  font-size: 9.5px;
+  line-height: 1.3;
+}
+
+.solution-toggle {
+  margin-left: auto;
+}
+
+.solution-mandatory {
   display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
-  gap: 14px;
-  align-items: start;
+  gap: 5px;
+  flex: none;
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold-soft) 80%, transparent), transparent 100%),
+    var(--panel);
+  padding: 10px 12px;
 }
 
-.exercices-statement-card {
+.solution-mandatory p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 10.5px;
+  font-weight: 560;
+  line-height: 1.45;
+}
+
+.solution-mandatory .solution-mandatory-compare {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.solution-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.solution-code-meta {
+  display: flex;
+  justify-content: flex-end;
+  flex: none;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+  padding: 5px 10px;
+  color: var(--muted-ink);
+  font-family: var(--mono);
+  font-size: 9px;
+}
+
+.solution-code-body {
+  max-height: min(62vh, 650px);
+  flex: none;
+  overflow: auto;
+}
+
+.solution-code-body .code-line {
+  min-height: 19px;
+  font-size: 11.5px;
+}
+
+.solution-code-body .line-number {
+  width: 30px;
+  padding-right: 7px;
+  color: var(--muted-ink);
+}
+
+/* Darker syntax tones keep small code legible on the light code background. */
+[data-theme='light'] .solution-code-body .token-string {
+  color: #0b7a53;
+}
+
+[data-theme='light'] .solution-code-body .token-comment {
+  color: #64708c;
+}
+
+[data-theme='light'] .solution-code-body .token-number {
+  color: #a04f00;
+}
+
+.solution-code-line {
+  border-left: 0;
+}
+
+.solution-code-line:hover {
+  background: rgba(127, 138, 170, 0.07);
+}
+
+.solution-notes {
+  border-top: 1px solid var(--line);
+  background: var(--panel-2);
+  padding: 12px;
+}
+
+.solution-notes strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--gold-ink);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.solution-notes p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.solution-hidden {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 230px;
+  padding: 24px;
+  text-align: center;
+}
+
+.solution-hidden-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
   border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--panel);
-  box-shadow: var(--shadow-soft);
-  padding: 20px 22px;
+  border-radius: 50%;
+  background: var(--panel-2);
+  color: var(--muted);
 }
 
-.exercices-code-column {
-  display: flex;
-  min-width: 0;
+.solution-hidden-icon .button-icon {
+  width: 23px;
+  height: 23px;
 }
 
-/* ---------------- per-question simulation ---------------- */
-
-.exercices-question-column {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  min-width: 0;
+.solution-hidden p {
+  max-width: 290px;
+  margin: 0;
+  color: var(--muted-ink);
+  font-size: 12px;
+  line-height: 1.55;
 }
 
+/* not found */
+
+.exercise-not-found {
+  align-items: flex-start;
+  max-width: 680px;
+  margin: 6vh auto;
+  padding: 34px;
+}
+
+.exercise-not-found-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
+  border-radius: 16px;
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+
+.exercise-not-found-icon .button-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.exercise-not-found h2 {
+  margin: 16px 0 0;
+  color: var(--ink);
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.exercise-not-found p {
+  max-width: 520px;
+  margin: 10px 0 22px;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.exercise-not-found .primary-button {
+  text-decoration: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------------- responsive ---------------- */
+
+@media (max-width: 1180px) {
+  .exercices-header .brand-credit,
+  .exercices-header .brand-rule,
+  .exercices-header .brand-institution-name {
+    display: none;
+  }
+}
+
+@media (max-width: 1020px) {
+  .exercices-app {
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .exercices-main {
+    overflow: visible;
+  }
+
+  .exercise-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .solution-code-body {
+    max-height: none;
+  }
+
+  .exercices-wrap {
+    padding: 0 28px;
+  }
+}
+
+@media (max-width: 760px) {
+  .exercices-wrap {
+    gap: 14px;
+    padding: 0 16px;
+  }
+
+  .exercices-header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    height: auto;
+    padding: 8px 10px;
+  }
+
+  .exercices-header .header-actions {
+    justify-self: start;
+    flex-wrap: wrap;
+  }
+
+  .exercices-header-link span {
+    display: none;
+  }
+
+  .exercices-header-link {
+    width: 40px;
+    padding: 0;
+  }
+
+  .exercices-mandatory {
+    padding: 10px 12px;
+  }
+
+  .exercices-mandatory p {
+    font-size: 11.5px;
+  }
+
+  .exercices-hero {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 24px 22px;
+    border-radius: 18px;
+  }
+
+  .exercices-hero-actions {
+    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .exercices-hero-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+  }
+
+  .exercices-hero-icon .button-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .exercices-section-head {
+    align-items: flex-start;
+  }
+
+  .exercise-sheet-head {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .exercise-question-head {
+    padding: 12px 14px;
+  }
+
+  .exercise-question-body {
+    padding: 18px;
+  }
+
+  .exercise-statement {
+    font-size: 15px;
+  }
+
+  .exercise-question-nav .secondary-button,
+  .exercise-question-nav .primary-button {
+    padding: 0 9px;
+  }
+
+  .exercise-question-position {
+    display: none;
+  }
+
+  .solution-header {
+    padding: 9px 10px;
+  }
+
+  .solution-toggle {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .exercise-not-found {
+    margin: 0;
+    padding: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exercice-card,
+  .exercice-card-go,
+  .exercices-pdf-link,
+  .exercise-progress > span {
+    transition: none;
+  }
+
+  .exercice-card:hover,
+  .exercice-card:hover .exercice-card-go,
+  .exercices-pdf-link:hover {
+    transform: none;
+  }
+}
 .exercices-sim {
   display: flex;
   flex-direction: column;
@@ -882,442 +1535,53 @@
 }
 
 
-.exercices-question-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
 
-.exercices-question-count {
-  color: var(--gold);
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.exercices-question-title {
-  margin: 0;
-  color: var(--ink);
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  line-height: 1.25;
-}
-
-.exercices-stepper {
-  display: flex;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.exercices-stepper button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
+/* Fenced C snippets inside exercise statements and sheet intros. */
+.exercise-code-block {
+  margin: 12px 0 0;
+  overflow: auto;
   border: 1px solid var(--line);
-  border-radius: 50%;
-  background: var(--panel-2);
-  color: var(--ink-2);
+  border-radius: 10px;
+  background: var(--code-bg);
+  padding: 6px 0;
   font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.exercices-stepper button:hover {
-  border-color: var(--line-strong);
-}
-
-.exercices-stepper button.active {
-  background: var(--gold);
-  border-color: var(--gold);
-  color: var(--ink);
-}
-
-.exercices-progress {
-  display: block;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--panel-3);
-  overflow: hidden;
-}
-
-.exercices-progress-fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--navy), var(--gold));
-  transition: width 220ms ease;
-}
-
-.exercices-question-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  color: var(--ink-2);
-  font-size: 13px;
+  font-size: 11.5px;
   line-height: 1.55;
 }
 
-.exercices-question-body p {
+.exercise-code-line {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  min-height: 19px;
+}
+
+.exercise-statement p,
+.exercise-sheet-intro p {
   margin: 0;
   white-space: pre-line;
 }
 
-.exercices-question-body code {
-  font-family: var(--mono);
-  font-size: 0.92em;
-  background: var(--panel-3);
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 1px 5px;
-  color: var(--ink);
+.exercise-statement p + p,
+.exercise-sheet-intro p + p {
+  margin-top: 12px;
 }
 
-.exercices-hints {
-  border: 1px dashed var(--line-strong);
-  border-radius: 12px;
-  background: var(--panel-2);
-  padding: 10px 12px;
+.exercise-sheet-intro .exercise-code-block {
+  max-width: 720px;
 }
 
-.exercices-hints summary {
-  cursor: pointer;
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 750;
+.exercise-question-body .exercices-sim {
+  margin-top: 8px;
 }
 
-.exercices-hints ul {
-  margin: 8px 0 0;
-  padding-left: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  color: var(--ink-2);
-  font-size: 12px;
-}
-
-.exercices-nav {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-/* ---------------- solution ---------------- */
-
-.exercices-solution {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  min-width: 0;
-  flex: 1;
-  height: 100%;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--panel);
-  box-shadow: var(--shadow-soft);
-  padding: 16px 18px;
-}
-
-.exercices-solution-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.exercices-solution-head-text {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.exercices-code-kicker {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 21px;
-  height: 21px;
-  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
-  border-radius: 5px;
-  background: var(--gold-soft);
-  color: var(--gold);
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.exercices-solution-title {
-  margin: 0;
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-}
-
-.exercices-solution-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-width: 0;
-}
-
-.exercices-solution-warning {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 0;
-  border: 1px solid color-mix(in srgb, var(--alert) 45%, var(--line));
-  border-radius: 10px;
-  background: var(--alert-soft);
-  color: var(--alert);
-  padding: 10px 12px;
-  font-size: 11.5px;
-  font-weight: 650;
-  line-height: 1.5;
-}
-
-.exercices-code {
-  display: block;
-  margin: 0;
-  overflow: auto;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--code-bg);
-  padding: 8px 0;
-  font-family: var(--mono);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-/* Long solutions scroll inside a stable code panel instead of stretching the sheet. */
-.exercices-solution .exercices-code {
-  height: clamp(320px, 46vh, 460px);
-  overscroll-behavior: contain;
-}
-
-.exercices-code-line {
-  display: flex;
-  width: max-content;
-  min-width: 100%;
-  min-height: 19.5px;
-}
-
-.exercices-code-number {
-  flex: none;
-  width: 34px;
-  padding-right: 9px;
-  color: var(--muted);
-  font-size: 9px;
-  text-align: right;
-  user-select: none;
-}
-
-.exercices-code-text {
-  padding-right: 14px;
-  white-space: pre;
-}
-
-.exercices-solution-notes {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border-top: 1px solid var(--line);
-  padding-top: 10px;
-}
-
-.exercices-solution-notes h4 {
-  margin: 0;
-  color: var(--ink);
-  font-size: 12px;
-}
-
-.exercices-solution-notes p {
-  margin: 0;
-  color: var(--ink-2);
-  font-size: 12px;
-  line-height: 1.55;
-}
-
-.exercices-solution-hidden {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 180px;
-  border: 1.5px dashed var(--line-strong);
-  border-radius: 14px;
-  background: var(--panel-2);
-  color: var(--muted);
-  padding: 18px;
-  text-align: center;
-}
-
-.exercices-solution-hidden p {
-  margin: 0;
-  max-width: 320px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.exercices-solution-hidden-icon {
-  width: 34px;
-  height: 34px;
-  color: var(--gold);
-}
-
-/* ---------------- simulation (embedded chapter visualizer) ---------------- */
-
-.exercices-simulation {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--panel);
-  box-shadow: var(--shadow-soft);
-  padding: 16px 18px;
-  overflow: hidden;
-}
-
-.exercices-simulation-head {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.exercices-simulation-title {
-  margin: 0;
-  color: var(--ink);
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
-
-.exercices-simulation-head p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.exercices-simulation-hint {
-  color: var(--ink-2);
-  font-size: 12.5px;
-}
-
-.exercices-simulation-frame {
-  position: relative;
-  height: clamp(560px, calc(100dvh - 400px), 960px);
-  min-height: 560px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  overflow-y: auto;
-  background: var(--bg);
-}
-
-.exercices-simulation-frame .app.app-embedded {
-  height: 100%;
-  min-height: 0;
-  grid-template-rows: minmax(0, 1fr) auto;
-  border-radius: 14px;
-}
-
-.exercices-simulation-frame .app.app-embedded .site-footer {
-  display: none;
-}
-
-.exercices-simulation-frame .bottom-dock {
-  height: 160px;
-  min-height: 160px;
-}
-
-.exercices-simulation-frame .bottom-dock .watch-panel,
-.exercices-simulation-frame .bottom-dock .journal-panel,
-.exercices-simulation-frame .bottom-dock .dock-sash {
-  display: none;
-}
-
-.exercices-simulation-frame .bottom-dock .dock-panels {
-  grid-template-columns: minmax(0, 1fr);
-  overflow: hidden;
-}
-
-.app.app-embedded .viz-card {
-  min-height: 246px;
-}
-
-.exercices-simulation-frame .left-column {
-  gap: 6px;
-}
-
-/* ---------------- misc ---------------- */
-
-.exercices-announcer,
-.exercices-sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.exercices-empty {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-/* ---------------- responsive ---------------- */
-
-@media (max-width: 1020px) {
-  .exercices-workspace {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 980px) {
-  .exercices-hero {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 30px 30px;
-  }
-
-  .exercices-hero-art {
-    display: none;
-  }
+.exercices-simulate-link {
+  min-height: 34px;
+  padding: 0 11px;
+  text-decoration: none;
 }
 
 @media (max-width: 680px) {
-  .exercices-main {
-    padding: 6px 22px 20px;
-  }
-
-  .exercices-hero {
-    margin: 0 0.45cm;
-    padding: 26px 24px;
-    border-radius: 20px;
-  }
-
-  .exercices-hero-icon {
-    display: none;
-  }
-
   .exercices-sim {
     padding: 12px;
   }
@@ -1336,24 +1600,5 @@
 
   .exercices-sim-dots {
     margin-left: 0;
-  }
-}
-
-@media (max-width: 520px) {
-  .exercices-header .brand-meta {
-    display: none;
-  }
-
-  .exercices-header .brand-title-row {
-    white-space: normal;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .exercise-card,
-  .exercise-card:hover {
-    transform: none;
-    box-shadow: var(--shadow-soft);
-    transition: none;
   }
 }
