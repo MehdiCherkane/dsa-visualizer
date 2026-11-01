@@ -1101,6 +1101,12 @@
   line-height: 1.6;
 }
 
+/* Long solutions scroll inside a stable code panel instead of stretching the sheet. */
+.exercices-solution .exercices-code {
+  height: clamp(320px, 46vh, 460px);
+  overscroll-behavior: contain;
+}
+
 .exercices-code-line {
   display: flex;
   width: max-content;
