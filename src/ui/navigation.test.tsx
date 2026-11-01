@@ -99,6 +99,27 @@ describe('navigation par hash', () => {
     expect(markup).not.toContain(fr.menu.subtitle)
   })
 
+  it('ouvre la page Presa depuis le menu, puis revient au menu', () => {
+    renderApp()
+    const download = query<HTMLAnchorElement>('.presa-download')
+    expect(download).not.toBeNull()
+    expect(download?.getAttribute('href')).toBe(PRESA_HASH)
+    expect(download?.hasAttribute('target')).toBe(false)
+
+    goTo(PRESA_HASH)
+    expect(document.title).toBe(fr.presa.pageTitle)
+    expect(query('.presa-page')).not.toBeNull()
+    expect(query('.menu-app')).toBeNull()
+    expect(query(`button[aria-label="${fr.menu.homeLabel}"]`)).not.toBeNull()
+    const cta = query<HTMLAnchorElement>('.presa-cta')
+    expect(cta?.getAttribute('href')).toBe(fr.presa.apkUrl)
+    expect(cta?.getAttribute('target')).toBe('_blank')
+
+    goTo(MENU_HASH)
+    expect(query('.menu-app')).not.toBeNull()
+    expect(query('.presa-page')).toBeNull()
+  })
+
   it('ouvre le chapitre 5 sur le scénario Liste vide', () => {
     renderApp()
     const card = query<HTMLAnchorElement>(`.chapter-card[href="${chapterHash(5)}"]`)
