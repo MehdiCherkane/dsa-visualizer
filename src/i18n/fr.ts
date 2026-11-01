@@ -92,7 +92,7 @@ export const fr = {
     eyebrow: 'Entraînement · Langage C',
     heading: 'Chercher d’abord, comparer ensuite.',
     subtitle:
-      'Les énoncés du chapitre 1, découpés en questions courtes. Chaque solution reste cachée jusqu’à ce que vous choisissiez de la consulter.',
+      'Les énoncés des TP, découpés en questions courtes. Chaque solution reste cachée jusqu’à ce que vous choisissiez de la consulter.',
     pageTitle: 'Exercices — Structures de données en C',
     exercisePageTitle: (title: string) => `${title} — Exercices · Structures de données en C`,
     notFoundPageTitle: 'Fiche introuvable — Exercices',
@@ -136,6 +136,22 @@ export const fr = {
     codeSectionAria: (title: string) => `Solution C de la question « ${title} »`,
     codeLines: (count: number) => plural(count, 'ligne', 'lignes'),
     solutionNotes: 'À retenir',
+    simulate: 'Simuler dans le visualiseur',
+    simulationKicker: 'Simulation pas à pas',
+    simulationFor: (questionTitle: string) => `Trace de la logique — ${questionTitle}`,
+    simulationStep: (current: number, total: number) => `Étape ${current} / ${total}`,
+    simulationReset: '↺ Rejouer',
+    simulationPrevious: '← Précédent',
+    simulationNext: 'Suivant →',
+    simulationDotsLabel: 'Aller à une étape de la simulation',
+    simulationJump: (step: number, total: number, title: string) =>
+      `Étape ${step} / ${total} : ${title}`,
+    simulationCarry: 'Retenue',
+    simulationCalls: 'Pile d’appels',
+    simulationOutput: 'Sortie',
+    simulationPacketCount: (count: number) => plural(count, 'paquet', 'paquets'),
+    simulationTop: 'sommet',
+    simulationBottom: 'fond',
     mandatoryBefore:
       '« Essayez de résoudre chaque question par vous-même avant d\'afficher la solution. C\'est en cherchant que l\'on apprend le mieux. »',
     mandatoryCompare:

@@ -65,12 +65,13 @@ afterEach(() => {
 })
 
 describe('données des exercices', () => {
-  it('contient les trois fiches et sept questions du chapitre 1', () => {
-    expect(exercises).toHaveLength(3)
-    expect(totalQuestionCount(exercises)).toBe(7)
-    expect(exercises.map((exercise) => exercise.chapter)).toEqual([1, 1, 1])
+  it('contient les fiches des chapitres 1 et 3', () => {
+    expect(exercises).toHaveLength(4)
+    expect(totalQuestionCount(exercises)).toBe(12)
+    expect(exercises.map((exercise) => exercise.chapter)).toEqual([1, 1, 1, 3])
     expect(exerciseById('chapitre-1-fibonacci')?.questions).toHaveLength(2)
     expect(exerciseById('chapitre-1-grands-nombres')?.questions).toHaveLength(4)
+    expect(exerciseById('chapitre-3-somme-grands-nombres')?.questions).toHaveLength(5)
   })
 
   it('respecte le modèle Question / Exercise et garde des identifiants uniques', () => {
@@ -97,6 +98,59 @@ describe('données des exercices', () => {
     }
   })
 
+  it('fournit une simulation pas à pas pour chaque question du TP 3', () => {
+    const tp3 = exerciseById('chapitre-3-somme-grands-nombres')
+    expect(tp3).toBeDefined()
+    if (!tp3) return
+
+    expect(tp3.title).toContain('Somme de deux grands nombres')
+    expect(tp3.intro).toContain('ElementPile')
+    expect(tp3.questions.map((question) => question.id)).toEqual([
+      'primitives-pile',
+      'remplir-paquets',
+      'somme-paquets',
+      'afficher-somme',
+      'lire-deux-nombres',
+    ])
+
+    for (const question of tp3.questions) {
+      const simulation = question.simulation
+      expect(simulation, question.id).toBeDefined()
+      if (!simulation) continue
+
+      expect(simulation.title.trim()).not.toBe('')
+      expect(simulation.intro.trim()).not.toBe('')
+      expect(simulation.frames.length).toBeGreaterThan(1)
+
+      for (const frame of simulation.frames) {
+        expect(frame.title.trim()).not.toBe('')
+        expect(frame.detail.trim()).not.toBe('')
+        const hasVisual =
+          (frame.stacks?.length ?? 0) > 0 ||
+          frame.digits !== undefined ||
+          frame.carry !== undefined ||
+          frame.output !== undefined ||
+          (frame.calls?.length ?? 0) > 0 ||
+          (frame.vars?.length ?? 0) > 0
+        expect(hasVisual, `${question.id} · ${frame.title}`).toBe(true)
+      }
+    }
+  })
+
+  it('empile les paquets du TP 3 du plus significatif au moins significatif', () => {
+    const tp3 = exerciseById('chapitre-3-somme-grands-nombres')
+    const lastFrame = tp3?.questions[1]?.simulation?.frames.at(-1)
+    expect(lastFrame?.stacks?.[0].packets).toEqual([7890, 3456, 12])
+
+    const sommeFrames = tp3?.questions[2]?.simulation?.frames ?? []
+    const transfer = sommeFrames.find((frame) => frame.title.startsWith('Transférer'))
+    expect(transfer?.stacks?.find((stack) => stack.label === 'S')?.packets).toEqual([
+      1100,
+      1111,
+      111,
+    ])
+  })
+
   it('tolère une progression absente, corrompue ou d’une autre version', () => {
     expect(normalizeProgress(null, exercises)).toEqual(createEmptyProgress())
     expect(normalizeProgress({ current: { inconnu: 4 }, revealed: { inconnu: ['x'] } }, exercises)).toEqual(
@@ -118,9 +172,9 @@ describe('page des exercices', () => {
   it('affiche la liste, les compteurs et les deux consignes', () => {
     renderPage()
 
-    expect(container.querySelectorAll('.exercice-card')).toHaveLength(3)
+    expect(container.querySelectorAll('.exercice-card')).toHaveLength(4)
     expect(container.textContent).toContain(fr.exercices.listTitle)
-    expect(container.textContent).toContain(fr.exercices.questionCount(7))
+    expect(container.textContent).toContain(fr.exercices.questionCount(12))
     expect(container.querySelector('.exercices-mandatory')?.textContent).toContain(
       fr.exercices.mandatoryBefore,
     )
@@ -240,5 +294,33 @@ describe('page des exercices', () => {
 
     click(container.querySelectorAll<HTMLButtonElement>('.exercise-step')[0]!)
     expect(buttonWithText(fr.exercices.hideSolution).getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('affiche le TP 3, sa simulation et le lien vers le visualiseur', () => {
+    renderPage('chapitre-3-somme-grands-nombres')
+
+    expect(query('.exercise-code-block')?.textContent).toContain('ElementPile')
+    expect(query('.exercices-sim-title')?.textContent).toBe(
+      exerciseById('chapitre-3-somme-grands-nombres')?.questions[0]?.simulation?.title,
+    )
+    expect(query('.exercices-sim-counter')?.textContent).toContain(
+      fr.exercices.simulationStep(1, 6),
+    )
+
+    const visualizer = query<HTMLAnchorElement>('.exercices-simulate-link')
+    expect(visualizer?.getAttribute('href')).toBe('#/chapitre-3')
+
+    click(buttonWithText(fr.exercices.simulationNext))
+    expect(query('.exercices-sim-counter')?.textContent).toContain(
+      fr.exercices.simulationStep(2, 6),
+    )
+
+    click(buttonWithText(fr.exercices.next))
+    expect(query('.exercices-sim-title')?.textContent).toBe(
+      exerciseById('chapitre-3-somme-grands-nombres')?.questions[1]?.simulation?.title,
+    )
+    expect(query('.exercices-sim-counter')?.textContent).toContain(
+      fr.exercices.simulationStep(1, 5),
+    )
   })
 })

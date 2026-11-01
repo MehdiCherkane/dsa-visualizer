@@ -1,11 +1,12 @@
 import { chapitre1Exercises } from './data/chapitre1'
+import { chapitre3Exercises } from './data/chapitre3'
 import type { Exercise } from './types'
 
 /**
  * Adding a new PDF is deliberately a two-step operation: create a typed data
- * file, then spread its exercises into this list.
+ * file under `data/`, then spread its exercises into this list.
  */
-const registeredExercises: Exercise[] = [...chapitre1Exercises]
+const registeredExercises: Exercise[] = [...chapitre1Exercises, ...chapitre3Exercises]
 
 export const exercises: readonly Exercise[] = registeredExercises
 

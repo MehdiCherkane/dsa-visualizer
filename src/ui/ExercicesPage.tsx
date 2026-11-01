@@ -23,11 +23,12 @@ import {
   HomeIcon,
   PdfIcon,
 } from './ExercicesIcon'
+import { QuestionSimulationView } from './QuestionSimulation'
 import { RichText } from './RichText'
 import { SiteFooter } from './SiteFooter'
 import { SolutionPanel } from './SolutionPanel'
 import { ThemeToggle } from './ThemeToggle'
-import { EXERCICES_HASH, exerciseHash, navigate } from './useHashRoute'
+import { chapterHash, EXERCICES_HASH, exerciseHash, navigate } from './useHashRoute'
 import '../exercices/exercices.css'
 
 interface ExercicesPageProps {
@@ -213,7 +214,7 @@ function ExercicesList({
                       <h3>{exercise.title}</h3>
                       {exercise.intro ? (
                         <p>
-                          <RichText text={exercise.intro} />
+                          <RichText text={exercise.intro.split('```')[0]?.trim() ?? ''} />
                         </p>
                       ) : null}
                     </div>
@@ -356,13 +357,23 @@ function ExerciseSheet({ exercise, progress, onProgress }: SheetProps): JSX.Elem
           <span className="chapter-chip">{fr.exercices.chapterLabel(exercise.chapter)}</span>
           <h2 id="exercise-sheet-title">{exercise.title}</h2>
           {exercise.intro ? (
-            <p className="exercise-sheet-intro">
-              <RichText text={exercise.intro} />
-            </p>
+            <div className="exercise-sheet-intro">
+              <RichText text={exercise.intro} block />
+            </div>
           ) : null}
           <div className="exercise-sheet-meta">
             <span>{fr.exercices.questionCount(total)}</span>
             <ChapterPdfLinks chapters={[exercise.chapter]} />
+            <a
+              className="secondary-button exercices-simulate-link"
+              href={chapterHash(exercise.chapter)}
+              onClick={(event) => {
+                event.preventDefault()
+                navigate(chapterHash(exercise.chapter))
+              }}
+            >
+              {fr.exercices.simulate}
+            </a>
           </div>
         </div>
       </section>
@@ -401,9 +412,9 @@ function ExerciseSheet({ exercise, progress, onProgress }: SheetProps): JSX.Elem
           </div>
 
           <div className="exercise-question-body">
-            <p className="exercise-statement">
-              <RichText text={question.statement} />
-            </p>
+            <div className="exercise-statement">
+              <RichText text={question.statement} block />
+            </div>
 
             {question.hints && question.hints.length > 0 ? (
               <details className="question-hints">
@@ -419,6 +430,15 @@ function ExerciseSheet({ exercise, progress, onProgress }: SheetProps): JSX.Elem
                   ))}
                 </ul>
               </details>
+            ) : null}
+
+            {question.simulation ? (
+              <QuestionSimulationView
+                key={question.id}
+                simulation={question.simulation}
+                questionId={question.id}
+                questionTitle={question.title}
+              />
             ) : null}
           </div>
 

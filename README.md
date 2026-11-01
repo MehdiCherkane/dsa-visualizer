@@ -8,7 +8,7 @@ Teaching platform for data structures in C (`Structures de données`), built wit
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (401 tests)
+npm test      # vitest suite (417 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
@@ -18,11 +18,21 @@ npm run dev   # local dev server
 
 To publish it, follow [DEPLOY.md](DEPLOY.md): Cloudflare Pages, free plan, static, no backend.
 
-Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point) and `#/chapitre-1` through `#/chapitre-6` for the six chapters. Unknown hashes fall back to the menu, and `Échap` or the `← Menu` header button leaves the demo.
+Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point), `#/exercices` (exercise sheets), `#/exercices/<id>` (one sheet), and `#/chapitre-1` through `#/chapitre-6` for the six chapters. Unknown hashes fall back to the menu, and `Échap` or the `← Menu` header button leaves the demo.
 
 ### Course PDFs
 
 The six course handouts ship as `public/cours/chapitre-<n>.pdf` (`chapitre-1.pdf` … `chapitre-6.pdf`, ~5.4 MB total). The document button in the header opens the matching PDF in a right-side drawer, with a direct **Ouvrir dans un nouvel onglet** fallback. Drag the drawer's left edge (or focus it and use `←`/`→`) to widen or narrow it; double-click resets the width, which is kept while the app stays open. The PDFs are copied to `dist/cours/`; they are never inlined, so the HTML stays around 1 MB whatever their size. Missing files do not break the app or the build, but the drawer has nothing to display for that chapter. Some browsers refuse to embed PDFs from `file://`; the new-tab link still opens the document.
+
+### Exercices (TP)
+
+The interactive exercise sheets follow one standard: one typed data file per handout under `src/exercices/data/chapitre-<n>.ts`, spread into `src/exercices/registry.ts`. Adding a new TP is deliberately two steps — create the data file, then add its exported array to the registry. The list lives at `#/exercices` and each sheet at `#/exercices/<id>`; the main-menu card, the header link and the chapter-aware **Simuler dans le visualiseur** button all derive from the same registry.
+
+Each sheet shows one question at a time (progress bar, clickable stepper, Previous / Next, `←` / `→`, `Échap` back to the menu), keeps the solution hidden behind **Afficher la solution**, and stores the current question plus revealed solutions under the versioned key `ldc-exercices-v1` with a safe fallback. Statements support inline backticks and fenced `c` code blocks, so longer course snippets stay in the typed data file.
+
+A question may also carry an optional `simulation`: a list of frames with stacks of 4-digit packets, highlighted digit groups, carry, variables, call stack and program output. `src/ui/QuestionSimulation.tsx` renders it inline under the statement with Replay, Previous / Next and clickable step dots. The data stays offline and resets when the question changes.
+
+Chapter 1 ships three sheets (`src/exercices/data/chapitre1.ts`, 7 questions). Chapter 3 ships the TP 3 handout **Somme de deux grands nombres** (`src/exercices/data/chapitre3.ts`, 5 questions, one step-by-step simulation per question), with its PDF at `public/exercices/chapitre-3.pdf`.
 
 ## Chapters
 
@@ -99,6 +109,7 @@ src/
                          C sources + symbolic line labels, steps, scenarios
   structures/shared/     shared linked-node SVG renderer, camera and geometry
   ui/                    shared shell, layout, panels, main menu, hash routing
+  exercices/             typed TP data, registry and progress persistence
   registry.ts            registers each chapter and resolves #/chapitre-<n>
 c/
   chapitre-5/lddc.c      standalone C11 program for the circular list
