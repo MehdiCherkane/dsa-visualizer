@@ -65,12 +65,13 @@ afterEach(() => {
 })
 
 describe('données des exercices', () => {
-  it('contient les trois fiches et sept questions du chapitre 1', () => {
+  it('contient les trois fiches et six questions du chapitre 1', () => {
     expect(exercises).toHaveLength(3)
-    expect(totalQuestionCount(exercises)).toBe(7)
+    expect(totalQuestionCount(exercises)).toBe(6)
     expect(exercises.map((exercise) => exercise.chapter)).toEqual([1, 1, 1])
-    expect(exerciseById('chapitre-1-fibonacci')?.questions).toHaveLength(2)
-    expect(exerciseById('chapitre-1-grands-nombres')?.questions).toHaveLength(4)
+    expect(exerciseById('chapitre-1-piles-files-application')?.questions).toHaveLength(4)
+    expect(exerciseById('chapitre-1-parentheses')?.questions).toHaveLength(1)
+    expect(exerciseById('chapitre-1-max-file')?.questions).toHaveLength(1)
   })
 
   it('respecte le modèle Question / Exercise et garde des identifiants uniques', () => {
@@ -108,7 +109,7 @@ describe('données des exercices', () => {
 
     window.localStorage.setItem(
       EXERCICES_STORAGE_KEY,
-      JSON.stringify({ version: 99, progress: { current: { 'chapitre-1-fibonacci': 1 } } }),
+      JSON.stringify({ version: 99, progress: { current: { 'chapitre-1-piles-files-application': 1 } } }),
     )
     expect(readProgress(exercises)).toEqual(createEmptyProgress())
   })
@@ -120,7 +121,7 @@ describe('page des exercices', () => {
 
     expect(container.querySelectorAll('.exercice-card')).toHaveLength(3)
     expect(container.textContent).toContain(fr.exercices.listTitle)
-    expect(container.textContent).toContain(fr.exercices.questionCount(7))
+    expect(container.textContent).toContain(fr.exercices.questionCount(6))
     expect(container.querySelector('.exercices-mandatory')?.textContent).toContain(
       fr.exercices.mandatoryBefore,
     )
@@ -138,7 +139,7 @@ describe('page des exercices', () => {
       card?.click()
     })
 
-    expect(window.location.hash).toBe('#/exercices/chapitre-1-exercice-1')
+    expect(window.location.hash).toBe('#/exercices/chapitre-1-piles-files-application')
   })
 
   it('affiche « Fiche introuvable » pour un identifiant inconnu', () => {
@@ -149,22 +150,22 @@ describe('page des exercices', () => {
   })
 
   it('cache le code par défaut et le révèle uniquement sur demande', () => {
-    renderPage('chapitre-1-exercice-1')
+    renderPage('chapitre-1-piles-files-application')
 
     const toggle = buttonWithText(fr.exercices.showSolution)
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     expect(query('.solution-code-body')).toBeNull()
-    expect(container.textContent).not.toContain('La chaine \\"%s\\"')
+    expect(container.textContent).not.toContain('Correction de la copie %d')
 
     click(toggle)
 
     expect(buttonWithText(fr.exercices.hideSolution).getAttribute('aria-expanded')).toBe('true')
     expect(query('.solution-code-body')).not.toBeNull()
-    expect(container.textContent).toContain('La chaine \\"%s\\"')
+    expect(container.textContent).toContain('Correction de la copie %d')
   })
 
   it('masque de nouveau le code sans le laisser dans le DOM', () => {
-    renderPage('chapitre-1-exercice-1')
+    renderPage('chapitre-1-piles-files-application')
     click(buttonWithText(fr.exercices.showSolution))
     click(buttonWithText(fr.exercices.hideSolution))
 
@@ -173,7 +174,7 @@ describe('page des exercices', () => {
   })
 
   it('affiche les deux consignes en haut de page et dans la section de code', () => {
-    renderPage('chapitre-1-fibonacci')
+    renderPage('chapitre-1-piles-files-application')
 
     const pageNotice = query('.exercices-mandatory')
     const solutionNotice = query('.solution-mandatory')
@@ -187,54 +188,54 @@ describe('page des exercices', () => {
   })
 
   it('navigue avec les boutons, le stepper et les flèches du clavier', () => {
-    renderPage('chapitre-1-fibonacci')
+    renderPage('chapitre-1-piles-files-application')
 
     expect(query('.exercise-question-count')?.textContent).toContain(
-      fr.exercices.questionLabel(1, 2),
+      fr.exercices.questionLabel(1, 4),
     )
     expect(query('[aria-live="polite"]')?.textContent).toContain(
-      fr.exercices.questionAnnouncement(1, 2, exerciseById('chapitre-1-fibonacci')!.questions[0]!.title),
+      fr.exercices.questionAnnouncement(1, 4, exerciseById('chapitre-1-piles-files-application')!.questions[0]!.title),
     )
 
     click(buttonWithText(fr.exercices.next))
     expect(query('.exercise-question-count')?.textContent).toContain(
-      fr.exercices.questionLabel(2, 2),
+      fr.exercices.questionLabel(2, 4),
     )
     expect(buttonWithText(fr.exercices.showSolution).getAttribute('aria-expanded')).toBe('false')
 
     press('ArrowLeft')
     expect(query('.exercise-question-count')?.textContent).toContain(
-      fr.exercices.questionLabel(1, 2),
+      fr.exercices.questionLabel(1, 4),
     )
 
     press('ArrowRight')
     expect(query('.exercise-question-count')?.textContent).toContain(
-      fr.exercices.questionLabel(2, 2),
+      fr.exercices.questionLabel(2, 4),
     )
 
     const steps = container.querySelectorAll<HTMLButtonElement>('.exercise-step')
     click(steps[0]!)
     expect(query('.exercise-question-count')?.textContent).toContain(
-      fr.exercices.questionLabel(1, 2),
+      fr.exercices.questionLabel(1, 4),
     )
     expect(steps[0]!.getAttribute('aria-current')).toBe('step')
   })
 
   it('conserve la question courante et les solutions révélées après un remontage', () => {
-    renderPage('chapitre-1-fibonacci')
+    renderPage('chapitre-1-piles-files-application')
     click(buttonWithText(fr.exercices.showSolution))
     click(buttonWithText(fr.exercices.next))
     expect(query('.exercise-question-count')?.textContent).toContain(
-      fr.exercices.questionLabel(2, 2),
+      fr.exercices.questionLabel(2, 4),
     )
 
     act(() => root.unmount())
     container.innerHTML = ''
     root = createRoot(container)
-    renderPage('chapitre-1-fibonacci')
+    renderPage('chapitre-1-piles-files-application')
 
     expect(query('.exercise-question-count')?.textContent).toContain(
-      fr.exercices.questionLabel(2, 2),
+      fr.exercices.questionLabel(2, 4),
     )
     expect(buttonWithText(fr.exercices.showSolution).getAttribute('aria-expanded')).toBe('false')
 

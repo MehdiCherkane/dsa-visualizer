@@ -92,7 +92,7 @@ export const fr = {
     eyebrow: 'Entraînement · Langage C',
     heading: 'Chercher d’abord, comparer ensuite.',
     subtitle:
-      'Les énoncés du chapitre 1, découpés en questions courtes. Chaque solution reste cachée jusqu’à ce que vous choisissiez de la consulter.',
+      'Les exercices du chapitre 1 sur les piles et files statiques, découpés en questions courtes. Chaque solution reste cachée jusqu’à ce que vous choisissiez de la consulter.',
     pageTitle: 'Exercices — Structures de données en C',
     exercisePageTitle: (title: string) => `${title} — Exercices · Structures de données en C`,
     notFoundPageTitle: 'Fiche introuvable — Exercices',
