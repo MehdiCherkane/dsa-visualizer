@@ -24,6 +24,7 @@ import {
   PdfIcon,
 } from './ExercicesIcon'
 import { QuestionSimulationView } from './QuestionSimulation'
+import { PdfDrawer } from './PdfDrawer'
 import { RichText } from './RichText'
 import { SiteFooter } from './SiteFooter'
 import { SolutionPanel } from './SolutionPanel'
@@ -42,6 +43,7 @@ interface SheetProps {
   exercise: Exercise
   progress: ExercicesProgress
   onProgress: Dispatch<SetStateAction<ExercicesProgress>>
+  onOpenPdf: (chapter: number) => void
 }
 
 function MandatoryNotice(): JSX.Element {
@@ -125,21 +127,26 @@ function ExercicesHeader({
   )
 }
 
-function ChapterPdfLinks({ chapters }: { chapters: number[] }): JSX.Element {
+function ChapterPdfLinks({
+  chapters,
+  onOpen,
+}: {
+  chapters: number[]
+  onOpen: (chapter: number) => void
+}): JSX.Element {
   return (
     <>
       {chapters.map((chapter) => (
-        <a
+        <button
           key={chapter}
+          type="button"
           className="exercices-pdf-link"
-          href={`./exercices/chapitre-${chapter}.pdf`}
-          target="_blank"
-          rel="noreferrer"
+          onClick={() => onOpen(chapter)}
           aria-label={fr.exercices.pdfAria(chapter)}
         >
           <PdfIcon />
           <span>{fr.exercices.pdf}</span>
-        </a>
+        </button>
       ))}
     </>
   )
@@ -148,9 +155,11 @@ function ChapterPdfLinks({ chapters }: { chapters: number[] }): JSX.Element {
 function ExercicesList({
   progress,
   onOpen,
+  onOpenPdf,
 }: {
   progress: ExercicesProgress
   onOpen: (id: string) => void
+  onOpenPdf: (chapter: number) => void
 }): JSX.Element {
   const chapters = [...new Set(exercises.map((exercise) => exercise.chapter))].sort(
     (first, second) => first - second,
@@ -172,7 +181,7 @@ function ExercicesList({
           <span className="exercices-hero-icon" aria-hidden="true">
             <ExercicesIcon />
           </span>
-          <ChapterPdfLinks chapters={chapters} />
+          <ChapterPdfLinks chapters={chapters} onOpen={onOpenPdf} />
         </div>
       </section>
 
@@ -277,7 +286,12 @@ function ExerciseStepper({
   )
 }
 
-function ExerciseSheet({ exercise, progress, onProgress }: SheetProps): JSX.Element {
+function ExerciseSheet({
+  exercise,
+  progress,
+  onProgress,
+  onOpenPdf,
+}: SheetProps): JSX.Element {
   const total = exercise.questions.length
   const index = currentQuestionIndex(progress, exercise.id, total)
   const question = exercise.questions[index] ?? exercise.questions[0]
@@ -363,7 +377,7 @@ function ExerciseSheet({ exercise, progress, onProgress }: SheetProps): JSX.Elem
           ) : null}
           <div className="exercise-sheet-meta">
             <span>{fr.exercices.questionCount(total)}</span>
-            <ChapterPdfLinks chapters={[exercise.chapter]} />
+            <ChapterPdfLinks chapters={[exercise.chapter]} onOpen={onOpenPdf} />
             <a
               className="secondary-button exercices-simulate-link"
               href={chapterHash(exercise.chapter)}
@@ -509,6 +523,8 @@ export function ExercicesPage({
   onMenu,
 }: ExercicesPageProps): JSX.Element {
   const [progress, setProgress] = useState<ExercicesProgress>(() => readProgress(exercises))
+  const [pdfChapter, setPdfChapter] = useState<number | null>(null)
+  const [pdfWidth, setPdfWidth] = useState(720)
   const exercise = exerciseId ? exerciseById(exerciseId) : undefined
 
   useEffect(() => {
@@ -518,6 +534,14 @@ export function ExercicesPage({
   const openExercise = (id: string): void => {
     navigate(exerciseHash(id))
   }
+
+  const openPdf = useCallback((chapter: number) => {
+    setPdfChapter(chapter)
+  }, [])
+
+  const closePdf = useCallback(() => {
+    setPdfChapter(null)
+  }, [])
 
   return (
     <div className="app has-footer exercices-app">
@@ -538,17 +562,38 @@ export function ExercicesPage({
                 exercise={exercise}
                 progress={progress}
                 onProgress={setProgress}
+                onOpenPdf={openPdf}
               />
             ) : (
               <ExerciseNotFound />
             )
           ) : (
-            <ExercicesList progress={progress} onOpen={openExercise} />
+            <ExercicesList progress={progress} onOpen={openExercise} onOpenPdf={openPdf} />
           )}
         </div>
       </main>
 
       <SiteFooter />
+
+      {pdfChapter !== null ? (
+        <PdfDrawer
+          src={`./exercices/chapitre-${pdfChapter}.pdf`}
+          labels={{
+            title: fr.exercices.pdfTitle,
+            subtitle: fr.exercices.chapterLabel(pdfChapter),
+            ariaLabel: fr.exercices.pdfDrawerAria(pdfChapter),
+            close: fr.pdfViewer.close,
+            closeAria: fr.exercices.pdfCloseAria,
+            resize: fr.exercices.pdfResize,
+            openInTab: fr.pdfViewer.openInTab,
+            hint: fr.pdfViewer.hint,
+            pixelValue: fr.pdfViewer.pixelValue,
+          }}
+          initialWidth={pdfWidth}
+          onWidthChange={setPdfWidth}
+          onClose={closePdf}
+        />
+      ) : null}
     </div>
   )
 }

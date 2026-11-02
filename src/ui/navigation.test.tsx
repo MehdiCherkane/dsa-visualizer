@@ -86,9 +86,9 @@ describe('navigation par hash', () => {
     expect(document.title).toBe(fr.presa.pageTitle)
     expect(query('.presa-app')).not.toBeNull()
     expect(query('.menu-app')).toBeNull()
-    expect(query('.presa-back')?.getAttribute('href')).toBe(MENU_HASH)
-    const cta = query<HTMLAnchorElement>('.presa-cta')
-    expect(cta?.getAttribute('href')).toBe('https://github.com/HamzaAGOUR/Presa')
+    expect(query('.presa-app .brand-home')?.getAttribute('href')).toBe(MENU_HASH)
+    const cta = query<HTMLAnchorElement>('.presa-cta-primary')
+    expect(cta?.getAttribute('href')).toBe(fr.presa.apkUrl)
     expect(cta?.getAttribute('target')).toBe('_blank')
 
     goTo(MENU_HASH)

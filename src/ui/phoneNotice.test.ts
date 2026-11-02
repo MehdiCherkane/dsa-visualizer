@@ -14,6 +14,14 @@ function readPhoneDetector(): (width: number, height: number) => boolean {
 
 const isPhoneScreen = readPhoneDetector()
 
+function readPresaDetector(): (hash: string) => boolean {
+  const match = html.match(/function isPresaRoute\(hash\) \{[^}]+\}/)
+  if (!match) throw new Error('isPresaRoute introuvable dans index.html')
+  return new Function(`${match[0]}; return isPresaRoute`)() as (hash: string) => boolean
+}
+
+const isPresaRoute = readPresaDetector()
+
 const cases = [
   { label: 'iPhone SE portrait', width: 375, height: 667, phone: true },
   { label: 'iPhone 14 Pro Max portrait', width: 430, height: 932, phone: true },
@@ -33,5 +41,24 @@ const cases = [
 describe('détection téléphone', () => {
   it.each(cases)('$label : $width×$height → $phone', ({ width, height, phone }) => {
     expect(isPhoneScreen(width, height)).toBe(phone)
+  })
+})
+
+describe('passage par la page Presa', () => {
+  it.each([
+    { hash: '#/presa', presa: true },
+    { hash: '#/presa/', presa: true },
+    { hash: '#/presage', presa: false },
+    { hash: '#/exercices', presa: false },
+    { hash: '#/', presa: false },
+    { hash: '', presa: false },
+  ])('$hash → $presa', ({ hash, presa }) => {
+    expect(isPresaRoute(hash)).toBe(presa)
+  })
+
+  it('affiche le lien Presa et resynchronise le portail au changement de hash', () => {
+    expect(html).toContain('id="phone-notice-presa"')
+    expect(html).toContain('href="#/presa"')
+    expect(html).toContain("window.addEventListener('hashchange', syncGate)")
   })
 })

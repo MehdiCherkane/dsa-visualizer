@@ -1,63 +1,82 @@
 // @vitest-environment jsdom
-import { act } from 'react'
-import { createRoot } from 'react-dom/client'
-import type { Root } from 'react-dom/client'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { describe, expect, it } from 'vitest'
 import { fr } from '../i18n/fr'
 import { PresaPage } from './PresaPage'
 import { MENU_HASH } from './useHashRoute'
 
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-
-let container: HTMLDivElement
-let root: Root
-
-beforeEach(() => {
-  container = document.createElement('div')
-  document.body.append(container)
-  root = createRoot(container)
-  act(() => {
-    root.render(<PresaPage theme="light" onTheme={() => {}} />)
-  })
-})
-
-afterEach(() => {
-  act(() => root.unmount())
-  container.remove()
-})
+function renderPage(): HTMLElement {
+  const host = document.createElement('div')
+  host.innerHTML = renderToStaticMarkup(<PresaPage theme="light" onTheme={() => {}} />)
+  return host
+}
 
 describe('page Presa', () => {
-  it('présente l’application et ses points forts', () => {
-    expect(container.textContent).toContain(fr.presa.tagline)
-    expect(container.textContent).toContain(fr.presa.lead)
-    expect(container.textContent).toContain(fr.presa.featuresTitle)
+  it('présente l’application et ses deux appels à l’action', () => {
+    const page = renderPage()
+    const text = page.textContent ?? ''
 
-    const features = container.querySelectorAll('.presa-feature')
-    expect(features).toHaveLength(fr.presa.features.length)
+    expect(page.querySelector('.presa-hero-title')?.textContent).toBe(fr.presa.heroTitle)
+    expect(text).toContain(fr.presa.heroLead)
+    expect(text).toContain(fr.presa.heroNote)
+    for (const item of fr.presa.meta) expect(text).toContain(item)
+
+    const apk = page.querySelector<HTMLAnchorElement>(`a[href="${fr.presa.apkUrl}"]`)
+    expect(apk).not.toBeNull()
+    expect(apk?.getAttribute('target')).toBe('_blank')
+    expect(apk?.getAttribute('rel')).toContain('noopener')
+    expect(apk?.textContent).toContain(fr.presa.apkCta)
+
+    const repo = page.querySelector<HTMLAnchorElement>(`a[href="${fr.presa.repoUrl}"]`)
+    expect(repo).not.toBeNull()
+    expect(repo?.getAttribute('target')).toBe('_blank')
+  })
+
+  it('affiche les fonctionnalités, les captures et les trois étapes', () => {
+    const page = renderPage()
+    const text = page.textContent ?? ''
+
     for (const feature of fr.presa.features) {
-      expect(container.textContent).toContain(feature.title)
-      expect(container.textContent).toContain(feature.body)
+      expect(text).toContain(feature.title)
+      expect(text).toContain(feature.text)
+    }
+
+    const shots = [...page.querySelectorAll<HTMLImageElement>('.presa-shot img')]
+    expect(shots).toHaveLength(fr.presa.screenshots.length)
+    fr.presa.screenshots.forEach((shot, index) => {
+      expect(shots[index].getAttribute('alt')).toBe(shot.alt)
+      expect(text).toContain(shot.caption)
+    })
+
+    for (const step of fr.presa.steps) {
+      expect(text).toContain(step.title)
+      expect(text).toContain(step.text)
     }
   })
 
-  it('renvoie vers le dépôt GitHub dans un nouvel onglet', () => {
-    const cta = container.querySelector<HTMLAnchorElement>('.presa-cta')
-    expect(cta).not.toBeNull()
-    expect(cta?.getAttribute('href')).toBe('https://github.com/HamzaAGOUR/Presa')
-    expect(cta?.getAttribute('target')).toBe('_blank')
-    expect(cta?.getAttribute('rel')).toContain('noopener')
-    expect(cta?.textContent).toContain(fr.presa.repo)
+  it('affiche la compatibilité, la confidentialité et les crédits', () => {
+    const page = renderPage()
+    const text = page.textContent ?? ''
+
+    for (const row of fr.presa.compatibility) {
+      expect(text).toContain(row.system)
+      expect(text).toContain(row.note)
+    }
+    expect(text).toContain(fr.presa.privacyTitle)
+    expect(text).toContain(fr.presa.privacyText)
+
+    expect(text).toContain(fr.presa.creditsTitle)
+    expect(text).toContain(fr.presa.creditsSupervisor)
+    for (const name of fr.credits.names) expect(text).toContain(name)
   })
 
-  it('permet de revenir au menu', () => {
-    const back = container.querySelector<HTMLAnchorElement>('.presa-back')
-    expect(back?.getAttribute('href')).toBe(MENU_HASH)
-    expect(back?.textContent).toContain(fr.presa.back)
-  })
-
-  it('affiche l’icône avec un texte alternatif', () => {
-    const icon = container.querySelector<HTMLImageElement>('.presa-art-icon')
-    expect(icon).not.toBeNull()
-    expect(icon?.getAttribute('alt')).toBe(fr.presa.iconAlt)
+  it('garde l’accueil dans l’en-tête sans les liens de la fiche d’exercices', () => {
+    const page = renderPage()
+    expect(page.querySelector('.brand-institution-name')).toBeNull()
+    expect(page.querySelector('.brand-credit')).toBeNull()
+    expect(page.querySelector('.exercices-header-link')).toBeNull()
+    const home = page.querySelector<HTMLAnchorElement>('.brand-home')
+    expect(home?.getAttribute('href')).toBe(MENU_HASH)
+    expect(home?.getAttribute('aria-label')).toBe(fr.menu.homeLabel)
   })
 })
