@@ -1,551 +1,544 @@
 import type { Exercise } from '../types'
 
-const codeCompter = String.raw`#include <stdio.h>
+const pileBase = String.raw`#include <stdio.h>
 
-int compterCaracteres(const char *chaine) {
-    const char *p = chaine;
-    int nbCar = 0;
+#define MAX 5
 
-    while (*p != '\0') {
-        p++;
-        nbCar++;
-    }
-    return nbCar;
+typedef struct {
+    int elements[MAX];
+    int sommet;
+} Pile;
+
+void initPile(Pile *p) {
+    p->sommet = -1;
 }
 
+int pileVide(Pile p) {
+    return p.sommet == -1;
+}
+
+int pilePleine(Pile p) {
+    return p.sommet == MAX - 1;
+}
+
+void empiler(Pile *p, int valeur) {
+    if (pilePleine(*p)) {
+        printf("Pile pleine\n");
+        return;
+    }
+    p->sommet++;
+    p->elements[p->sommet] = valeur;
+}
+
+int depiler(Pile *p) {
+    if (pileVide(*p)) {
+        return -1;
+    }
+    int valeur = p->elements[p->sommet];
+    p->sommet--;
+    return valeur;
+}
+`
+
+const pileOperations = String.raw`
+void empilerCopie(Pile *p, int numero) {
+    empiler(p, numero);
+}
+
+void corrigerCopie(Pile *p) {
+    int numero = depiler(p);
+    if (numero != -1) {
+        printf("Correction de la copie %d\n", numero);
+    }
+}
+`
+
+const codeEmpilerCopie = pileBase + pileOperations + String.raw`
 int main(void) {
-    const char *texte = "Structures de donnees";
-    printf("La chaine \"%s\" contient %d caracteres.\n", texte, compterCaracteres(texte));
+    Pile p;
+    initPile(&p);
+
+    empilerCopie(&p, 12);
+    empilerCopie(&p, 7);
+    empilerCopie(&p, 25);
+    corrigerCopie(&p);
+    corrigerCopie(&p);
     return 0;
 }
 `
 
-const codeFib = String.raw`unsigned long Fib(int n) {
-    unsigned long resultat;
-
-    if (n < 2) {
-        resultat = 1L;
-    } else {
-        resultat = Fib(n - 1) + Fib(n - 2);
+const codeTracePile = pileBase + pileOperations + String.raw`
+void afficherPile(const Pile *p) {
+    printf("[");
+    for (int i = 0; i <= p->sommet; i++) {
+        if (i > 0) {
+            printf(", ");
+        }
+        printf("%d", p->elements[i]);
     }
-    return resultat;
-}
-`
-
-const codeFib40 = String.raw`#include <stdio.h>
-
-#define ligne 10
-
-unsigned long Fib(int n) {
-    if (n < 2) {
-        return 1L;
-    }
-    return Fib(n - 1) + Fib(n - 2);
+    printf("] sommet = %d\n", p->sommet);
 }
 
 int main(void) {
-    int i = 0;
-    unsigned long nombre;
+    Pile p;
+    initPile(&p);
 
-    while (i <= 39) {
-        nombre = Fib(i);
-        printf("Fib(%d) = %lu\n", i, nombre);
-        i++;
-        if (i % ligne == 0 && i <= 39) {
-            getchar();
+    printf("1) empilerCopie(12) : ");
+    empilerCopie(&p, 12);
+    afficherPile(&p);
+
+    printf("2) empilerCopie(7) : ");
+    empilerCopie(&p, 7);
+    afficherPile(&p);
+
+    printf("3) empilerCopie(25) : ");
+    empilerCopie(&p, 25);
+    afficherPile(&p);
+
+    printf("4) corrigerCopie() : ");
+    corrigerCopie(&p);
+    afficherPile(&p);
+
+    printf("5) corrigerCopie() : ");
+    corrigerCopie(&p);
+    afficherPile(&p);
+
+    return 0;
+}
+`
+
+const fileBase = String.raw`#include <stdio.h>
+
+#define MAX 5
+
+typedef struct {
+    int elements[MAX];
+    int av;
+    int ar;
+} File;
+
+void initFile(File *f) {
+    f->av = -1;
+    f->ar = -1;
+}
+
+int fileVide(File f) {
+    return f.av == -1;
+}
+
+int filePleine(File f) {
+    return (f.ar + 1) % MAX == f.av;
+}
+
+void enfiler(File *f, int valeur) {
+    if (filePleine(*f)) {
+        printf("File pleine\n");
+        return;
+    }
+    f->ar = (f->ar + 1) % MAX;
+    if (fileVide(*f)) {
+        f->av = f->ar;
+    }
+    f->elements[f->ar] = valeur;
+}
+
+int defiler(File *f) {
+    if (fileVide(*f)) {
+        return -1;
+    }
+    int valeur = f->elements[f->av];
+    if (f->av == f->ar) {
+        f->av = -1;
+        f->ar = -1;
+    } else {
+        f->av = (f->av + 1) % MAX;
+    }
+    return valeur;
+}
+`
+
+const fileOperations = String.raw`
+void enregistrerArrivee(File *f, int numero) {
+    enfiler(f, numero);
+}
+
+void guichetSuivant(File *f) {
+    int numero = defiler(f);
+    if (numero != -1) {
+        printf("Guichet : etudiant %d servi\n", numero);
+    }
+}
+`
+
+const codeEnregistrerArrivee = fileBase + fileOperations + String.raw`
+int main(void) {
+    File f;
+    initFile(&f);
+
+    enregistrerArrivee(&f, 65);
+    enregistrerArrivee(&f, 66);
+    enregistrerArrivee(&f, 67);
+    enregistrerArrivee(&f, 68);
+    guichetSuivant(&f);
+    guichetSuivant(&f);
+    return 0;
+}
+`
+
+const codeTraceFile = fileBase + fileOperations + String.raw`
+void afficherFile(File f) {
+    printf("av=%d ar=%d [", f.av, f.ar);
+    if (!fileVide(f)) {
+        int i = f.av;
+        while (1) {
+            printf("%d", f.elements[i]);
+            if (i == f.ar) {
+                break;
+            }
+            printf(", ");
+            i = (i + 1) % MAX;
         }
     }
+    printf("]\n");
+}
+
+int main(void) {
+    File f;
+    initFile(&f);
+
+    printf("1) enregistrerArrivee(65) : ");
+    enregistrerArrivee(&f, 65);
+    afficherFile(f);
+
+    printf("2) enregistrerArrivee(66) : ");
+    enregistrerArrivee(&f, 66);
+    afficherFile(f);
+
+    printf("3) enregistrerArrivee(67) : ");
+    enregistrerArrivee(&f, 67);
+    afficherFile(f);
+
+    printf("4) enregistrerArrivee(68) : ");
+    enregistrerArrivee(&f, 68);
+    afficherFile(f);
+
+    printf("5) guichetSuivant() : ");
+    guichetSuivant(&f);
+    afficherFile(f);
+
+    printf("6) guichetSuivant() : ");
+    guichetSuivant(&f);
+    afficherFile(f);
+
     return 0;
 }
 `
 
-const codeConvertir = String.raw`#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+const codeParentheses = String.raw`#include <stdio.h>
 
-#define MAX_CHIFFRES 120
-#define MAX_PAQUETS 32
-#define TAILLE_PAQUET 4
+#define MAX 100
 
-typedef int tableau[MAX_PAQUETS];
+typedef struct {
+    int elements[MAX];
+    int sommet;
+} Pile;
 
-void Convertir(tableau tab, const char *chaine, int *NL) {
-    int longueur = (int)strlen(chaine);
-    int nombrePaquets = longueur / TAILLE_PAQUET;
-    int reste = longueur % TAILLE_PAQUET;
-    int i;
+void initPile(Pile *p) {
+    p->sommet = -1;
+}
 
-    for (i = 0; i < nombrePaquets; i++) {
-        int debut = longueur - TAILLE_PAQUET * (i + 1);
-        char paquet[TAILLE_PAQUET + 1];
+int pileVide(Pile p) {
+    return p.sommet == -1;
+}
 
-        memcpy(paquet, chaine + debut, TAILLE_PAQUET);
-        paquet[TAILLE_PAQUET] = '\0';
-        tab[i] = atoi(paquet);
+int pilePleine(Pile p) {
+    return p.sommet == MAX - 1;
+}
+
+void empiler(Pile *p, int valeur) {
+    if (pilePleine(*p)) {
+        return;
     }
-    if (reste != 0) {
-        char paquet[TAILLE_PAQUET + 1];
+    p->sommet++;
+    p->elements[p->sommet] = valeur;
+}
 
-        memcpy(paquet, chaine, (size_t)reste);
-        paquet[reste] = '\0';
-        tab[nombrePaquets] = atoi(paquet);
-        nombrePaquets++;
+int depiler(Pile *p) {
+    if (pileVide(*p)) {
+        return -1;
     }
-    *NL = nombrePaquets;
+    int valeur = p->elements[p->sommet];
+    p->sommet--;
+    return valeur;
+}
+
+int parenthesesEquilibrees(const char *texte) {
+    Pile p;
+    initPile(&p);
+
+    for (int i = 0; texte[i] != '\0'; i++) {
+        if (texte[i] == '(') {
+            if (pilePleine(p)) {
+                return 0;
+            }
+            empiler(&p, texte[i]);
+        } else if (texte[i] == ')') {
+            if (pileVide(p)) {
+                return 0;
+            }
+            depiler(&p);
+        }
+    }
+    return pileVide(p);
 }
 
 int main(void) {
-    const char *exemple = "1459812454578123456894512";
-    tableau tab;
-    int nombrePaquets = 0;
-    int i;
+    const char *tests[] = {
+        "(()())",
+        "(()",
+        ")(",
+        "((a+b)*(c-d))"
+    };
 
-    Convertir(tab, exemple, &nombrePaquets);
-    printf("Nombre de paquets : %d\n", nombrePaquets);
-    for (i = nombrePaquets - 1; i >= 0; i--) {
-        printf("%04d ", tab[i]);
+    for (int i = 0; i < 4; i++) {
+        printf("\"%s\" -> %d\n", tests[i], parenthesesEquilibrees(tests[i]));
     }
-    printf("\n");
     return 0;
 }
 `
 
-const codeSomme = String.raw`#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+const codeRecupererMax = String.raw`#include <stdio.h>
 
-#define MAX_PAQUETS 32
-#define TAILLE_PAQUET 4
-#define BASE 10000
+#define MAX 5
 
-typedef int tableau[MAX_PAQUETS];
+int F[MAX];
+int av = -1;
+int ar = -1;
 
-void Convertir(tableau tab, const char *chaine, int *NL) {
-    int longueur = (int)strlen(chaine);
-    int nombrePaquets = longueur / TAILLE_PAQUET;
-    int reste = longueur % TAILLE_PAQUET;
-    int i;
-
-    for (i = 0; i < nombrePaquets; i++) {
-        int debut = longueur - TAILLE_PAQUET * (i + 1);
-        char paquet[TAILLE_PAQUET + 1];
-
-        memcpy(paquet, chaine + debut, TAILLE_PAQUET);
-        paquet[TAILLE_PAQUET] = '\0';
-        tab[i] = atoi(paquet);
-    }
-    if (reste != 0) {
-        char paquet[TAILLE_PAQUET + 1];
-
-        memcpy(paquet, chaine, (size_t)reste);
-        paquet[reste] = '\0';
-        tab[nombrePaquets] = atoi(paquet);
-        nombrePaquets++;
-    }
-    *NL = nombrePaquets;
+void initFile(void) {
+    av = -1;
+    ar = -1;
 }
 
-void Somme(int N, int M, int *taille, const tableau t1, const tableau t2, tableau t3) {
-    int retenue = 0;
-    int i;
-
-    for (i = 0; i < N; i++) {
-        int s = t1[i] + t2[i] + retenue;
-
-        t3[i] = s % BASE;
-        retenue = s / BASE;
-    }
-    for (i = N; i < M; i++) {
-        int s = t2[i] + retenue;
-
-        t3[i] = s % BASE;
-        retenue = s / BASE;
-    }
-    *taille = M;
-    if (retenue != 0) {
-        t3[M] = retenue;
-        *taille = M + 1;
-    }
+int fileVide(void) {
+    return av == -1;
 }
 
-int main(void) {
-    const char *nombre1 = "1459812454578123456894512";
-    const char *nombre2 = "59292545326446";
-    tableau tab1, tab2, tab_som;
-    int N1 = 0;
-    int N2 = 0;
-    int taille = 0;
-    int i;
+int filePleine(void) {
+    return (ar + 1) % MAX == av;
+}
 
-    Convertir(tab1, nombre1, &N1);
-    Convertir(tab2, nombre2, &N2);
-    if (N1 <= N2) {
-        Somme(N1, N2, &taille, tab1, tab2, tab_som);
+void enfiler(int valeur) {
+    if (filePleine()) {
+        printf("File pleine\n");
+        return;
+    }
+    ar = (ar + 1) % MAX;
+    if (fileVide()) {
+        av = ar;
+    }
+    F[ar] = valeur;
+}
+
+int defiler(void) {
+    if (fileVide()) {
+        return -1;
+    }
+    int valeur = F[av];
+    if (av == ar) {
+        av = -1;
+        ar = -1;
     } else {
-        Somme(N2, N1, &taille, tab2, tab1, tab_som);
+        av = (av + 1) % MAX;
     }
-    printf("La somme =\n");
-    for (i = taille - 1; i >= 0; i--) {
-        if (i == taille - 1) {
-            printf("%d", tab_som[i]);
+    return valeur;
+}
+
+int recupererMax(void) {
+    if (fileVide()) {
+        return -1;
+    }
+    int n = ((ar - av + MAX) % MAX) + 1;
+    int max = F[av];
+
+    for (int i = 0; i < n; i++) {
+        int x = defiler();
+        if (x > max) {
+            max = x;
+        }
+        enfiler(x);
+    }
+
+    int retire = 0;
+    for (int i = 0; i < n; i++) {
+        int x = defiler();
+        if (!retire && x == max) {
+            retire = 1;
         } else {
-            printf("%04d", tab_som[i]);
+            enfiler(x);
         }
     }
-    printf("\n");
-    return 0;
-}
-`
-
-const codeAfficher = String.raw`#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#define MAX_PAQUETS 32
-#define TAILLE_PAQUET 4
-#define BASE 10000
-
-typedef int tableau[MAX_PAQUETS];
-
-void Convertir(tableau tab, const char *chaine, int *NL) {
-    int longueur = (int)strlen(chaine);
-    int nombrePaquets = longueur / TAILLE_PAQUET;
-    int reste = longueur % TAILLE_PAQUET;
-    int i;
-
-    for (i = 0; i < nombrePaquets; i++) {
-        int debut = longueur - TAILLE_PAQUET * (i + 1);
-        char paquet[TAILLE_PAQUET + 1];
-
-        memcpy(paquet, chaine + debut, TAILLE_PAQUET);
-        paquet[TAILLE_PAQUET] = '\0';
-        tab[i] = atoi(paquet);
-    }
-    if (reste != 0) {
-        char paquet[TAILLE_PAQUET + 1];
-
-        memcpy(paquet, chaine, (size_t)reste);
-        paquet[reste] = '\0';
-        tab[nombrePaquets] = atoi(paquet);
-        nombrePaquets++;
-    }
-    *NL = nombrePaquets;
+    return max;
 }
 
-void Somme(int N, int M, int *taille, const tableau t1, const tableau t2, tableau t3) {
-    int retenue = 0;
-    int i;
-
-    for (i = 0; i < N; i++) {
-        int s = t1[i] + t2[i] + retenue;
-
-        t3[i] = s % BASE;
-        retenue = s / BASE;
+void afficherFile(void) {
+    printf("av=%d ar=%d [", av, ar);
+    if (!fileVide()) {
+        int i = av;
+        while (1) {
+            printf("%d", F[i]);
+            if (i == ar) {
+                break;
+            }
+            printf(", ");
+            i = (i + 1) % MAX;
+        }
     }
-    for (i = N; i < M; i++) {
-        int s = t2[i] + retenue;
-
-        t3[i] = s % BASE;
-        retenue = s / BASE;
-    }
-    *taille = M;
-    if (retenue != 0) {
-        t3[M] = retenue;
-        *taille = M + 1;
-    }
-}
-
-void Afficher(int taille, const tableau t) {
-    int i;
-
-    if (taille <= 0) {
-        printf("0\n");
-        return;
-    }
-    printf("%d", t[taille - 1]);
-    for (i = taille - 2; i >= 0; i--) {
-        printf("%04d", t[i]);
-    }
-    printf("\n");
+    printf("]\n");
 }
 
 int main(void) {
-    const char *nombre1 = "1459812454578123456894512";
-    const char *nombre2 = "59292545326446";
-    tableau tab1, tab2, tab_som;
-    int N1 = 0;
-    int N2 = 0;
-    int taille = 0;
+    initFile();
+    enfiler(42);
+    enfiler(17);
+    enfiler(63);
+    enfiler(8);
+    enfiler(55);
 
-    Convertir(tab1, nombre1, &N1);
-    Convertir(tab2, nombre2, &N2);
-    if (N1 <= N2) {
-        Somme(N1, N2, &taille, tab1, tab2, tab_som);
-    } else {
-        Somme(N2, N1, &taille, tab2, tab1, tab_som);
-    }
-    printf("La somme =\n");
-    Afficher(taille, tab_som);
-    return 0;
-}
-`
+    printf("File initiale : ");
+    afficherFile();
 
-const codeMain = String.raw`#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+    int max = recupererMax();
+    printf("Maximum récupéré : %d\n", max);
+    printf("File après retrait : ");
+    afficherFile();
 
-#define MAX_CHIFFRES 120
-#define MAX_PAQUETS 32
-#define TAILLE_PAQUET 4
-#define BASE 10000
+    initFile();
+    enfiler(5);
+    enfiler(1);
+    enfiler(5);
+    enfiler(2);
 
-typedef int tableau[MAX_PAQUETS];
+    printf("Doublon : maximum = %d\n", recupererMax());
+    printf("File restante : ");
+    afficherFile();
 
-void Convertir(tableau tab, const char *chaine, int *NL) {
-    int longueur = (int)strlen(chaine);
-    int nombrePaquets = longueur / TAILLE_PAQUET;
-    int reste = longueur % TAILLE_PAQUET;
-    int i;
-
-    for (i = 0; i < nombrePaquets; i++) {
-        int debut = longueur - TAILLE_PAQUET * (i + 1);
-        char paquet[TAILLE_PAQUET + 1];
-
-        memcpy(paquet, chaine + debut, TAILLE_PAQUET);
-        paquet[TAILLE_PAQUET] = '\0';
-        tab[i] = atoi(paquet);
-    }
-    if (reste != 0) {
-        char paquet[TAILLE_PAQUET + 1];
-
-        memcpy(paquet, chaine, (size_t)reste);
-        paquet[reste] = '\0';
-        tab[nombrePaquets] = atoi(paquet);
-        nombrePaquets++;
-    }
-    *NL = nombrePaquets;
-}
-
-void Somme(int N, int M, int *taille, const tableau t1, const tableau t2, tableau t3) {
-    int retenue = 0;
-    int i;
-
-    for (i = 0; i < N; i++) {
-        int s = t1[i] + t2[i] + retenue;
-
-        t3[i] = s % BASE;
-        retenue = s / BASE;
-    }
-    for (i = N; i < M; i++) {
-        int s = t2[i] + retenue;
-
-        t3[i] = s % BASE;
-        retenue = s / BASE;
-    }
-    *taille = M;
-    if (retenue != 0) {
-        t3[M] = retenue;
-        *taille = M + 1;
-    }
-}
-
-void Afficher(int taille, const tableau t) {
-    int i;
-
-    if (taille <= 0) {
-        printf("0\n");
-        return;
-    }
-    printf("%d", t[taille - 1]);
-    for (i = taille - 2; i >= 0; i--) {
-        printf("%04d", t[i]);
-    }
-    printf("\n");
-}
-
-static int lireGrandNombre(const char *invite, char *chaine, int capacite) {
-    size_t longueur;
-    int caractere;
-    int i;
-
-    printf("%s", invite);
-    if (fgets(chaine, capacite, stdin) == NULL) {
-        chaine[0] = '\0';
-        return 0;
-    }
-    longueur = strlen(chaine);
-    if (longueur > 0 && chaine[longueur - 1] == '\n') {
-        chaine[longueur - 1] = '\0';
-        longueur--;
-    } else {
-        while ((caractere = getchar()) != '\n' && caractere != EOF) {
-            /* vider le reste de la ligne trop longue */
-        }
-        if (longueur >= (size_t)capacite - 1) {
-            return 0;
-        }
-    }
-    if (longueur == 0) {
-        return 0;
-    }
-    for (i = 0; i < (int)longueur; i++) {
-        if (chaine[i] < '0' || chaine[i] > '9') {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-int main(void) {
-    char ch1[MAX_CHIFFRES + 2];
-    char ch2[MAX_CHIFFRES + 2];
-    tableau tab1, tab2, tab_som;
-    int N1 = 0;
-    int N2 = 0;
-    int taille = 0;
-
-    if (!lireGrandNombre("Donner un tres grand nombre : ", ch1, (int)sizeof ch1) ||
-        !lireGrandNombre("Donner un tres grand nombre : ", ch2, (int)sizeof ch2)) {
-        fprintf(stderr, "Saisie invalide : entrez jusqu'a %d chiffres.\n", MAX_CHIFFRES);
-        return 1;
-    }
-    Convertir(tab1, ch1, &N1);
-    Convertir(tab2, ch2, &N2);
-    if (N1 <= N2) {
-        Somme(N1, N2, &taille, tab1, tab2, tab_som);
-    } else {
-        Somme(N2, N1, &taille, tab2, tab1, tab_som);
-    }
-    printf("La somme =\n");
-    Afficher(taille, tab_som);
     return 0;
 }
 `
 
 export const chapitre1Exercises: Exercise[] = [
   {
-    id: 'chapitre-1-exercice-1',
-    title: 'Exercice 1 — Compter les caractères d’une chaîne',
+    id: 'chapitre-1-piles-files-application',
+    title: 'Exercice d’application — Pile de copies et file du guichet',
     chapter: 1,
     intro:
-      'Une chaîne de caractères en C est un tableau de `char` terminé par le caractère `\'\\0\'`. Le cours propose de la parcourir avec un pointeur plutôt qu’avec un indice.',
+      'Ce premier exercice reprend les deux structures du cours : une pile de copies à corriger (LIFO) et une file circulaire de guichet (FIFO). Les questions 1 et 3 demandent le code ; les questions 2 et 4 demandent la trace des opérations.',
     questions: [
       {
-        id: 'compter-les-caracteres',
-        title: 'Compter les caractères avec un pointeur',
+        id: 'pile-copies-code',
+        title: 'Écrire `empilerCopie` et `corrigerCopie`',
         statement:
-          'Écrire une fonction `compterCaracteres` qui reçoit une chaîne et retourne son nombre de caractères, sans utiliser `strlen`. Parcourir la chaîne avec un pointeur `p` et un compteur `nbCar`, et s’arrêter sur le caractère terminateur `\'\\0\'`.',
+          'Une pile de copies est représentée par la structure `Pile` du cours (`elements[MAX]`, `sommet`). Écrire `empilerCopie(Pile *p, int numero)` qui empile le numéro d’une copie, et `corrigerCopie(Pile *p)` qui dépile la copie du sommet et affiche son numéro. Ne rien afficher si la pile est vide.',
         hints: [
-          'Initialiser `p` avec l’adresse du premier caractère de la chaîne.',
-          'Tester `*p != \'\\0\'` avant chaque tour de boucle.',
-          'Incrémenter `p` et `nbCar` dans le corps de la boucle.',
+          '`empilerCopie` peut simplement appeler `empiler`.',
+          '`corrigerCopie` doit tester la valeur retournée par `depiler` avant d’afficher.',
+          'La dernière copie empilée est la première corrigée.',
         ],
-        solutionCode: codeCompter,
+        solutionCode: codeEmpilerCopie,
         solutionNotes:
-          'La boucle s’arrête sur le terminateur : il n’est pas compté. Le pointeur avance d’un caractère à chaque tour, ce qui donne un parcours en O(n).',
+          '`empilerCopie` délègue à `empiler` ; `corrigerCopie` utilise `depiler` et vérifie la sentinelle `-1`. La pile est initialisée avec `sommet = -1`.',
+      },
+      {
+        id: 'pile-copies-trace',
+        title: 'Dérouler 3 empilements puis 2 corrections',
+        statement:
+          'En partant d’une pile vide, dérouler les opérations suivantes : `empilerCopie(12)`, `empilerCopie(7)`, `empilerCopie(25)`, puis `corrigerCopie()` deux fois. Donner à chaque étape le contenu de la pile (bas → haut) et la valeur de `sommet`.',
+        hints: [
+          '`sommet` vaut -1 quand la pile est vide.',
+          'Empiler avance `sommet` avant d’écrire.',
+          'Dépiler lit la valeur au sommet puis recule `sommet`.',
+        ],
+        solutionCode: codeTracePile,
+        solutionNotes:
+          'Trace attendue : 1) [12], sommet = 0 ; 2) [12, 7], sommet = 1 ; 3) [12, 7, 25], sommet = 2 ; 4) correction de 25 → [12, 7], sommet = 1 ; 5) correction de 7 → [12], sommet = 0. La copie 12 reste au fond de la pile.',
+      },
+      {
+        id: 'file-guichet-code',
+        title: 'Écrire `enregistrerArrivee` et `guichetSuivant`',
+        statement:
+          'Une file circulaire de taille `MAX = 5` représente le guichet d’inscription (`elements[MAX]`, `av`, `ar`). Écrire `enregistrerArrivee(File *f, int numero)` qui enfile un étudiant, et `guichetSuivant(File *f)` qui défile le premier étudiant et affiche son numéro. Ne rien afficher si la file est vide.',
+        hints: [
+          '`enregistrerArrivee` appelle `enfiler`.',
+          '`guichetSuivant` appelle `defiler` et teste la valeur retournée.',
+          'La file circulaire utilise `% MAX` pour avancer `av` et `ar`.',
+        ],
+        solutionCode: codeEnregistrerArrivee,
+        solutionNotes:
+          '`enfiler` avance `ar` de façon circulaire et place `av` sur le premier élément si la file était vide. `defiler` lit `av`, puis remet `av` et `ar` à `-1` si c’était le dernier élément.',
+      },
+      {
+        id: 'file-guichet-trace',
+        title: 'Dérouler 4 arrivées puis 2 départs',
+        statement:
+          'Toujours avec `MAX = 5`, dérouler `enregistrerArrivee(65)`, `enregistrerArrivee(66)`, `enregistrerArrivee(67)`, `enregistrerArrivee(68)`, puis `guichetSuivant()` deux fois. Donner `av`, `ar` et le contenu de la file après chaque opération.',
+        hints: [
+          'La file est vide quand `av == -1`.',
+          'Après le premier ajout, `av` et `ar` valent 0.',
+          'Un départ avance `av` ; si `av == ar`, la file redevient vide.',
+        ],
+        solutionCode: codeTraceFile,
+        solutionNotes:
+          'Trace attendue : 1) av = 0, ar = 0, [65] ; 2) av = 0, ar = 1, [65, 66] ; 3) av = 0, ar = 2, [65, 66, 67] ; 4) av = 0, ar = 3, [65, 66, 67, 68] ; 5) départ de 65 → av = 1, ar = 3, [66, 67, 68] ; 6) départ de 66 → av = 2, ar = 3, [67, 68]. FIFO : 65 puis 66 sortent dans l’ordre d’arrivée.',
       },
     ],
   },
   {
-    id: 'chapitre-1-fibonacci',
-    title: 'Exercice — Les 40 premiers nombres de Fibonacci',
+    id: 'chapitre-1-parentheses',
+    title: 'Exercice 1 — Test de l’équilibre des parenthèses',
     chapter: 1,
     intro:
-      'La suite est définie par `Fib(0) = 1`, `Fib(1) = 1` et `Fib(n) = Fib(n-1) + Fib(n-2)` pour `n >= 2`. Le sujet fournit le squelette de `main` et demande d’écrire la fonction récursive.',
+      'On utilise une pile pour mémoriser les parenthèses ouvrantes rencontrées. À chaque `)`, on dépile une `(` ; si la pile est vide, la chaîne n’est pas équilibrée.',
     questions: [
       {
-        id: 'ecrire-fib',
-        title: 'Écrire la fonction `Fib`',
+        id: 'parentheses-equilibrees',
+        title: 'Écrire `parenthesesEquilibrees`',
         statement:
-          'Compléter la fonction récursive `unsigned long Fib(int n)` en respectant la définition du cours. Le cas de base `n < 2` renvoie `1L` ; sinon, la fonction additionne les deux appels précédents.',
+          'Écrire une fonction `parenthesesEquilibrees` qui reçoit une chaîne de caractères contenant les parenthèses `(` et `)` et retourne `1` si elles sont bien équilibrées, `0` sinon, en utilisant une pile. Empiler à chaque `(` ; dépiler à chaque `)` ; si la pile est vide au moment de dépiler, ou si elle n’est pas vide à la fin du parcours, les parenthèses ne sont pas équilibrées.',
         hints: [
-          'Le cas de base couvre à la fois `n = 0` et `n = 1`.',
-          'Le résultat doit être de type `unsigned long`, comme le demande la signature.',
-          'Ne pas oublier de retourner le résultat à la fin de la fonction.',
+          'Parcourir la chaîne avec un indice jusqu’au caractère nul.',
+          'Ignorer les autres caractères.',
+          'Tester `pileVide` avant chaque dépilement.',
+          'À la fin, la pile doit être vide.',
         ],
-        solutionCode: codeFib,
+        solutionCode: codeParentheses,
         solutionNotes:
-          'La fonction est récursive : chaque appel non terminal en crée deux autres. Le nombre d’appels croît très vite, mais c’est bien la version demandée par le cours.',
-      },
-      {
-        id: 'afficher-fib-40',
-        title: 'Afficher les 40 premiers nombres',
-        statement:
-          'Écrire le programme complet qui affiche `Fib(0)` à `Fib(39)`, une valeur par ligne, en réutilisant la fonction `Fib`. Le sujet propose une pause `getchar()` toutes les 10 lignes.',
-        hints: [
-          'Faire varier `i` de 0 à 39 avec une boucle `while`.',
-          'Afficher un `unsigned long` avec `%lu`.',
-          'La pause ne doit pas être déclenchée après la dernière ligne.',
-        ],
-        solutionCode: codeFib40,
-        solutionNotes:
-          'Le sujet écrit `%ld` ; `%lu` correspond au type `unsigned long`. La pause `getchar()` attend une entrée : elle est conservée pour respecter le squelette, mais évitée après `Fib(39)`.',
+          'Le test `)` sur une pile vide détecte une fermeture orpheline ; le test final détecte une ouverture non fermée. Complexité O(n) en temps et O(n) dans le pire cas pour la pile.',
       },
     ],
   },
   {
-    id: 'chapitre-1-grands-nombres',
-    title: 'Exemple complet — Somme de deux grands entiers',
+    id: 'chapitre-1-max-file',
+    title: 'Exercice 2 — Récupération du maximum d’une file',
     chapter: 1,
     intro:
-      'On lit deux grands nombres sous forme de chaînes, on les découpe en paquets de 4 chiffres, puis on additionne les paquets avec retenue. Exemple du cours : `1 4598 1245 4578 1234 5689 4512` + `59 2925 4532 6446` = `1 4598 1245 4637 4160 0222 0958`.',
+      'La file est circulaire et déclarée globalement avec `F`, `av` et `ar`. Pour récupérer le maximum sans perdre l’ordre FIFO, on fait tourner la file, on repère le maximum, puis on retire une seule occurrence en réenfilant les autres valeurs.',
     questions: [
       {
-        id: 'convertir-en-paquets',
-        title: 'Convertir la chaîne en paquets de 4 chiffres',
+        id: 'recuperer-max-file',
+        title: 'Écrire les opérations de la file et `recupererMax`',
         statement:
-          'Écrire `Convertir` qui découpe `chaine` en paquets de 4 chiffres en partant de la droite et les range dans `tab`. `*NL` reçoit le nombre de paquets. Le paquet le plus à gauche peut contenir moins de 4 chiffres.',
+          'On considère une file circulaire d’entiers déclarée globalement par un tableau `F` et deux indices `av` et `ar`. Écrire `initFile`, `fileVide`, `filePleine`, `enfiler`, `defiler`, `recupererMax` et `main`. `recupererMax` doit retourner le maximum de la file et le retirer (une seule occurrence), tout en conservant l’ordre FIFO des autres éléments.',
         hints: [
-          'Calculer `longueur = strlen(chaine)`.',
-          'Pour le paquet `i`, commencer à `longueur - 4 * (i + 1)`.',
-          'Copier chaque paquet dans un buffer terminé par `\'\\0\'` avant d’appeler `atoi`.',
-          'Le reste éventuel se place au dernier indice.',
+          '`initFile` place `av` et `ar` à -1.',
+          '`filePleine` teste `(ar + 1) % MAX == av`.',
+          'Dans `enfiler`, si la file était vide, `av` doit rejoindre `ar`.',
+          'Dans `defiler`, si `av == ar`, c’était le dernier élément : remettre `av` et `ar` à -1.',
+          'Compter les éléments avec `((ar - av + MAX) % MAX) + 1`, puis faire deux tours de rotation.',
         ],
-        solutionCode: codeConvertir,
+        solutionCode: codeRecupererMax,
         solutionNotes:
-          'Le code du cours copie 4 caractères dans `char ch4[4]` sans terminateur, puis appelle `atoi` : le comportement n’est pas garanti. Ici, le buffer fait 5 cases et reçoit `\'\\0\'`.',
-      },
-      {
-        id: 'additionner-les-paquets',
-        title: 'Additionner les paquets avec retenue',
-        statement:
-          'Écrire `Somme` qui additionne `t1` (N paquets) et `t2` (M paquets), avec `N <= M`, en propageant la retenue. Le résultat est stocké dans `t3` et `*taille` reçoit sa taille.',
-        hints: [
-          'Additionner d’abord les N paquets communs.',
-          'Recopier les paquets restants de `t2` en ajoutant la retenue.',
-          'Si la retenue finale est non nulle, ajouter un paquet supplémentaire.',
-        ],
-        solutionCode: codeSomme,
-        solutionNotes:
-          'Le cours écrit `(*taille) = M` avant la boucle et ajoute la retenue à l’indice `M`. On garde la même logique, avec un tableau assez grand pour le paquet de débordement.',
-      },
-      {
-        id: 'afficher-la-somme',
-        title: 'Afficher la somme',
-        statement:
-          'Écrire `Afficher` qui affiche le paquet le plus significatif sans zéros inutiles, puis chaque paquet suivant sur exactement 4 chiffres. Gérer aussi le cas où `taille` vaut 0.',
-        hints: [
-          'Afficher `t[taille - 1]` avec `%d`.',
-          'Afficher les autres paquets avec `%04d`.',
-          'Ne pas oublier le retour à la ligne final.',
-        ],
-        solutionCode: codeAfficher,
-        solutionNotes:
-          'Le cours reconstruit les zéros avec une série de `if` et `sprintf`. `%04d` fait le même travail en une seule conversion, sans buffer intermédiaire.',
-      },
-      {
-        id: 'lire-et-orchestrer',
-        title: 'Lire les nombres et orchestrer le calcul',
-        statement:
-          'Écrire le `main` complet : lire deux grands nombres avec `fgets`, les convertir, appeler `Somme` en mettant le plus court en premier, puis afficher la somme. Refuser une saisie vide, trop longue ou non numérique.',
-        hints: [
-          '`fgets` conserve le caractère `\'\\n\'` : il faut le retirer.',
-          'Comparer `N1` et `N2` pour choisir l’ordre des deux tableaux.',
-          'Afficher un message d’erreur si la lecture échoue.',
-        ],
-        solutionCode: codeMain,
-        solutionNotes:
-          'Le cours utilise `gets`, retiré de C11 et dangereux car il ne connaît pas la taille du buffer. `fgets` reçoit une capacité explicite ; les buffers sont terminés par `\'\\0\'` et le tableau garde une case de marge pour la retenue.',
+          'Le premier tour défile et réenfile chaque valeur pour trouver le maximum. Le second tour réenfile toutes les valeurs sauf la première occurrence du maximum. La file [42, 17, 63, 8, 55] devient [42, 17, 8, 55] et `recupererMax` retourne 63. Avec un doublon, seule la première occurrence du maximum est retirée.',
       },
     ],
   },
