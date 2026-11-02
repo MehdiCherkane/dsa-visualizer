@@ -65,6 +65,9 @@ const TYPES = new Set([
   'Noeud',
   'NoeudEtudiant',
   'Etudiant',
+  'GrandNombre',
+  'Element',
+  'ElementPile',
 ])
 const BUILTINS = new Set([
   'malloc',
@@ -92,10 +95,21 @@ const BUILTINS = new Set([
   'stdout',
   'stderr',
   'EOF',
+  'EXIT_SUCCESS',
+  'EXIT_FAILURE',
 ])
-const PREV_FIELDS = new Set(['precedent'])
-const NEXT_FIELDS = new Set(['suivant'])
-const VALUE_FIELDS = new Set(['valeur', 'donnees', 'numero', 'nom', 'prenom'])
+const PREV_FIELDS = new Set(['precedent', 'Precedent'])
+const NEXT_FIELDS = new Set(['suivant', 'Suivant'])
+const VALUE_FIELDS = new Set([
+  'valeur',
+  'donnees',
+  'numero',
+  'nom',
+  'prenom',
+  'Paquet',
+  'Sommet',
+  'Npaquets',
+])
 
 function classifyIdentifier(word: string): TokenKind {
   if (KEYWORDS.has(word)) return 'keyword'
