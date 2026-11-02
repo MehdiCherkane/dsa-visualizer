@@ -8,7 +8,7 @@ Teaching platform for data structures in C (`Structures de données`), built wit
 
 ```bash
 npm ci        # once, uses package-lock.json
-npm test      # vitest suite (417 tests)
+npm test      # vitest suite (427 tests)
 npm run lint  # oxlint
 npm run build # typecheck + single-file offline build
 npm run dev   # local dev server
@@ -18,7 +18,7 @@ npm run dev   # local dev server
 
 To publish it, follow [DEPLOY.md](DEPLOY.md): Cloudflare Pages, free plan, static, no backend.
 
-Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point), `#/exercices` (exercise sheets), `#/exercices/<id>` (one sheet), and `#/chapitre-1` through `#/chapitre-6` for the six chapters. Unknown hashes fall back to the menu, and `Échap` or the `← Menu` header button leaves the demo.
+Navigation is hash-based so it also works from `file://`: `#/` (main menu, the entry point), `#/exercices` (exercise sheets), `#/exercices/<id>` (one sheet), `#/presa` (Presa Android app), and `#/chapitre-1` through `#/chapitre-6` for the six chapters. Unknown hashes fall back to the menu, and `Échap` or the `← Menu` header button leaves the demo.
 
 ### Course PDFs
 
@@ -33,6 +33,12 @@ Each sheet shows one question at a time (progress bar, clickable stepper, Previo
 A question may also carry an optional `simulation`: a list of frames with stacks of 4-digit packets, highlighted digit groups, carry, variables, call stack and program output. `src/ui/QuestionSimulation.tsx` renders it inline under the statement with Replay, Previous / Next and clickable step dots. The data stays offline and resets when the question changes.
 
 Chapter 1 ships three sheets (`src/exercices/data/chapitre1.ts`, 7 questions). Chapter 3 ships the TP 3 handout **Somme de deux grands nombres** (`src/exercices/data/chapitre3.ts`, 5 questions, one step-by-step simulation per question), with its PDF at `public/exercices/chapitre-3.pdf`.
+
+Each handout PDF (`public/exercices/chapitre-<n>.pdf`) opens in the same resizable right-side drawer as the course PDFs, with an **Ouvrir dans un nouvel onglet** fallback. Long C solutions scroll inside a fixed-height code panel, so the sheet keeps a stable layout.
+
+### Presa (Android)
+
+Presa turns a phone into a Bluetooth presentation remote: it sends real keyboard presses and relative pointer moves to the connected computer, with nothing to install on the PC. The presentation page at `#/presa` covers the hero, the phone mockup, four real screenshots, pairing steps, compatibility, privacy and credits. It links to the **1.0.2 APK** and the source repository, both in a new tab. On a phone, the startup notice offers **Découvrir Presa**, and opening `#/presa` directly bypasses the phone gate; navigating back restores it.
 
 ## Chapters
 

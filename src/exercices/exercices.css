@@ -196,9 +196,12 @@
   background: var(--panel);
   padding: 0 12px;
   color: var(--ink);
+  font-family: inherit;
   font-size: 11px;
   font-weight: 750;
+  line-height: 1;
   text-decoration: none;
+  cursor: pointer;
   box-shadow: var(--shadow-soft);
   transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
 }
@@ -829,9 +832,10 @@
 }
 
 .solution-code-body {
-  max-height: min(62vh, 650px);
+  height: clamp(320px, 46vh, 460px);
   flex: none;
   overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .solution-code-body .code-line {
@@ -1003,10 +1007,6 @@
 
   .exercise-layout {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .solution-code-body {
-    max-height: none;
   }
 
   .exercices-wrap {
