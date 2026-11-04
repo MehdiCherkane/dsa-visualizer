@@ -269,7 +269,12 @@ export function PresaPage({ theme, onTheme }: PresaPageProps): JSX.Element {
             <h2 id={screenshotsTitleId}>{presa.screenshotsTitle}</h2>
             <p>{presa.screenshotsLead}</p>
           </header>
-          <div className="presa-shots">
+          <div
+            className="presa-shots"
+            role="region"
+            aria-label={presa.screenshotsTitle}
+            tabIndex={0}
+          >
             {presa.screenshots.map((shot, index) => (
               <figure className="presa-shot" key={shot.caption}>
                 <img

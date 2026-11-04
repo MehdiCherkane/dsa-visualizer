@@ -740,6 +740,10 @@
 }
 
 @media (max-width: 980px) {
+  .presa-app {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
   .presa-hero {
     grid-template-columns: minmax(0, 1fr);
     padding: 32px 30px;
@@ -769,7 +773,60 @@
   }
 }
 
+@media (max-width: 760px) {
+  .presa-app.has-footer {
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+  }
+
+  .presa-app .exercices-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .presa-app .exercices-header .header-actions {
+    justify-self: end;
+    flex-wrap: nowrap;
+  }
+
+  .presa-app .site-footer {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 6px;
+    padding: 10px 8px 4px;
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: center;
+  }
+
+  .presa-app .site-footer-brand {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .presa-app .site-footer-contact {
+    text-align: center;
+  }
+
+  .presa-app .site-footer-contact a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 10px;
+  }
+
+  .presa-app .site-footer-authors {
+    text-align: center;
+  }
+
+  .presa-app .site-footer-credit {
+    text-wrap: balance;
+  }
+}
+
 @media (max-width: 680px) {
+  .presa-app .chapter-chip {
+    display: none;
+  }
+
   .presa-page {
     gap: 14px;
   }
@@ -784,7 +841,11 @@
   }
 
   .presa-hero-lead {
-    font-size: 14px;
+    font-size: 15px;
+  }
+
+  .presa-hero-note {
+    font-size: 13.5px;
   }
 
   .presa-stats {
@@ -799,13 +860,47 @@
     font-size: 21px;
   }
 
-  .presa-credits {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 20px;
+  .presa-section-head p {
+    font-size: 14px;
   }
 
-  .presa-credits-names {
-    justify-content: flex-start;
+  .presa-feature p,
+  .presa-step p,
+  .presa-privacy p,
+  .presa-credits p,
+  .presa-final p {
+    font-size: 13.5px;
+  }
+
+  .presa-shot figcaption {
+    font-size: 12.5px;
+  }
+
+  /* One swipeable screenshot per view keeps the page short on phones. */
+  .presa-shots {
+    grid-auto-flow: column;
+    grid-auto-columns: min(calc(100% - 16px), 300px);
+    grid-template-columns: none;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    contain: inline-size;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 1px;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .presa-shot {
+    scroll-snap-align: start;
+  }
+
+  .presa-text-link {
+    min-height: 44px;
+    padding-top: 10px;
   }
 
   .presa-compat-list li {
@@ -813,8 +908,22 @@
     gap: 2px;
   }
 
+  .presa-compat-list strong {
+    font-size: 13px;
+  }
+
   .presa-compat-list span {
+    font-size: 13px;
     text-align: left;
+  }
+
+  .presa-credits {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 20px;
+  }
+
+  .presa-credits-names {
+    justify-content: flex-start;
   }
 
   .presa-final {
@@ -836,8 +945,16 @@
     width: 100%;
   }
 
-  .presa-shots {
-    grid-template-columns: minmax(0, 1fr);
+  .presa-final-actions {
+    width: 100%;
+  }
+
+  .presa-final-actions .presa-cta {
+    width: 100%;
+  }
+
+  .presa-final-note {
+    white-space: normal;
   }
 }
 
