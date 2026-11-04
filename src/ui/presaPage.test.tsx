@@ -41,6 +41,11 @@ describe('page Presa', () => {
       expect(text).toContain(feature.text)
     }
 
+    const gallery = page.querySelector('.presa-shots')
+    expect(gallery?.getAttribute('role')).toBe('region')
+    expect(gallery?.getAttribute('aria-label')).toBe(fr.presa.screenshotsTitle)
+    expect(gallery?.getAttribute('tabindex')).toBe('0')
+
     const shots = [...page.querySelectorAll<HTMLImageElement>('.presa-shot img')]
     expect(shots).toHaveLength(fr.presa.screenshots.length)
     fr.presa.screenshots.forEach((shot, index) => {
