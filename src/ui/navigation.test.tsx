@@ -75,6 +75,20 @@ describe('navigation par hash', () => {
     expect(markup).not.toContain(fr.menu.subtitle)
   })
 
+  it('garde le nom de l’école et du professeur hors des en-têtes', () => {
+    window.location.hash = '#/chapitre-4'
+    const chapterMarkup = renderToStaticMarkup(<App />)
+    const chapterHeader = chapterMarkup.slice(0, chapterMarkup.indexOf('</header>'))
+    expect(chapterHeader).not.toContain(fr.app.institutionName)
+    expect(chapterHeader).not.toContain(fr.app.professor)
+
+    window.location.hash = MENU_HASH
+    const menuMarkup = renderToStaticMarkup(<App />)
+    const menuHeader = menuMarkup.slice(0, menuMarkup.indexOf('</header>'))
+    expect(menuHeader).not.toContain(fr.app.institutionName)
+    expect(menuHeader).not.toContain(fr.app.professor)
+  })
+
   it('ouvre la page Presa depuis le menu, puis revient au menu', () => {
     renderApp()
     const download = query<HTMLAnchorElement>('.presa-download')
