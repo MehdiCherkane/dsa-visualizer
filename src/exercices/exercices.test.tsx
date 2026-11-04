@@ -65,14 +65,46 @@ afterEach(() => {
 })
 
 describe('données des exercices', () => {
-  it('contient les fiches des chapitres 1 et 3', () => {
-    expect(exercises).toHaveLength(4)
-    expect(totalQuestionCount(exercises)).toBe(11)
-    expect(exercises.map((exercise) => exercise.chapter)).toEqual([1, 1, 1, 3])
+  it('contient les fiches des chapitres 1, 2 et 3', () => {
+    expect(exercises).toHaveLength(5)
+    expect(totalQuestionCount(exercises)).toBe(21)
+    expect(exercises.map((exercise) => exercise.chapter)).toEqual([1, 1, 1, 2, 3])
     expect(exerciseById('chapitre-1-piles-files-application')?.questions).toHaveLength(4)
     expect(exerciseById('chapitre-1-parentheses')?.questions).toHaveLength(1)
     expect(exerciseById('chapitre-1-max-file')?.questions).toHaveLength(1)
+    expect(exerciseById('chapitre-2-registre-etudiants-lsc')?.questions).toHaveLength(10)
     expect(exerciseById('chapitre-3-somme-grands-nombres')?.questions).toHaveLength(5)
+  })
+
+  it('fournit les 10 questions et les simulations pas à pas du TP 2', () => {
+    const tp2 = exerciseById('chapitre-2-registre-etudiants-lsc')
+    expect(tp2).toBeDefined()
+    if (!tp2) return
+
+    expect(tp2.title).toContain('Gestion des étudiants par liste simplement chaînée')
+    expect(tp2.intro).toContain('Liste Simplement Chaînée (LSC)')
+    expect(tp2.questions).toHaveLength(10)
+    expect(tp2.questions.map((q) => q.id)).toEqual([
+      'tp2-q1-structures-variables-globales',
+      'tp2-q2-initialisation-liste',
+      'tp2-q3-allocation-noeud-etudiant',
+      'tp2-q4-insertion-debut',
+      'tp2-q5-insertion-fin',
+      'tp2-q6-affichage-iteratif',
+      'tp2-q7-liberation-memoire',
+      'tp2-q8-division-classe-admis-non-admis',
+      'tp2-q9-tri-merite-admis',
+      'tp2-q10-fonction-main',
+    ])
+
+    for (const question of tp2.questions) {
+      expect(question.hints).toBeDefined()
+      expect(question.hints!.length).toBeGreaterThan(0)
+      expect(question.solutionCode).toContain('NoeudEtudiant')
+      expect(question.solutionNotes).toBeDefined()
+      expect(question.simulation).toBeDefined()
+      expect(question.simulation!.frames.length).toBeGreaterThan(0)
+    }
   })
 
   it('respecte le modèle Question / Exercise et garde des identifiants uniques', () => {
@@ -173,9 +205,9 @@ describe('page des exercices', () => {
   it('affiche la liste, les compteurs et les deux consignes', () => {
     renderPage()
 
-    expect(container.querySelectorAll('.exercice-card')).toHaveLength(4)
+    expect(container.querySelectorAll('.exercice-card')).toHaveLength(5)
     expect(container.textContent).toContain(fr.exercices.listTitle)
-    expect(container.textContent).toContain(fr.exercices.questionCount(11))
+    expect(container.textContent).toContain(fr.exercices.questionCount(21))
     expect(container.querySelector('.exercices-mandatory')?.textContent).toContain(
       fr.exercices.mandatoryBefore,
     )

@@ -92,6 +92,17 @@ describe('sujets PDF des exercices', () => {
     )
   })
 
+  it('ouvre le sujet du chapitre 2 (TP 2) dans le tiroir partagé', () => {
+    renderPage('chapitre-2-registre-etudiants-lsc')
+    const dialog = openPdf(2)
+
+    expect(dialog.getAttribute('aria-label')).toBe(fr.exercices.pdfDrawerAria(2))
+    expect(dialog.textContent).toContain(fr.exercices.chapterLabel(2))
+    expect(dialog.querySelector('iframe')?.getAttribute('src')).toBe(
+      './exercices/chapitre-2.pdf',
+    )
+  })
+
   it('ferme le tiroir avec Échap et rend le focus au bouton', () => {
     renderPage()
     const dialog = openPdf(3)
